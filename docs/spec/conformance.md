@@ -259,6 +259,19 @@ permanent research case identifiers, and none of these rows claims one.
 | GH-CACHE-INTEGRITY | a cache entry is replayed only when complete and still hashing to its digest; anything else is a miss and one refetch (PV-AUDIT-GITHUB-CACHE-INTEGRITY-001) | `test_gh_cache_integrity_01_02_05_unreadable_metadata_is_a_miss_never_an_exception`, `test_gh_cache_integrity_03_07_a_body_that_no_longer_hashes_to_its_digest_is_not_replayed`, `test_gh_cache_integrity_04_06_a_304_over_an_invalid_entry_refetches_once_and_a_valid_one_replays` |
 | CANON-NONFINITE / DECIMAL / JSON-PARSER / UNICODE | the canonical decoder rejects non-finite constants, decimal and exponent numbers, duplicate members and unpaired surrogates; integers of any size and valid Unicode survive (PV-AUDIT-CANONICAL-*-001) | `test_canon_nonfinite_and_decimal_tokens_reject_at_the_decoder`, `test_canon_decimal_07_integers_of_any_size_stay_integers`, `test_canon_json_parser_a_member_named_twice_is_rejected_not_collapsed`, `test_canon_unicode_01_04_an_unpaired_surrogate_is_rejected`, `test_canon_unicode_05_08_a_valid_pair_and_ordinary_unicode_survive`, `test_canon_unicode_06_07_a_direct_surrogate_value_or_key_is_a_canonicalization_error_not_a_unicode_error` |
 
+## Vitals and vectors (review of 2026-09-30)
+
+Implementation-local labels, as above.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| Pulse over 29 dates | a capped enumeration over all 29 UTC dates the 28-day window touches is evaluated, not a crash | `test_a_capped_enumeration_over_all_29_dates_the_window_touches_is_evaluated_not_a_crash` |
+| Pulse completions | every band an admissible completion reaches is in `possible_bands`, the QUIET threshold included | `test_every_band_a_completion_reaches_is_in_the_possible_set` |
+| Debt freshness | a stale or freshness-unknown partial register is UNKNOWN, never a PRESENT lower bound | `test_a_stale_partial_register_proves_nothing_about_now` |
+| vacuous expectations | an expectation that states nothing (an empty object or list, an empty code) is refused; an exactly compared empty `metric_deltas` is still a statement | `test_an_expectation_that_states_nothing_is_refused`, `test_an_exactly_empty_metric_delta_is_still_a_statement` |
+| schema conditional | every envelope of the corpus satisfies the published schema's value conditional as JSON Schema evaluates it | `test_every_envelope_satisfies_the_schemas_value_conditional` |
+| rule ids documented | every Vital `rule_id` the code declares is in vitals.md | `test_every_vital_rule_id_the_code_declares_is_documented` |
+
 ## Store and command line (review of 2026-09-30)
 
 Implementation-local labels, as above.

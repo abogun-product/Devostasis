@@ -175,6 +175,20 @@ accepted judgements, and their `rule_id` moved with them.
   content, no `size`, invalid base64 or more bytes than the bound, and run or
   suite fields (`name`, `event`, `html_url`, `workflow_id`, `url`) of the
   wrong type, which failed the canonical encoder.
+- **Vitals and vectors** (review of 2026-09-30). Pulse crashed with
+  `IndexError` when a capped commit enumeration covered all 29 UTC dates a
+  28-day window touches (the completion grid stopped at 28 and was empty),
+  which cost the project its bundle; the grid now reaches 29 and includes
+  the one-event QUIET threshold it missed, and an empty set would be
+  `UNKNOWN` as `PV-PULSE-REQUIRED-LOWER-BOUND-001` says. Debt read a stale
+  or freshness-unknown partial register as a `PRESENT` lower bound; it is
+  `UNKNOWN`, as vitals.md always said. The vector runner refuses an
+  expectation that states nothing (an empty object or list, an empty code,
+  which as a prefix matched every code), and the published vector schema
+  requires `status` in its value conditional: without it the schema rejected
+  39 of the 64 vectors the runner accepts. vitals.md lists all seven rule
+  ids (it said four Vitals kept their V0 ids; Clutter moved in this
+  release), and a drift test now reads them from the code.
 - **The store and the command line tell the truth about what they did**
   (review of 2026-09-30). Without an index, the scan for the newest bundle
   skipped a directory whose manifest it could not read, so the next run

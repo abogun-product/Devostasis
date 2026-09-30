@@ -33,10 +33,19 @@ Every Vital emits: `vital_id`, `vital_version`, `rule_id`, `band`,
 deterministic `explanation`. An `UNKNOWN` Vital has `band = null`.
 
 `rule_id` versions the evaluation rule of one Vital independently of the
-taxonomy and the policy constants. Flow (`flow.bands.v1`) and Pulse
-(`pulse.bands.v1`) carry the calibration repairs adopted in 0.1.2, Integrity
-(`integrity.bands.v1+ci-unit-004`) the judgements adopted in 0.1.9; the other
-four Vitals keep their V0 rule ids. A rule version change never rewrites a
+taxonomy and the policy constants. The seven rule ids of this version:
+
+| Vital | `rule_id` | Since |
+| --- | --- | --- |
+| Horizon | `horizon.bands.v1` | 0.1.0 |
+| Clutter | `clutter.bands.v1` | 0.1.9 (the incomplete-evidence contract and its subset proof) |
+| Direction | `direction.bands.v1.1` | 0.1.0 |
+| Flow | `flow.bands.v1` | 0.1.2 (the calibration repairs) |
+| Integrity | `integrity.bands.v1+ci-unit-004` | 0.1.9 (the newest-UNKNOWN, partial-series, sample-strength and totality judgements) |
+| Debt | `debt.bands.v1.1` | 0.1.0 |
+| Pulse | `pulse.bands.v1` | 0.1.2 (the calibration repairs) |
+
+A rule version change never rewrites a
 historical bundle: the affected Vital compares as `INCOMPARABLE`
 (`RULE_VERSION_BOUNDARY`) across the boundary while the rest of the bundle
 stays comparable ([history-and-reports.md](history-and-reports.md)).

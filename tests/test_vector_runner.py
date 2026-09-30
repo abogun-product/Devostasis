@@ -272,3 +272,31 @@ def test_a_comparison_status_the_engine_does_not_know_is_rejected():
     assert "unknown comparison_status" in str(error.value)
     with pytest.raises(vectors.VectorError):
         parse(kind="delta", given=given, expect=dict(expect, comparison_status="COMPARABEL"))
+
+
+@pytest.mark.parametrize(
+    "kind, given, expect",
+    [
+        ("ci", {"revisions": [{"sha": "a", "committed_at": "2026-09-01T00:00:00Z"}]}, {"revisions": {}}),
+        ("ci", {"revisions": [{"sha": "a", "committed_at": "2026-09-01T00:00:00Z"}]}, {"revisions": {"a": {}}}),
+        ("activity", {"observations": [{"observation_id": "git.default_branch.commits_28d", "value_type": "series", "value": []}]}, {"coverage_notes": []}),
+        ("activity", {"observations": [{"observation_id": "git.default_branch.commits_28d", "value_type": "series", "value": []}]}, {"interval": {}, "classes": {}}),
+        ("vital", {"vital": "clutter", "observations": CLUTTER_OBSERVATIONS}, {"band": "LIGHT", "evaluation_status": "AVAILABLE", "diagnostics": [""]}),
+        ("vital", {"vital": "clutter", "observations": CLUTTER_OBSERVATIONS}, {"band": "LIGHT", "evaluation_status": "AVAILABLE", "derived": {}}),
+    ],
+    ids=["ci-empty-revisions", "ci-empty-row", "activity-empty-notes", "activity-empty-interval", "vital-empty-code", "vital-empty-derived"],
+)
+def test_an_expectation_that_states_nothing_is_refused(kind, given, expect):
+    """An empty container asserts nothing and an empty code matches every code; neither may pass as proof."""
+    with pytest.raises(vectors.VectorError, match="states nothing|not a code"):
+        parse(kind=kind, given=given, expect=expect)
+
+
+def test_an_exactly_empty_metric_delta_is_still_a_statement():
+    """metric_deltas is compared exactly, so an empty list says 'no metric moved'."""
+    comparison = {
+        "previous": {"vitals": [{"vital_id": "clutter", "band": "LIGHT"}]},
+        "current": {"vitals": [{"vital_id": "clutter", "band": "LIGHT"}]},
+    }
+    vector = parse(kind="delta", given=comparison, expect={"vitals": {"clutter": {"transition_class": "UNCHANGED", "metric_deltas": []}}})
+    assert vector.kind == "delta"

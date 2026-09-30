@@ -87,13 +87,17 @@ def reachable_bands(
     observed lower bounds and at every threshold above them covers the whole
     completion space exactly.
     """
-    window = PULSE["window_days"]
+    # The 28-day window touches 29 UTC dates, so 29 distinct active days are
+    # admissible; bounding at 28 left the set empty for a capped enumeration
+    # that had already seen 29, and the evaluation crashed.
+    days_ceiling = max(PULSE["window_days"] + 1, active_days)
     if days_uncertain:
-        days_set = {d for d in (active_days, PULSE["steady_active_days"], PULSE["surging_active_days"], window) if active_days <= d <= window}
+        days_set = {d for d in (active_days, PULSE["steady_active_days"], PULSE["surging_active_days"], days_ceiling) if active_days <= d <= days_ceiling}
     else:
         days_set = {active_days}
     if events_uncertain:
-        events_set = {e for e in (events, PULSE["steady_events"], PULSE["surging_events"], UNBOUNDED_EVENTS) if e >= events}
+        # One event is the QUIET threshold, the lowest one the classifier has.
+        events_set = {e for e in (events, 1, PULSE["steady_events"], PULSE["surging_events"], UNBOUNDED_EVENTS) if e >= events}
     else:
         events_set = {events}
     reached = {
@@ -180,6 +184,10 @@ def evaluate(obs: ObservationSet) -> VitalResult:
             channel_count,
             channels_high,
         )
+        if not possible:
+            # PV-PULSE-REQUIRED-LOWER-BOUND-001: without a defensible
+            # conservative set there is no band to claim.
+            return unknown_result(VITAL_ID, VITAL_VERSION, RULE_ID, obs, ids, unobserved + partial_required + ["PULSE_COMPLETIONS_UNDEFINED"], SHARED, GROUPS)
         band = possible[0]
         if commits_capped:
             derived["commits_28d_semantics"] = "LOWER_BOUND"

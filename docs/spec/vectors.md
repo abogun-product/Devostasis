@@ -12,7 +12,7 @@ exact vectors of the research process are in the corpus (seven of those 70,
 with sixty-three still to come), beside the accepted families transcribed
 from their contracts (`ORDER`, `INT-UNKNOWN`, `INT-TOTAL`, `CLU-INCOMPLETE`,
 `ACT-COV`, and since 0.2.0 `DIR-CLOSED`, `DIR-INCOMPLETE`, `HOR-PARTIAL`,
-`DEBT-PARTIAL`). Authored against this format a case arrives executable instead of
+`DEBT-PARTIAL`, `HIST`). Authored against this format a case arrives executable instead of
 needing translation.
 
 ## A vector file

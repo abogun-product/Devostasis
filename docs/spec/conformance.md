@@ -40,7 +40,8 @@ citation resolves; both directions are a test (`test_spec_drift.py`).
 
 ## Integrity: the newest revision and the sample (PV-REV-INTEGRITY-UNKNOWN-001, PV-REV-TEST-003, PV-REV-TEST-VECTORS-002)
 
-Rule `integrity.bands.v1+ci-unit-004`, adopted in 0.1.9. The six cases of the
+Rule `integrity.bands.v1+ci-unit-004`, adopted in 0.1.9; since 0.2.0 the same
+cases hold under `integrity.bands.v1+ci-unit-004+hist-002`. The six cases of the
 accepted judgement on issue #13 are executable; two of them start at the
 provider-native normalization, because their subject is that `startup_failure`
 and an unsupported conclusion reach the Vital as `UNKNOWN`.
@@ -59,6 +60,41 @@ and an unsupported conclusion reach the Vital as `UNKNOWN`.
 | verdict vocabulary | a current verdict outside the canonical vocabulary is read as UNKNOWN, never as a non-decisive state an older pass speaks for | `test_a_verdict_outside_the_vocabulary_fails_closed_instead_of_falling_back_to_an_older_pass` |
 | record consistency | a record whose contribution contradicts its own history state is a defect, not a pass | `test_a_record_whose_contribution_contradicts_its_history_is_a_defect_not_a_pass` |
 | unusable series | an unusable required series is UNKNOWN even beside a positive `ci.configured = false` (precedence A of PV-INTEGRITY-TOTALITY-001) | `test_an_unusable_series_is_unknown_even_beside_a_positive_not_configured` |
+
+## Integrity: durable revision history (PV-HIST-002)
+
+Rule `integrity.bands.v1+ci-unit-004+hist-002`, adopted in 0.2.0 (target B3).
+The reconciliation cases state the carried history as the observation a build
+adds (`ci.revision_history_carried`) and are vectors; the cases about the
+chain, which bundle is the source and what a lost one means, need a history
+store and are tests.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| HIST-01 | a revision a prior bundle proved failing stays FAILURE_OBSERVED when the provider now shows the same revision passing; the current verdict is PASS | `vector:HIST-01` |
+| HIST-02 | a revision the prior bundle recorded PASS_ONLY_OBSERVED becomes FAILURE_OBSERVED when a failure of it is newly observed, and stays there | `vector:HIST-02` |
+| HIST-03 | a prior failure plus any number of same-revision retries that passed is one failed contribution, whatever the number or order of the retries | `vector:HIST-03` |
+| HIST-04 | a failed revision and a newer passing revision are two samples while both are in the window | `vector:HIST-04` |
+| HIST-05 | a failure the provider no longer exposes stays historical evidence while its revision is in the window | `vector:HIST-05` |
+| HIST-06 | without durable history a parent-level pass cannot prove the earlier attempts: UNKNOWN_HISTORY, no favorable PASS_ONLY reconstruction | `vector:HIST-06`, `test_parent_level_provenance_is_diagnosed_and_a_favorable_one_is_unknown_history` |
+| HIST-07 | complete attempt-level current evidence with no unresolved prior gap proves PASS_ONLY_OBSERVED | `vector:HIST-07` |
+| HIST-08 | a required predecessor that is missing or unverifiable is a HISTORY_GAP: nothing is carried through it | `test_hist_20_and_hist_08_a_lost_predecessor_is_a_gap_and_nothing_older_is_carried` |
+| HIST-09 | the same failure in durable history and in the current enumeration is one failed contribution, never two | `vector:HIST-09` |
+| HIST-10 | a revision whose durable failure has aged beyond the 14-day window no longer contributes | `vector:HIST-10` |
+| HIST-11 | equivalent failure histories on the Actions and the check-suite surfaces, in any enumeration order, give the identical record and result | `vector:HIST-11` |
+| HIST-12 | an unrelated rule or configuration change keeps the durable Integrity history | `test_hist_12_an_unrelated_vital_rule_change_keeps_the_durable_history` |
+| HIST-13 | carried history of the older lineage is replayed from the attempts it kept, never copied from the state it derived: its failure stays, its parent-level pass is unknown | `vector:HIST-13`, `test_hist_13_the_first_bundle_after_an_older_version_replays_its_revision_records` |
+| HIST-14 | a history-semantics change with an accepted deterministic migration records the migration | not executable: no migration has been accepted, so the mechanism accepts none and a foreign lineage takes the HIST-15 path |
+| HIST-15 | carried history of a lineage with neither replay nor an accepted migration leaves the revisions it names unknown, until complete current evidence repairs them | `vector:HIST-15` |
+| HIST-16 | a prior bundle's current verdict is never inherited: the revision the provider no longer shows keeps its history and speaks for nothing current | `vector:HIST-16` |
+| HIST-17 | the same current observation over different durable histories is different canonical evidence and a different bundle | `test_hist_17_different_durable_history_is_different_canonical_evidence` |
+| HIST-18 | history of another immutable project at the same locator is never carried | `test_hist_18_another_project_at_the_same_locator_is_never_carried` |
+| HIST-19 | a prior UNKNOWN_HISTORY does not heal because the provider now shows a pass that is complete only for what is visible | `vector:HIST-19`, `test_hist_19_complete_evidence_repairs_an_unknown_history` (the nearby repair) |
+| HIST-20 | B1 pass, B2 same-revision failure, B3 pass again: B3 carries from B2 and keeps the failure; with B2 lost it is a gap, never a fallback to B1 | `test_hist_20_the_immediate_predecessor_carries_a_failure_an_older_bundle_did_not_see`, `test_hist_20_and_hist_08_a_lost_predecessor_is_a_gap_and_nothing_older_is_carried` |
+| parent-level failure | an observed failure is proven on any surface; only favorable parent-level evidence is unknown | `test_a_parent_level_failure_is_still_a_proven_failure` |
+| continuity | the history crosses a bundle whose verification evidence was unusable | `test_the_durable_history_crosses_a_bundle_whose_verification_evidence_was_unusable` |
+| source is the predecessor | a build refuses observations that carry history from another bundle, leaves the caller's set untouched, and `verify` names a source that is not the previous bundle | `test_a_build_refuses_observations_that_carry_history_from_another_predecessor`, `test_a_build_leaves_the_callers_observation_set_as_it_was`, `test_verify_names_carried_history_that_is_not_from_the_previous_bundle`, `test_every_stored_bundle_verifies_with_its_carried_history` |
+| corrupt carried history | carried history that is not its lineage's shape fails closed | `test_carried_history_that_is_not_its_lineages_shape_fails_closed` |
 
 ## Integrity: totality (PV-INTEGRITY-TOTALITY-001)
 

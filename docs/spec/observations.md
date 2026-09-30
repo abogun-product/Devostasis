@@ -73,6 +73,7 @@ Inventories (emitted by adapters):
 | `forge.releases.inventory` | series | the 30 most recent published releases; a full page is `PARTIAL`, because the provider had at least that many |
 | `ci.configured` | boolean | positively observed presence or absence of verification |
 | `ci.revision_verdicts_14d` | series | one canonical record per default-branch revision of the 14-day window (see [integrity-ci.md](integrity-ci.md)); coverage `runs_complete`, `attempts_complete`, `suites_complete`, `suite_revisions_planned`, `suite_revisions_examined`, `suites_stop_reason`, `surface` |
+| `ci.revision_history_carried` | record | added by a build, not a collector: the durable revision history of the immediate predecessor bundle, or why there is none ([integrity-ci.md](integrity-ci.md#durable-history-pv-hist-002)) |
 
 Aggregates (derived deterministically from inventories; status follows the
 relevant coverage flag):

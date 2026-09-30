@@ -44,7 +44,7 @@ taxonomy and the policy constants. The seven rule ids of this version:
 | Clutter | `clutter.bands.v1` | 0.1.9 (the incomplete-evidence contract and its subset proof) |
 | Direction | `direction.bands.v2` | 0.2.0 (state-neutral and incomplete linkage, PV-REV-DIRECTION-CLOSED-TARGET-001 and PV-DIRECTION-INCOMPLETE-001) |
 | Flow | `flow.bands.v1` | 0.1.2 (the calibration repairs) |
-| Integrity | `integrity.bands.v1+ci-unit-004` | 0.1.9 (the newest-UNKNOWN, partial-series, sample-strength and totality judgements) |
+| Integrity | `integrity.bands.v1+ci-unit-004+hist-002` | 0.2.0 (durable revision history, PV-HIST-002; the band table and the 0.1.9 judgements unchanged) |
 | Debt | `debt.bands.v2` | 0.2.0 (partial register, PV-DEBT-PARTIAL-001) |
 | Pulse | `pulse.bands.v1` | 0.1.2 (the calibration repairs) |
 
@@ -170,7 +170,29 @@ to three decisive revisions, `ESTABLISHED` from four, and the diagnostic
 band is exact about the revisions it counts and says so, so that `FAILING`
 over one revision is not read as an established rate.
 
-Degradation and refusal, under rule `integrity.bands.v1+ci-unit-004`:
+History is counted over the durable revision history of **PV-HIST-002**
+(rule `integrity.bands.v1+ci-unit-004+hist-002`, HIST-01..20): every attempt
+one bundle observed for a revision is carried into the next one while the
+revision is in the window, so a failure the provider later hides behind a
+passing retry, or forgets through retention, still counts, and exactly once.
+Favorable evidence that cannot prove every attempt, a parent-level check suite
+or an Actions run whose earlier attempts are not all observed, is
+`UNKNOWN_HISTORY` rather than a reconstructed pass (R52). The carrier and its
+rules are in [integrity-ci.md](integrity-ci.md#durable-history-pv-hist-002).
+
+Degradation and refusal, under rule `integrity.bands.v1+ci-unit-004+hist-002`:
+
+- a recent revision whose history is `UNKNOWN_HISTORY` makes the Vital
+  `UNKNOWN` with no band, each such revision named by
+  `REVISION_HISTORY_UNKNOWN:<revision>` and the counts of the others kept in
+  `derived`: T9 puts unknown history above every conservative branch, so no
+  band is derived around it;
+- durable history that proves verification happened while the provider shows
+  no current verification at all is `UNKNOWN`
+  (`CURRENT_VERIFICATION_NOT_OBSERVED`): a current verdict is never carried
+  from an earlier bundle (HIST-16);
+- carried history that is not the shape its lineage declares is corrupt
+  persisted history and `UNKNOWN` (`REVISION_HISTORY_CARRY_MALFORMED`);
 
 - a required revision series with acquisition status `PARTIAL` is `UNKNOWN`
   with no band (`PV-REV-TEST-003`): the accepted chain has no degraded path

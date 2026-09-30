@@ -130,13 +130,21 @@ def test_ci_norm_outcome_mapping_fails_closed():
     assert github_ci.normalize_outcome("completed", "some_future_value") == "UNKNOWN"
 
 
-def test_current_unresolved_degrades_instead_of_claiming_clean():
+def test_current_unresolved_is_unknown_unless_failing_is_already_established():
+    """PV-INTEGRITY-TOTALITY-001: an older pass never speaks for a revision still being verified."""
     revs = passing_revisions(4) + [revision("new", "2026-09-09T00:00:00Z", [parent("pn", "VERIFY_UNRESOLVED")], "VERIFY_UNRESOLVED", "NO_DECISIVE_OBSERVED")]
     obs = obs_set()
     integrity_inputs(obs, True, revs)
     result = integrity.evaluate(obs)
-    assert result.band == "CLEAN" and result.evaluation_status == "DEGRADED"
-    assert "FAILING" in result.possible_bands and "CURRENT_VERIFICATION_UNRESOLVED" in result.diagnostics
+    assert result.band is None and result.evaluation_status == "UNKNOWN" and result.possible_bands is None
+    assert "CI_CURRENT_VERIFY_UNRESOLVED" in result.diagnostics
+
+    revs = passing_revisions(3) + [revision("f1", "2026-08-30T00:00:00Z", [parent("pf", "VERIFY_FAIL")], "VERIFY_FAIL", "FAILURE_OBSERVED")]
+    revs += [revision("new", "2026-09-09T00:00:00Z", [parent("pn", "VERIFY_UNRESOLVED")], "VERIFY_UNRESOLVED", "NO_DECISIVE_OBSERVED")]
+    obs = obs_set()
+    integrity_inputs(obs, True, revs)
+    result = integrity.evaluate(obs)
+    assert (result.band, result.evaluation_status, result.band_semantics, result.possible_bands) == ("FAILING", "DEGRADED", "EXACT", None)
 
 
 def test_partial_revision_series_is_unknown_with_its_evidence_preserved():
@@ -185,28 +193,79 @@ def test_a_newest_unknown_verdict_never_inherits_an_older_pass():
     assert result.derived["unknown_verdict_rule"] == "PV-REV-INTEGRITY-UNKNOWN-001"
 
 
-def test_the_unresolved_superset_is_derived_from_the_completions_the_evidence_admits():
-    """#12 finding 3: possible_bands must contain every band a completion can reach, and no fixed tail."""
-    assert integrity.reachable_after_unresolved(4, 0, "VERIFY_PASS") == ["CLEAN", "FAILING"]
-    assert integrity.reachable_after_unresolved(2, 0, "VERIFY_PASS") == ["SPARSE", "FAILING"]
-    assert integrity.reachable_after_unresolved(3, 0, "VERIFY_PASS") == ["SPARSE", "CLEAN", "FAILING"], "one more pass makes the sample established"
-    assert integrity.reachable_after_unresolved(0, 0, None) == ["NO_DECISIVE_RUNS", "SPARSE", "FAILING"]
-    assert integrity.reachable_after_unresolved(4, 1, "VERIFY_PASS") == ["FLAKY", "FAILING"], "one of four failed is FAILING now and FLAKY if the newest passes"
-    assert integrity.reachable_after_unresolved(4, 2, "VERIFY_PASS") == ["FAILING"], "no completion leaves FAILING"
+def _unresolved_over(passes: int, fails: int, newest_history: str = "NO_DECISIVE_OBSERVED"):
+    revs = passing_revisions(passes) + [
+        revision(f"f{i}", f"2026-08-{20 + i:02d}T00:00:00Z", [parent(f"pf{i}", "VERIFY_FAIL")], "VERIFY_FAIL", "FAILURE_OBSERVED") for i in range(fails)
+    ]
+    revs += [revision("new", "2026-09-09T00:00:00Z", [parent("pn", "VERIFY_UNRESOLVED")], "VERIFY_UNRESOLVED", newest_history)]
+    obs = obs_set()
+    integrity_inputs(obs, True, revs)
+    return integrity.evaluate(obs)
 
-    revs = passing_revisions(3) + [revision("f1", "2026-08-30T00:00:00Z", [parent("pf", "VERIFY_FAIL")], "VERIFY_FAIL", "FAILURE_OBSERVED")]
-    revs += [revision("new", "2026-09-09T00:00:00Z", [parent("pn", "VERIFY_UNRESOLVED")], "VERIFY_UNRESOLVED", "NO_DECISIVE_OBSERVED")]
+
+def test_an_unresolved_newest_revision_never_emits_a_band_its_history_does_not_already_prove():
+    """The superset this rule version first carried could omit the band it emitted (777 of 7,029 shapes).
+
+    Under the accepted totality rule there is no superset to get wrong: over
+    every history, the band is FAILING exactly where the established FAILING
+    predicate already holds, and nothing everywhere else.
+    """
+    for passes in range(0, 9):
+        for fails in range(0, 5):
+            result = _unresolved_over(passes, fails)
+            n, f = passes + fails, fails
+            if integrity.established_failing(n, f):
+                assert (result.band, result.evaluation_status, result.band_semantics) == ("FAILING", "DEGRADED", "EXACT"), (n, f)
+            else:
+                assert (result.band, result.evaluation_status) == (None, "UNKNOWN"), (n, f)
+            assert result.possible_bands is None and "CI_CURRENT_VERIFY_UNRESOLVED" in result.diagnostics, (n, f)
+            assert result.derived["decisive_count_14d"] == n and result.derived["failed_count_14d"] == f
+
+
+def test_a_newest_revision_with_one_workflow_passed_and_one_running_is_already_counted_and_still_unresolved():
+    """The live shape the superset got wrong: the revision is decisive history and unresolved at once."""
+    revs = passing_revisions(1) + [revision("f1", "2026-08-30T00:00:00Z", [parent("pf", "VERIFY_FAIL")], "VERIFY_FAIL", "FAILURE_OBSERVED")]
+    revs += [revision("new", "2026-09-09T00:00:00Z", [parent("ci", "VERIFY_PASS"), parent("docs", "VERIFY_UNRESOLVED")], "VERIFY_UNRESOLVED", "PASS_ONLY_OBSERVED")]
     obs = obs_set()
     integrity_inputs(obs, True, revs)
     result = integrity.evaluate(obs)
-    assert result.band == "FAILING" and result.evaluation_status == "DEGRADED" and result.possible_bands == ["FLAKY", "FAILING"]
+    assert result.derived["decisive_count_14d"] == 3, "the passed workflow already counts the revision"
+    assert (result.band, result.evaluation_status) == (None, "UNKNOWN"), "SPARSE_MIXED would let the older sample speak for the running workflow"
 
-    revs = passing_revisions(2) + [revision("f1", "2026-08-30T00:00:00Z", [parent("pf", "VERIFY_FAIL")], "VERIFY_FAIL", "FAILURE_OBSERVED"), revision("f2", "2026-08-31T00:00:00Z", [parent("pg", "VERIFY_FAIL")], "VERIFY_FAIL", "FAILURE_OBSERVED")]
-    revs += [revision("new", "2026-09-09T00:00:00Z", [parent("pn", "VERIFY_UNRESOLVED")], "VERIFY_UNRESOLVED", "NO_DECISIVE_OBSERVED")]
+
+def test_a_verdict_outside_the_vocabulary_fails_closed_instead_of_falling_back_to_an_older_pass():
+    for token in ("PENDING", "VERIFY_PASSED", "SOME_FUTURE_STATE"):
+        revs = passing_revisions(4) + [revision("new", "2026-09-09T00:00:00Z", [parent("pn", token)], token, "NO_DECISIVE_OBSERVED")]
+        obs = obs_set()
+        integrity_inputs(obs, True, revs)
+        result = integrity.evaluate(obs)
+        assert (result.band, result.evaluation_status) == (None, "UNKNOWN"), token
+        assert f"CURRENT_VERDICT_UNRECOGNIZED:{token}" in result.diagnostics
+        assert not any(code.startswith("LATEST_REVISION_NON_DECISIVE") for code in result.diagnostics)
+
+
+def test_a_record_whose_contribution_contradicts_its_history_is_a_defect_not_a_pass():
+    contradictory = revision("r9", "2026-09-05T00:00:00Z", [parent("p9", "VERIFY_PASS")], "VERIFY_PASS", "PASS_ONLY_OBSERVED")
+    contradictory["historical_contribution"] = "VERIFY_FAIL"
     obs = obs_set()
-    integrity_inputs(obs, True, revs)
+    integrity_inputs(obs, True, passing_revisions(4) + [contradictory])
     result = integrity.evaluate(obs)
-    assert result.band == "FAILING" and result.evaluation_status == "AVAILABLE" and result.possible_bands is None
+    assert (result.band, result.evaluation_status) == (None, "UNKNOWN")
+    assert "REVISION_RECORD_INCONSISTENT:r9" in result.diagnostics
+
+
+def test_an_unusable_series_is_unknown_even_beside_a_positive_not_configured():
+    """UNINSTRUMENTED claims there is no verification evidence; an unreadable series cannot establish that."""
+    for status in ("FORBIDDEN", "ERROR", "UNKNOWN"):
+        obs = obs_set()
+        add(obs, "ci.configured", False, "boolean")
+        add(obs, "ci.revision_verdicts_14d", None, "series", status=status, reason_code="X")
+        result = integrity.evaluate(obs)
+        assert (result.band, result.evaluation_status) == (None, "UNKNOWN"), status
+    obs = obs_set()
+    add(obs, "ci.configured", False, "boolean")
+    add(obs, "ci.revision_verdicts_14d", [], "series", freshness="STALE")
+    assert integrity.evaluate(obs).evaluation_status == "UNKNOWN"
 
 
 def test_latest_non_decisive_revision_falls_back_to_latest_decisive_verdict():

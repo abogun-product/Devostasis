@@ -1,0 +1,1629 @@
+{
+  "schema": "devostasis.vectors.v1",
+  "notes": "Cases INT-TOTAL-01..06 and 08..13 of PV-INTEGRITY-TOTALITY-001 (accepted by PV-REV-INT-TOTALITY-001), transcribed from the contract's Required conformance cases section and adopted in 0.1.9 under rule integrity.bands.v1+ci-unit-004. A newest revision still being verified is spoken for by no older verdict: only an already-true established FAILING predicate (at least four decisive revisions, a failure ratio of at least one quarter) names a band, DEGRADED / FAILING / EXACT; every other region is UNKNOWN with no band. A positively unconfigured repository with only non-decisive recent records is UNINSTRUMENTED with CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY. INT-TOTAL-07 (RAW_RUNS) and INT-TOTAL-14 (GitLab equivalence) are not materialized: this implementation has no RAW_RUNS sample path and no GitLab adapter. INT-TOTAL-13 starts at the provider-native normalization, because its subject is that a failure followed by a re-run in progress keeps its contribution whatever the enumeration order.",
+  "vectors": [
+    {
+      "case": "INT-TOTAL-01",
+      "title": "Configured CI, a newest revision still being verified and no decisive history is UNKNOWN with no band, never NO_DECISIVE_RUNS",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "new",
+                "committed_at": "2026-09-09T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-new",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_UNRESOLVED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_UNRESOLVED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_UNRESOLVED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": null,
+        "evaluation_status": "UNKNOWN",
+        "band_semantics": null,
+        "possible_bands": null,
+        "diagnostics": [
+          "CI_CURRENT_VERIFY_UNRESOLVED"
+        ],
+        "diagnostics_absent": [
+          "LATEST_REVISION_NON_DECISIVE",
+          "CURRENT_VERIFICATION_UNRESOLVED"
+        ],
+        "derived": {
+          "decisive_count_14d": 0,
+          "failed_count_14d": 0,
+          "unresolved_verdict_rule": "PV-INTEGRITY-TOTALITY-001"
+        },
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-02",
+      "title": "Two decisive passes and a newest unresolved revision is UNKNOWN: an older pass does not make it SPARSE",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-01T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r2",
+                "committed_at": "2026-09-02T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r2",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "new",
+                "committed_at": "2026-09-09T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-new",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_UNRESOLVED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_UNRESOLVED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_UNRESOLVED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": null,
+        "evaluation_status": "UNKNOWN",
+        "band_semantics": null,
+        "possible_bands": null,
+        "diagnostics": [
+          "CI_CURRENT_VERIFY_UNRESOLVED"
+        ],
+        "diagnostics_absent": [
+          "LATEST_REVISION_NON_DECISIVE",
+          "CURRENT_VERIFICATION_UNRESOLVED"
+        ],
+        "derived": {
+          "decisive_count_14d": 2,
+          "failed_count_14d": 0,
+          "unresolved_verdict_rule": "PV-INTEGRITY-TOTALITY-001"
+        },
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-03",
+      "title": "One pass, one failure and a newest unresolved revision is UNKNOWN: neither SPARSE_MIXED nor FAILING without the established predicate",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-01T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r2",
+                "committed_at": "2026-09-02T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r2",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_FAIL",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_FAIL"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "FAILURE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_FAIL",
+                "history_state": "FAILURE_OBSERVED",
+                "historical_contribution": "VERIFY_FAIL",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "new",
+                "committed_at": "2026-09-09T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-new",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_UNRESOLVED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_UNRESOLVED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_UNRESOLVED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": null,
+        "evaluation_status": "UNKNOWN",
+        "band_semantics": null,
+        "possible_bands": null,
+        "diagnostics": [
+          "CI_CURRENT_VERIFY_UNRESOLVED"
+        ],
+        "diagnostics_absent": [
+          "LATEST_REVISION_NON_DECISIVE",
+          "CURRENT_VERIFICATION_UNRESOLVED"
+        ],
+        "derived": {
+          "decisive_count_14d": 2,
+          "failed_count_14d": 1,
+          "unresolved_verdict_rule": "PV-INTEGRITY-TOTALITY-001"
+        },
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-04",
+      "title": "Four decisive passes and a newest unresolved revision is UNKNOWN, never CLEAN",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-01T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r2",
+                "committed_at": "2026-09-02T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r2",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r3",
+                "committed_at": "2026-09-03T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r3",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r4",
+                "committed_at": "2026-09-04T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r4",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "new",
+                "committed_at": "2026-09-09T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-new",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_UNRESOLVED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_UNRESOLVED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_UNRESOLVED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": null,
+        "evaluation_status": "UNKNOWN",
+        "band_semantics": null,
+        "possible_bands": null,
+        "diagnostics": [
+          "CI_CURRENT_VERIFY_UNRESOLVED"
+        ],
+        "diagnostics_absent": [
+          "LATEST_REVISION_NON_DECISIVE",
+          "CURRENT_VERIFICATION_UNRESOLVED"
+        ],
+        "derived": {
+          "decisive_count_14d": 4,
+          "failed_count_14d": 0,
+          "unresolved_verdict_rule": "PV-INTEGRITY-TOTALITY-001"
+        },
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-05",
+      "title": "Four passes and one failure (a ratio below one quarter) with a newest unresolved revision is UNKNOWN, never FLAKY through an inherited pass",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-01T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r2",
+                "committed_at": "2026-09-02T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r2",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r3",
+                "committed_at": "2026-09-03T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r3",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r4",
+                "committed_at": "2026-09-04T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r4",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r5",
+                "committed_at": "2026-09-05T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r5",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_FAIL",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_FAIL"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "FAILURE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_FAIL",
+                "history_state": "FAILURE_OBSERVED",
+                "historical_contribution": "VERIFY_FAIL",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "new",
+                "committed_at": "2026-09-09T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-new",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_UNRESOLVED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_UNRESOLVED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_UNRESOLVED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": null,
+        "evaluation_status": "UNKNOWN",
+        "band_semantics": null,
+        "possible_bands": null,
+        "diagnostics": [
+          "CI_CURRENT_VERIFY_UNRESOLVED"
+        ],
+        "diagnostics_absent": [
+          "LATEST_REVISION_NON_DECISIVE",
+          "CURRENT_VERIFICATION_UNRESOLVED"
+        ],
+        "derived": {
+          "decisive_count_14d": 5,
+          "failed_count_14d": 1,
+          "unresolved_verdict_rule": "PV-INTEGRITY-TOTALITY-001"
+        },
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-06",
+      "title": "Three passes and one failure already satisfy the established FAILING predicate: DEGRADED / FAILING / EXACT with the unresolved state explicit",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-01T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r2",
+                "committed_at": "2026-09-02T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r2",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r3",
+                "committed_at": "2026-09-03T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r3",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r4",
+                "committed_at": "2026-09-04T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r4",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_FAIL",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_FAIL"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "FAILURE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_FAIL",
+                "history_state": "FAILURE_OBSERVED",
+                "historical_contribution": "VERIFY_FAIL",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "new",
+                "committed_at": "2026-09-09T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-new",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_UNRESOLVED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_UNRESOLVED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_UNRESOLVED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": "FAILING",
+        "evaluation_status": "DEGRADED",
+        "band_semantics": "EXACT",
+        "possible_bands": null,
+        "derived": {
+          "decisive_count_14d": 4,
+          "failed_count_14d": 1,
+          "failure_ratio_14d": {
+            "num": 1,
+            "den": 4
+          },
+          "unresolved_verdict_rule": "PV-INTEGRITY-TOTALITY-001"
+        },
+        "diagnostics": [
+          "CI_CURRENT_VERIFY_UNRESOLVED"
+        ],
+        "diagnostics_absent": [
+          "LATEST_REVISION_NON_DECISIVE",
+          "CURRENT_VERIFICATION_UNRESOLVED"
+        ],
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-08",
+      "title": "Positively unconfigured CI with no decisive evidence and one recent NOT_EXECUTED record is exactly UNINSTRUMENTED, the record kept visible",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": false
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-05T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "NOT_EXECUTED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "NOT_EXECUTED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "NOT_EXECUTED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": "UNINSTRUMENTED",
+        "evaluation_status": "AVAILABLE",
+        "band_semantics": "EXACT",
+        "possible_bands": null,
+        "derived": {
+          "decisive_count_14d": 0,
+          "revisions_with_verification": 1,
+          "uninstrumented_rule": "PV-INTEGRITY-TOTALITY-001"
+        },
+        "diagnostics": [
+          "CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY"
+        ],
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-09",
+      "title": "The same with one recent NON_VERIFY_TERMINAL record: UNINSTRUMENTED with the diagnostic, the record kept visible",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": false
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-05T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "NON_VERIFY_TERMINAL",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "NON_VERIFY_TERMINAL"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "NON_VERIFY_TERMINAL",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": "UNINSTRUMENTED",
+        "evaluation_status": "AVAILABLE",
+        "band_semantics": "EXACT",
+        "possible_bands": null,
+        "derived": {
+          "decisive_count_14d": 0,
+          "revisions_with_verification": 1,
+          "uninstrumented_rule": "PV-INTEGRITY-TOTALITY-001"
+        },
+        "diagnostics": [
+          "CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY"
+        ],
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-10",
+      "title": "Configured CI with only recent non-decisive records stays NO_DECISIVE_RUNS: the unconfigured rule does not leak across configured=true",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-04T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "NON_VERIFY_TERMINAL",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "NON_VERIFY_TERMINAL"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "NON_VERIFY_TERMINAL",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r2",
+                "committed_at": "2026-09-05T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r2",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "NOT_EXECUTED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "NOT_EXECUTED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "NOT_EXECUTED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": "NO_DECISIVE_RUNS",
+        "evaluation_status": "AVAILABLE",
+        "band_semantics": "EXACT",
+        "possible_bands": null,
+        "diagnostics_absent": [
+          "CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY"
+        ],
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-11",
+      "title": "A newest UNKNOWN over a history that satisfies established FAILING stays UNKNOWN: PV-REV-INTEGRITY-UNKNOWN-001 is authoritative",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-01T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r2",
+                "committed_at": "2026-09-02T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r2",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r3",
+                "committed_at": "2026-09-03T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r3",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r4",
+                "committed_at": "2026-09-04T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r4",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_FAIL",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_FAIL"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "FAILURE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_FAIL",
+                "history_state": "FAILURE_OBSERVED",
+                "historical_contribution": "VERIFY_FAIL",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "new",
+                "committed_at": "2026-09-09T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-new",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "UNKNOWN",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "UNKNOWN"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "UNKNOWN",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "band": null,
+        "evaluation_status": "UNKNOWN",
+        "band_semantics": null,
+        "possible_bands": null,
+        "derived": {
+          "decisive_count_14d": 4,
+          "failed_count_14d": 1
+        },
+        "diagnostics": [
+          "CURRENT_VERDICT_UNKNOWN:new"
+        ],
+        "diagnostics_absent": [
+          "CI_CURRENT_VERIFY_UNRESOLVED"
+        ],
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-12",
+      "title": "A required revision series acquired PARTIAL is UNKNOWN with no band, whatever the unresolved or failing history it holds",
+      "kind": "vital",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "vital": "integrity",
+        "observed_at": "2026-09-10T12:00:00Z",
+        "observations": [
+          {
+            "observation_id": "ci.configured",
+            "value_type": "boolean",
+            "value": true
+          },
+          {
+            "observation_id": "ci.revision_verdicts_14d",
+            "value_type": "series",
+            "value": [
+              {
+                "revision": "r1",
+                "committed_at": "2026-09-01T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r1",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r2",
+                "committed_at": "2026-09-02T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r2",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r3",
+                "committed_at": "2026-09-03T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r3",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_PASS",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_PASS"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "PASS_ONLY_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_PASS",
+                "history_state": "PASS_ONLY_OBSERVED",
+                "historical_contribution": "VERIFY_PASS",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "r4",
+                "committed_at": "2026-09-04T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-r4",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_FAIL",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_FAIL"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "FAILURE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_FAIL",
+                "history_state": "FAILURE_OBSERVED",
+                "historical_contribution": "VERIFY_FAIL",
+                "history_provenance": "ATTEMPT_LEVEL"
+              },
+              {
+                "revision": "new",
+                "committed_at": "2026-09-09T10:00:00Z",
+                "parents": [
+                  {
+                    "parent_id": "p-new",
+                    "kind": "github_actions_workflow_run",
+                    "name": "ci",
+                    "event": "push",
+                    "current_attempt": 1,
+                    "current_state": "VERIFY_UNRESOLVED",
+                    "attempts_observed": [
+                      {
+                        "attempt": 1,
+                        "state": "VERIFY_UNRESOLVED"
+                      }
+                    ],
+                    "attempts_complete": true,
+                    "history_state": "NO_DECISIVE_OBSERVED",
+                    "url": null
+                  }
+                ],
+                "current_verdict": "VERIFY_UNRESOLVED",
+                "history_state": "NO_DECISIVE_OBSERVED",
+                "historical_contribution": null,
+                "history_provenance": "ATTEMPT_LEVEL"
+              }
+            ],
+            "status": "PARTIAL",
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false
+            }
+          }
+        ]
+      },
+      "expect": {
+        "band": null,
+        "evaluation_status": "UNKNOWN",
+        "band_semantics": null,
+        "possible_bands": null,
+        "diagnostics": [
+          "REVISION_SERIES_PARTIAL:PAGINATION_CAPPED"
+        ],
+        "diagnostics_absent": [
+          "CI_CURRENT_VERIFY_UNRESOLVED"
+        ],
+        "rule_id": "integrity.bands.v1+ci-unit-004"
+      }
+    },
+    {
+      "case": "INT-TOTAL-13",
+      "title": "A failure followed by a re-run still in progress on the same revision keeps its VERIFY_FAIL contribution, and the established FAILING projection holds in every enumeration order",
+      "kind": "ci",
+      "source_unit": "PV-INTEGRITY-TOTALITY-001",
+      "given": {
+        "observed_at": "2026-09-10T12:00:00Z",
+        "variants": [
+          {
+            "title": "runs enumerated oldest first",
+            "revisions": [
+              {
+                "sha": "r1",
+                "committed_at": "2026-09-01T10:00:00Z"
+              },
+              {
+                "sha": "r2",
+                "committed_at": "2026-09-02T10:00:00Z"
+              },
+              {
+                "sha": "r3",
+                "committed_at": "2026-09-03T10:00:00Z"
+              },
+              {
+                "sha": "r4",
+                "committed_at": "2026-09-04T10:00:00Z"
+              }
+            ],
+            "actions_runs": [
+              {
+                "id": 101,
+                "head_sha": "r1",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "name": "ci",
+                "event": "push"
+              },
+              {
+                "id": 102,
+                "head_sha": "r2",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "name": "ci",
+                "event": "push"
+              },
+              {
+                "id": 103,
+                "head_sha": "r3",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "name": "ci",
+                "event": "push"
+              },
+              {
+                "id": 104,
+                "head_sha": "r4",
+                "run_attempt": 2,
+                "status": "in_progress",
+                "conclusion": null,
+                "name": "ci",
+                "event": "push",
+                "prior_attempts": [
+                  {
+                    "run_attempt": 1,
+                    "status": "completed",
+                    "conclusion": "failure"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "runs enumerated newest first",
+            "revisions": [
+              {
+                "sha": "r4",
+                "committed_at": "2026-09-04T10:00:00Z"
+              },
+              {
+                "sha": "r3",
+                "committed_at": "2026-09-03T10:00:00Z"
+              },
+              {
+                "sha": "r2",
+                "committed_at": "2026-09-02T10:00:00Z"
+              },
+              {
+                "sha": "r1",
+                "committed_at": "2026-09-01T10:00:00Z"
+              }
+            ],
+            "actions_runs": [
+              {
+                "id": 104,
+                "head_sha": "r4",
+                "run_attempt": 2,
+                "status": "in_progress",
+                "conclusion": null,
+                "name": "ci",
+                "event": "push",
+                "prior_attempts": [
+                  {
+                    "run_attempt": 1,
+                    "status": "completed",
+                    "conclusion": "failure"
+                  }
+                ]
+              },
+              {
+                "id": 103,
+                "head_sha": "r3",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "name": "ci",
+                "event": "push"
+              },
+              {
+                "id": 102,
+                "head_sha": "r2",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "name": "ci",
+                "event": "push"
+              },
+              {
+                "id": 101,
+                "head_sha": "r1",
+                "run_attempt": 1,
+                "status": "completed",
+                "conclusion": "success",
+                "name": "ci",
+                "event": "push"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "revisions": {
+          "r4": {
+            "current_verdict": "VERIFY_UNRESOLVED",
+            "history_state": "FAILURE_OBSERVED",
+            "historical_contribution": "VERIFY_FAIL",
+            "parents": [
+              {
+                "current_state": "VERIFY_UNRESOLVED",
+                "history_state": "FAILURE_OBSERVED",
+                "current_attempt": 2,
+                "attempts_complete": true
+              }
+            ]
+          },
+          "r3": {
+            "current_verdict": "VERIFY_PASS",
+            "historical_contribution": "VERIFY_PASS"
+          }
+        },
+        "integrity": {
+          "band": "FAILING",
+          "evaluation_status": "DEGRADED",
+          "band_semantics": "EXACT",
+          "possible_bands": null,
+          "rule_id": "integrity.bands.v1+ci-unit-004",
+          "derived": {
+            "decisive_count_14d": 4,
+            "failed_count_14d": 1
+          },
+          "diagnostics": [
+            "CI_CURRENT_VERIFY_UNRESOLVED"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -170,15 +170,29 @@ Degradation and refusal, under rule `integrity.bands.v1+ci-unit-004`:
   decisive verdict; the decisive history stays in `derived` and is never
   reconstructed as a pass, and the diagnostic `CURRENT_VERDICT_UNKNOWN`
   names the revision;
-- a newest revision whose verification is still unresolved yields `DEGRADED`
-  with a `NON_AUTHORITATIVE_CONSERVATIVE_SUPERSET` derived from the
-  completions the evidence admits (the revision fails, passes, or ends
-  without a verdict), which always includes `FAILING`; when every completion
-  yields the band already reached, the band is exact;
+- a newest revision whose verification is still unresolved is spoken for by
+  no older verdict (`PV-INTEGRITY-TOTALITY-001`, INT-TOTAL-01..14): when the
+  history already satisfies the established FAILING predicate on its own
+  (`decisive >= 4` and `failed / decisive >= 1/4`) the result is
+  `DEGRADED / FAILING / EXACT`, exact for this snapshot while the evaluation
+  says the current verification is unresolved; every other history is
+  `UNKNOWN` with no band. Both carry `CI_CURRENT_VERIFY_UNRESOLVED`, and no
+  `possible_bands` is derived: the accepted contract defines no reachability
+  algorithm, and the one this rule version first carried could omit the
+  band it emitted;
 - when the latest revision has a positively observed non-decisive verdict
   (`NOT_EXECUTED`, `NON_VERIFY_TERMINAL`), the latest decisive revision is
   used and diagnosed `LATEST_REVISION_NON_DECISIVE`; that fallback is never
-  applied to `UNKNOWN`.
+  applied to `UNKNOWN`, nor to a verdict outside the canonical vocabulary,
+  which is read as `UNKNOWN` (`CURRENT_VERDICT_UNRECOGNIZED`);
+- `ci.configured` positively false with no decisive evidence and only
+  non-decisive recent records is `UNINSTRUMENTED`, with those records kept
+  visible and diagnosed `CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY`;
+  with `ci.configured` true the same records stay `NO_DECISIVE_RUNS`;
+- a required series that cannot be used (forbidden, errored, unknown, stale)
+  is `UNKNOWN` even beside a positive "not configured", and so is a series
+  holding a record whose contribution contradicts its own history state
+  (`REVISION_RECORD_INCONSISTENT`).
 
 A persistently failing secondary workflow makes every revision
 `FAILURE_OBSERVED` and the band `FAILING`; PV-CAL-002 confirmed this as the

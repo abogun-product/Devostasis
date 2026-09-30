@@ -31,10 +31,24 @@ accepted judgements, and their `rule_id` moved with them.
   `DEGRADED` path with a fixed three-band tail called a superset is gone.
   `PV-REV-TEST-VECTORS-002` (issue #21): one to three decisive revisions carry
   `sample_strength = SPARSE` and `CI_SPARSE_SAMPLE`, four or more
-  `ESTABLISHED`. The one degraded path left, a newest revision still being
-  verified, now declares a `possible_bands` derived from the completions the
-  evidence admits: the revision fails, passes, or ends without a verdict.
-  Cases `INT-UNKNOWN-01..06`, `T2`, `R1`, `R2` are executable vectors.
+  `ESTABLISHED`. `PV-INTEGRITY-TOTALITY-001` (accepted by
+  `PV-REV-INT-TOTALITY-001`, #33): a newest revision still being verified is
+  spoken for by no older verdict; the history names a band only when it
+  already satisfies FAILING on its own (four or more decisive revisions, a
+  quarter or more failed), `DEGRADED / FAILING / EXACT`, and every other
+  history is `UNKNOWN` with no band, diagnosed `CI_CURRENT_VERIFY_UNRESOLVED`.
+  This rule version first carried a `possible_bands` derived from the
+  completions instead; the review of 2026-09-30 found it could omit the band
+  it emitted (777 of 7,029 shapes, the commonest being one workflow passed
+  and one still running) and could miss bands a completion reaches, and the
+  accepted contract defines no reachability algorithm at all. A positively
+  unconfigured repository with only non-decisive recent records is
+  `UNINSTRUMENTED` with `CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY`;
+  an unusable series is `UNKNOWN` even beside "not configured"; a verdict
+  outside the vocabulary is `UNKNOWN`, never a fallback to an older pass; a
+  record whose contribution contradicts its history is a defect. Cases
+  `INT-UNKNOWN-01..06`, `INT-TOTAL-01..06` and `08..13`, `T2`, `R1`, `R2` are
+  executable vectors.
 - **Pulse diagnoses issue-only activity** (`PULSE_ISSUE_ONLY_ACTIVITY`,
   permanent case T5, issue #22), under `pulse.bands.v1` as the accepted vector
   requires: provenance, not a judgement about productivity. It is emitted

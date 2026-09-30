@@ -55,7 +55,33 @@ and an unsupported conclusion reach the Vital as `UNKNOWN`.
 | INT-UNKNOWN-06 | a newest UNKNOWN over failure-bearing history stays UNKNOWN and the failure is not erased | `vector:INT-UNKNOWN-06` |
 | partial series | a required revision series that is PARTIAL is UNKNOWN with no band, its counts visible (PV-REV-TEST-003) | `test_partial_revision_series_is_unknown_with_its_evidence_preserved` |
 | sample strength | one to three decisive revisions are SPARSE with `CI_SPARSE_SAMPLE`; four are ESTABLISHED | `test_sparse_samples_declare_their_strength_and_established_ones_do_not_carry_the_diagnostic` |
-| unresolved superset | `possible_bands` of a still-verifying newest revision holds every band a completion reaches, never a fixed tail (#12 finding 3) | `test_the_unresolved_superset_is_derived_from_the_completions_the_evidence_admits` |
+| unresolved newest revision | over every history, a newest revision still being verified yields FAILING exactly where the established FAILING predicate already holds and no band elsewhere; the superset this rule version first carried, which could omit the band it emitted, is gone (#12 finding 3, PV-INTEGRITY-TOTALITY-001) | `test_an_unresolved_newest_revision_never_emits_a_band_its_history_does_not_already_prove`, `test_current_unresolved_is_unknown_unless_failing_is_already_established`, `test_a_newest_revision_with_one_workflow_passed_and_one_running_is_already_counted_and_still_unresolved` |
+| verdict vocabulary | a current verdict outside the canonical vocabulary is read as UNKNOWN, never as a non-decisive state an older pass speaks for | `test_a_verdict_outside_the_vocabulary_fails_closed_instead_of_falling_back_to_an_older_pass` |
+| record consistency | a record whose contribution contradicts its own history state is a defect, not a pass | `test_a_record_whose_contribution_contradicts_its_history_is_a_defect_not_a_pass` |
+| unusable series | an unusable required series is UNKNOWN even beside a positive `ci.configured = false` (precedence A of PV-INTEGRITY-TOTALITY-001) | `test_an_unusable_series_is_unknown_even_beside_a_positive_not_configured` |
+
+## Integrity: totality (PV-INTEGRITY-TOTALITY-001)
+
+Accepted by `PV-REV-INT-TOTALITY-001` and adopted in 0.1.9 under the same
+unreleased rule `integrity.bands.v1+ci-unit-004`. The cases are transcribed
+from the contract's Required conformance cases section.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| INT-TOTAL-01 | configured, newest unresolved, no decisive history: UNKNOWN with no band, never NO_DECISIVE_RUNS | `vector:INT-TOTAL-01` |
+| INT-TOTAL-02 | two passes and a newest unresolved revision: UNKNOWN, never SPARSE through an older pass | `vector:INT-TOTAL-02` |
+| INT-TOTAL-03 | one pass, one failure, newest unresolved: UNKNOWN, neither SPARSE_MIXED nor FAILING | `vector:INT-TOTAL-03` |
+| INT-TOTAL-04 | four passes, newest unresolved: UNKNOWN, never CLEAN | `vector:INT-TOTAL-04` |
+| INT-TOTAL-05 | five decisive, one failure, newest unresolved: UNKNOWN, never FLAKY | `vector:INT-TOTAL-05` |
+| INT-TOTAL-06 | four decisive, one failure (the established FAILING predicate), newest unresolved: DEGRADED / FAILING / EXACT, no `possible_bands` | `vector:INT-TOTAL-06` |
+| INT-TOTAL-07 | the same region under RAW_RUNS is PROVISIONAL_NONINDEPENDENT | not materialized: this implementation has no RAW_RUNS sample path (issue #23) |
+| INT-TOTAL-08 | not configured, no decisive evidence, one NOT_EXECUTED record: UNINSTRUMENTED with `CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY` | `vector:INT-TOTAL-08` |
+| INT-TOTAL-09 | the same with one NON_VERIFY_TERMINAL record | `vector:INT-TOTAL-09` |
+| INT-TOTAL-10 | configured with only non-decisive records stays NO_DECISIVE_RUNS | `vector:INT-TOTAL-10` |
+| INT-TOTAL-11 | a newest UNKNOWN stays UNKNOWN over any history, an established FAILING one included | `vector:INT-TOTAL-11` |
+| INT-TOTAL-12 | a PARTIAL required series stays UNKNOWN whatever it holds | `vector:INT-TOTAL-12` |
+| INT-TOTAL-13 | a failure followed by a re-run in progress keeps its contribution in every enumeration order | `vector:INT-TOTAL-13` |
+| INT-TOTAL-14 | equivalent GitHub and GitLab evidence give one result | not materialized: there is no GitLab adapter yet (target C1, issue #34) |
 
 ## Clutter: incomplete evidence (PV-CLUTTER-INCOMPLETE-001, PV-ISSUE-026-RECONCILE-001)
 

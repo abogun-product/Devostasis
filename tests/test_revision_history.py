@@ -266,3 +266,43 @@ def test_verify_names_carried_history_that_is_not_from_the_previous_bundle(tmp_p
     assert _check_history_source(b2.members, b2.manifest, observations) == []
     problems = _check_history_source(b2.members, dict(b2.manifest, previous_bundle_id="c" * 64), observations)
     assert len(problems) == 2 and all(problem.startswith("HISTORY_SOURCE_MISMATCH") for problem in problems)
+
+
+def test_the_carrier_holds_only_what_the_build_can_consume(tmp_path):
+    """Records that have aged out of the window are not carried, and replayed 0.1.x records keep only what replay reads."""
+    store = FilesystemHistoryStore(tmp_path)
+    project = single_project(LOCATOR, config_version="1")
+    older = _older_bundle(project, _obs("2026-09-06T12:00:00Z", _passing([1, 2, 3]) + [_record("r", 4, [_run(RUN_R, [(1, "VERIFY_FAIL")])]), _record("s", 5, [_run(RUN_R + 1, [(1, "VERIFY_PASS")])])]))
+    store.commit(older)
+    # Observed on 2026-09-19 the window starts at 09-05T12:00: r (09-04) has aged out, s (09-05T10:00) too, nothing else is carried.
+    b2, _ = _build(store, "2026-09-19T12:00:00Z", _passing([6, 7]))
+    assert _carried(b2)["value"]["records"] == []
+    # On 2026-09-20 the window starts at 09-06T12:00, so p6 (09-06T10:00) is no longer carried either.
+    b3, _ = _build(store, "2026-09-20T12:00:00Z", _passing([6, 7, 8]))
+    assert [r["revision"] for r in _carried(b3)["value"]["records"]] == ["p7"]
+    b4_store = FilesystemHistoryStore(tmp_path / "replay")
+    b4_store.commit(older)
+    b4, _ = _build(b4_store, "2026-09-10T12:00:00Z", _passing([6]))
+    replayed = _carried(b4)["value"]["records"]
+    assert {r["revision"] for r in replayed} == {"p1", "p2", "p3", "r", "s"}
+    assert all(set(r) == {"revision", "committed_at", "parents"} for r in replayed)
+    assert all(set(p) == {"parent_id", "kind", "current_attempt", "attempts_observed"} for r in replayed for p in r["parents"])
+
+
+def test_the_carrier_groups_parents_by_shape_without_losing_one():
+    """Hundreds of single-attempt runs on one revision are stored once per shape, and every parent comes back."""
+    from devostasis.revision_history import HistoryShapeError, parent_groups, parents_from_groups
+
+    parents = [
+        {"parent_id": f"github_actions:workflow_run:{n}", "kind": "github_actions_workflow_run", "latest_attempt": 1, "attempts": [{"attempt": 1, "state": "VERIFY_PASS"}]}
+        for n in range(300)
+    ] + [
+        {"parent_id": "github_actions:workflow_run:900", "kind": "github_actions_workflow_run", "latest_attempt": 2, "attempts": [{"attempt": 1, "state": "VERIFY_FAIL"}, {"attempt": 2, "state": "VERIFY_PASS"}]},
+        {"parent_id": "github_checks:check_suite:7", "kind": "github_check_suite", "latest_attempt": None, "attempts": [{"attempt": None, "state": "VERIFY_PASS"}]},
+    ]
+    groups = parent_groups(parents)
+    assert len(groups) == 3 and sum(len(group["parent_ids"]) for group in groups) == 302
+    restored = parents_from_groups(groups, "test")
+    assert sorted(restored, key=lambda p: p["parent_id"]) == sorted(parents, key=lambda p: p["parent_id"])
+    with pytest.raises(HistoryShapeError):
+        parents_from_groups([groups[0], {**groups[0]}], "test")

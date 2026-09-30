@@ -171,9 +171,8 @@
                 {
                   "revision": "r",
                   "committed_at": "2026-09-06T10:00:00Z",
-                  "parents": [
+                  "parent_groups": [
                     {
-                      "parent_id": "github_checks:check_suite:41",
                       "kind": "github_check_suite",
                       "latest_attempt": null,
                       "attempts": [
@@ -181,6 +180,9 @@
                           "attempt": null,
                           "state": "VERIFY_FAIL"
                         }
+                      ],
+                      "parent_ids": [
+                        "github_checks:check_suite:41"
                       ]
                     }
                   ]
@@ -384,9 +386,8 @@
                 {
                   "revision": "r",
                   "committed_at": "2026-09-01T10:00:00Z",
-                  "parents": [
+                  "parent_groups": [
                     {
-                      "parent_id": "github_actions:workflow_run:41",
                       "kind": "github_actions_workflow_run",
                       "latest_attempt": 1,
                       "attempts": [
@@ -394,6 +395,9 @@
                           "attempt": 1,
                           "state": "VERIFY_PASS"
                         }
+                      ],
+                      "parent_ids": [
+                        "github_actions:workflow_run:41"
                       ]
                     }
                   ]
@@ -479,9 +483,8 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_actions:workflow_run:41",
                           "kind": "github_actions_workflow_run",
                           "latest_attempt": 1,
                           "attempts": [
@@ -489,6 +492,9 @@
                               "attempt": 1,
                               "state": "VERIFY_FAIL"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_actions:workflow_run:41"
                           ]
                         }
                       ]
@@ -568,9 +574,8 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_actions:workflow_run:41",
                           "kind": "github_actions_workflow_run",
                           "latest_attempt": 1,
                           "attempts": [
@@ -578,6 +583,9 @@
                               "attempt": 1,
                               "state": "VERIFY_FAIL"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_actions:workflow_run:41"
                           ]
                         }
                       ]
@@ -657,9 +665,8 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_actions:workflow_run:41",
                           "kind": "github_actions_workflow_run",
                           "latest_attempt": 6,
                           "attempts": [
@@ -687,6 +694,9 @@
                               "attempt": 1,
                               "state": "VERIFY_FAIL"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_actions:workflow_run:41"
                           ]
                         }
                       ]
@@ -781,9 +791,8 @@
                 {
                   "revision": "r",
                   "committed_at": "2026-09-06T10:00:00Z",
-                  "parents": [
+                  "parent_groups": [
                     {
-                      "parent_id": "github_actions:workflow_run:41",
                       "kind": "github_actions_workflow_run",
                       "latest_attempt": 1,
                       "attempts": [
@@ -791,6 +800,9 @@
                           "attempt": 1,
                           "state": "VERIFY_FAIL"
                         }
+                      ],
+                      "parent_ids": [
+                        "github_actions:workflow_run:41"
                       ]
                     }
                   ]
@@ -968,9 +980,8 @@
                 {
                   "revision": "r",
                   "committed_at": "2026-09-06T10:00:00Z",
-                  "parents": [
+                  "parent_groups": [
                     {
-                      "parent_id": "github_actions:workflow_run:41",
                       "kind": "github_actions_workflow_run",
                       "latest_attempt": 1,
                       "attempts": [
@@ -978,6 +989,9 @@
                           "attempt": 1,
                           "state": "VERIFY_FAIL"
                         }
+                      ],
+                      "parent_ids": [
+                        "github_actions:workflow_run:41"
                       ]
                     }
                   ]
@@ -1691,9 +1705,8 @@
                     {
                       "revision": "p1",
                       "committed_at": "2026-09-01T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_actions:workflow_run:901",
                           "kind": "github_actions_workflow_run",
                           "latest_attempt": 1,
                           "attempts": [
@@ -1701,6 +1714,9 @@
                               "attempt": 1,
                               "state": "VERIFY_PASS"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_actions:workflow_run:901"
                           ]
                         }
                       ]
@@ -1897,9 +1913,8 @@
                 {
                   "revision": "r",
                   "committed_at": "2026-09-01T10:00:00Z",
-                  "parents": [
+                  "parent_groups": [
                     {
-                      "parent_id": "github_actions:workflow_run:41",
                       "kind": "github_actions_workflow_run",
                       "latest_attempt": 1,
                       "attempts": [
@@ -1907,6 +1922,9 @@
                           "attempt": 1,
                           "state": "VERIFY_FAIL"
                         }
+                      ],
+                      "parent_ids": [
+                        "github_actions:workflow_run:41"
                       ]
                     }
                   ]
@@ -2072,9 +2090,8 @@
                 {
                   "revision": "old",
                   "committed_at": "2026-08-20T10:00:00Z",
-                  "parents": [
+                  "parent_groups": [
                     {
-                      "parent_id": "github_actions:workflow_run:40",
                       "kind": "github_actions_workflow_run",
                       "latest_attempt": 1,
                       "attempts": [
@@ -2082,6 +2099,9 @@
                           "attempt": 1,
                           "state": "VERIFY_FAIL"
                         }
+                      ],
+                      "parent_ids": [
+                        "github_actions:workflow_run:40"
                       ]
                     }
                   ]
@@ -2280,9 +2300,8 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_actions:workflow_run:41",
                           "kind": "github_actions_workflow_run",
                           "latest_attempt": 1,
                           "attempts": [
@@ -2290,6 +2309,9 @@
                               "attempt": 1,
                               "state": "VERIFY_FAIL"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_actions:workflow_run:41"
                           ]
                         }
                       ]
@@ -2465,9 +2487,8 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_actions:workflow_run:41",
                           "kind": "github_actions_workflow_run",
                           "latest_attempt": 2,
                           "attempts": [
@@ -2479,6 +2500,9 @@
                               "attempt": 1,
                               "state": "VERIFY_FAIL"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_actions:workflow_run:41"
                           ]
                         }
                       ]
@@ -2654,9 +2678,8 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_checks:check_suite:41",
                           "kind": "github_check_suite",
                           "latest_attempt": null,
                           "attempts": [
@@ -2664,6 +2687,9 @@
                               "attempt": null,
                               "state": "VERIFY_FAIL"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_checks:check_suite:41"
                           ]
                         }
                       ]
@@ -2987,7 +3013,7 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": []
+                      "parent_groups": []
                     }
                   ],
                   "source_bundle_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -3160,7 +3186,7 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": []
+                      "parent_groups": []
                     }
                   ],
                   "source_bundle_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -3337,9 +3363,8 @@
                 {
                   "revision": "r",
                   "committed_at": "2026-09-09T10:00:00Z",
-                  "parents": [
+                  "parent_groups": [
                     {
-                      "parent_id": "github_actions:workflow_run:41",
                       "kind": "github_actions_workflow_run",
                       "latest_attempt": 1,
                       "attempts": [
@@ -3347,6 +3372,9 @@
                           "attempt": 1,
                           "state": "VERIFY_FAIL"
                         }
+                      ],
+                      "parent_ids": [
+                        "github_actions:workflow_run:41"
                       ]
                     }
                   ]
@@ -3550,9 +3578,8 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_actions:workflow_run:41",
                           "kind": "github_actions_workflow_run",
                           "latest_attempt": 3,
                           "attempts": [
@@ -3560,6 +3587,9 @@
                               "attempt": 3,
                               "state": "VERIFY_PASS"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_actions:workflow_run:41"
                           ]
                         }
                       ]
@@ -3735,9 +3765,8 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [
+                      "parent_groups": [
                         {
-                          "parent_id": "github_checks:check_suite:41",
                           "kind": "github_check_suite",
                           "latest_attempt": null,
                           "attempts": [
@@ -3745,6 +3774,9 @@
                               "attempt": null,
                               "state": "VERIFY_UNRESOLVED"
                             }
+                          ],
+                          "parent_ids": [
+                            "github_checks:check_suite:41"
                           ]
                         }
                       ]
@@ -3902,7 +3934,7 @@
                     {
                       "revision": "r",
                       "committed_at": "2026-09-06T10:00:00Z",
-                      "parents": [],
+                      "parent_groups": [],
                       "unresolved": [
                         "LINEAGE_INCOMPATIBLE:devostasis.ci-history.v9"
                       ]

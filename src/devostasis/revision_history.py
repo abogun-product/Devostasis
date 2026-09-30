@@ -126,11 +126,40 @@ def parent_from_current(parent: Any, where: str) -> dict[str, Any]:
     return _parent(parent.get("parent_id"), parent.get("kind"), parent.get("current_attempt"), parent.get("attempts_observed"), where)
 
 
-def parent_from_durable(parent: Any, where: str) -> dict[str, Any]:
-    """A parent of a carried union record."""
-    if not isinstance(parent, dict):
-        raise HistoryShapeError(f"{where}: a parent is not an object")
-    return _parent(parent.get("parent_id"), parent.get("kind"), parent.get("latest_attempt"), parent.get("attempts"), where)
+def parents_from_groups(groups: Any, where: str) -> list[dict[str, Any]]:
+    """The parents of a carried union record, which the carrier stores grouped by shape."""
+    if not isinstance(groups, list):
+        raise HistoryShapeError(f"{where}: parent_groups is not a list")
+    parents: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for group in groups:
+        if not isinstance(group, dict) or not isinstance(group.get("parent_ids"), list) or not group["parent_ids"]:
+            raise HistoryShapeError(f"{where}: a parent group names no parents")
+        for parent_id in group["parent_ids"]:
+            if parent_id in seen:
+                raise HistoryShapeError(f"{where}: parent {parent_id} is in two groups")
+            seen.add(parent_id)
+            parents.append(_parent(parent_id, group.get("kind"), group.get("latest_attempt"), group.get("attempts"), where))
+    return parents
+
+
+def parent_groups(parents: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Parents of one shape (kind, greatest attempt, observed attempts) stored once with their ids.
+
+    A busy default branch attaches hundreds of single-attempt runs to one
+    revision; written one object per run, the carrier of such a repository
+    was hundreds of kilobytes. The grouping loses nothing: every parent keeps
+    its identity and exactly its own attempts.
+    """
+    groups: dict[tuple, dict[str, Any]] = {}
+    for parent in parents:
+        key = (parent["kind"], -1 if parent["latest_attempt"] is None else parent["latest_attempt"], tuple(_attempt_key(a) for a in parent["attempts"]))
+        group = groups.setdefault(key, {"kind": parent["kind"], "latest_attempt": parent["latest_attempt"], "attempts": parent["attempts"], "parent_ids": []})
+        group["parent_ids"].append(parent["parent_id"])
+    ordered = [groups[key] for key in sorted(groups)]
+    for group in ordered:
+        group["parent_ids"] = sorted(group["parent_ids"])
+    return ordered
 
 
 def merge_parents(*groups: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
@@ -188,6 +217,13 @@ def union_record(revision: str, committed_at: str, parents: list[dict[str, Any]]
     return record
 
 
+def encode(record: dict[str, Any]) -> dict[str, Any]:
+    """A union record as the carrier stores it: its parents grouped by shape."""
+    encoded = {key: value for key, value in record.items() if key != "parents"}
+    encoded["parent_groups"] = parent_groups(record["parents"])
+    return encoded
+
+
 def current_history(parents: list[dict[str, Any]]) -> tuple[str, bool]:
     """The state current evidence proves on its own (no durable history), for the per-bundle revision record."""
     durable = [parent_from_current(p, "current") for p in parents]
@@ -218,7 +254,7 @@ def _carried_records(value: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
             raise HistoryShapeError(f"{where}: no revision or committed_at")
         timeutil.parse_ts(record["committed_at"])
         if lineage == LINEAGE:
-            parents = [parent_from_durable(p, where) for p in record.get("parents") or []]
+            parents = parents_from_groups(record.get("parent_groups") or [], where)
             unresolved = record.get("unresolved") or []
             if not isinstance(unresolved, list) or not all(isinstance(reason, str) for reason in unresolved):
                 raise HistoryShapeError(f"{where}: unresolved is not a list of reasons")
@@ -256,7 +292,7 @@ class Reconciled:
         """
         bearing = [r for r in self.records.values() if r["parents"] or r.get("unresolved")]
         ordered = sorted(bearing, key=lambda r: (r["committed_at"], r["revision"]))
-        return {"lineage": LINEAGE, "source": dict(self.source), "records": ordered}
+        return {"lineage": LINEAGE, "source": dict(self.source), "records": [encode(record) for record in ordered]}
 
 
 def _series_records(series: Observation | None) -> tuple[list[dict[str, Any]] | None, bool]:
@@ -328,6 +364,41 @@ def reconcile(obs: ObservationSet) -> Reconciled:
 # --------------------------------------------------------------------------- the carried observation
 
 
+def _in_window(records: Any, observed_at: str) -> Any:
+    """The records a build can consume: those still inside the 14-day window it evaluates.
+
+    A record outside the window would be dropped by the reconciliation anyway
+    (HIST-10), so carrying it adds bytes and no evidence. A record whose time
+    cannot be read is kept, so the reconciliation reports it as malformed
+    instead of it disappearing here.
+    """
+    if not isinstance(records, list):
+        return records
+    window_start = timeutil.minus_days(timeutil.parse_ts(observed_at), INTEGRITY["window_days"])
+    kept = []
+    for record in records:
+        try:
+            if timeutil.parse_ts(record["committed_at"]) < window_start:
+                continue
+        except (KeyError, TypeError, ValueError):
+            pass
+        kept.append(record)
+    return kept
+
+
+def _replay_source(record: Any) -> Any:
+    """A 0.1.x revision record reduced to what its replay reads: identity, time and every observed attempt."""
+    if not isinstance(record, dict) or not isinstance(record.get("parents"), list):
+        return record
+    parents = []
+    for parent in record["parents"]:
+        if not isinstance(parent, dict):
+            parents.append(parent)
+            continue
+        parents.append({key: parent.get(key) for key in ("parent_id", "kind", "current_attempt", "attempts_observed")})
+    return {"revision": record.get("revision"), "committed_at": record.get("committed_at"), "parents": parents}
+
+
 def carried_observation(
     comparison_status: str,
     previous_bundle_id: str | None,
@@ -361,7 +432,7 @@ def carried_observation(
     integrity = next((v for v in previous_snapshot.get("vitals") or [] if isinstance(v, dict) and v.get("vital_id") == "integrity"), None)
     durable = (integrity or {}).get("derived", {}).get("revision_history") if isinstance((integrity or {}).get("derived"), dict) else None
     if isinstance(durable, dict) and "lineage" in durable:
-        value = {"lineage": durable.get("lineage"), "records": durable.get("records"), "basis": BASIS_SNAPSHOT, **source}
+        value = {"lineage": durable.get("lineage"), "records": _in_window(durable.get("records"), observed_at), "basis": BASIS_SNAPSHOT, **source}
         return Observation(observation_id=CARRIED, status=AVAILABLE, value_type="record", value=value, evidence_ref=evidence, **common)
     series = None
     if isinstance(previous_observations, dict):
@@ -369,7 +440,8 @@ def carried_observation(
     if series is not None:
         # A bundle older than this carrier: replay its revision records.
         records = series.get("value") if series.get("status") in (AVAILABLE, PARTIAL) and isinstance(series.get("value"), list) else []
-        value = {"lineage": REPLAYABLE_LINEAGE, "records": records, "basis": BASIS_SERIES, "source_series_status": series.get("status"), **source}
+        replayable = [_replay_source(record) for record in _in_window(records, observed_at)]
+        value = {"lineage": REPLAYABLE_LINEAGE, "records": replayable, "basis": BASIS_SERIES, "source_series_status": series.get("status"), **source}
         return Observation(observation_id=CARRIED, status=AVAILABLE, value_type="record", value=value, evidence_ref=evidence, **common)
     return Observation(observation_id=CARRIED, status=UNKNOWN, value_type="record", reason_code=PREDECESSOR_CARRIES_NO_HISTORY, evidence_ref=evidence, **common)
 

@@ -104,12 +104,16 @@ PV-REV-HIST-002, target B3), under the history-semantics lineage
 `devostasis.ci-history.v2`.
 
 **The carrier** is the union of every attempt observed per parent per
-revision: `{revision, committed_at, parents: [{parent_id, kind,
-latest_attempt, attempts: [{attempt, state}]}], history_state,
-historical_contribution, history_complete}`. Each bundle's union is its
-predecessor's union plus what the provider shows now, so it holds every
-history fact of the chain and selects none (the complete-chain-equivalent
-reduction of section C). It lives in two canonical places:
+revision: `{revision, committed_at, history_state, historical_contribution,
+history_complete, parent_groups: [{kind, latest_attempt, attempts:
+[{attempt, state}], parent_ids}]}`. Parents of one shape are stored once
+with their ids, which loses nothing and keeps the carrier small where a busy
+default branch attaches hundreds of single-attempt runs to one revision (the
+most active project of the fleet: 91 KB of snapshot instead of 393 KB).
+Each bundle's union is its predecessor's union plus what the provider shows
+now, so it holds every history fact of the chain and selects none (the
+complete-chain-equivalent reduction of section C). Records that have aged
+out of the window are not carried. It lives in two canonical places:
 
 - `derived.revision_history` of the Integrity result in `snapshot.json`,
   `{lineage, source, records}`: the durable output, present on every

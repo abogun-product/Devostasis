@@ -3,9 +3,9 @@
 All notable changes to this project are documented here. Semantic changes to a
 contract or a policy always come with a version bump of that contract.
 
-## 0.1.9 (unreleased)
+## 0.1.9 (2026-09-30)
 
-Three things in one release. First, the adoption of the research judgements
+Four things in one release. First, the adoption of the research judgements
 that had been delivered and not adopted, which the roadmap's standing
 obligation puts before queued work: one Integrity and one Clutter rule
 version, one accepted diagnostic under an existing rule, eight accepted exact
@@ -13,11 +13,16 @@ vectors and thirty-one cases of three judgements, plus the vector kinds those
 cases needed. Second, the review pass of 2026-09-22 (issue #30). Third, the
 repairs of the research audits of 2026-09-20 to 2026-09-24, which were
 handed off on Drive and had no record in this repository until the review
-of 2026-09-25 catalogued them in issue #35. No threshold,
-window or gauge changed; the two band rules that changed did so under
-accepted judgements, and their `rule_id` moved with them.
+of 2026-09-25 catalogued them in issue #35. Fourth, the review of
+2026-09-30 (issue #48), which found defects in this release's own new code
+(among them an Integrity superset that could omit the band it emitted,
+replaced by the accepted totality rule) and older ones in verification,
+collection, the store and the command line, and filed what needs a decision
+as #38 to #47. No threshold, window or gauge changed; the two band rules
+that changed did so under accepted judgements, and their `rule_id` moved
+with them.
 
-- **Integrity rule `integrity.bands.v1+ci-unit-004`.** Three accepted
+- **Integrity rule `integrity.bands.v1+ci-unit-004`.** Four accepted
   judgements, one rule version, one `RULE_VERSION_BOUNDARY` per project.
   `PV-REV-INTEGRITY-UNKNOWN-001` (issue #13): a newest in-scope revision whose
   current verdict is `UNKNOWN` never inherits an older decisive verdict; the

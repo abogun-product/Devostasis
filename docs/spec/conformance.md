@@ -124,6 +124,120 @@ identifier. Cases 13 to 16 are the accepted answer to issue #26.
 | CLU-PARTIAL-TRUST-08 | complete AVAILABLE/FRESH evidence and the optional UNAVAILABLE path are unchanged | `test_clu_partial_trust_08_complete_and_optional_unavailable_evidence_are_unchanged` |
 | invariant band under unclassified branches | when the work items alone reach the band the full unclassified count reaches, the band is DEGRADED and EXACT (section 5 of the contract) | `test_clutter_unclassified_branches_that_the_work_items_already_reach_are_an_invariant_band` |
 
+## Direction: state-neutral and incomplete linkage (PV-REV-DIRECTION-CLOSED-TARGET-001, PV-DIRECTION-INCOMPLETE-001)
+
+Rule `direction.bands.v2`, adopted in 0.2.0 as one Direction rule version for
+both repairs. The cases are transcribed from the judgement's and the
+contract's required fixtures. A case about how one change request's evidence
+becomes LINKED, UNLINKED or UNRESOLVED states the change-request and target
+inventories and runs the derivation (`given.derive`); a case about the
+completion rule states N, L, U and R. PV-REV-DIRECTION-INCOMPLETE-001 narrowed
+DIR-CLOSED-04's "unlinked or unresolved": a positively missing target is
+UNLINKED (DIR-CLOSED-04, DIR-INCOMPLETE-07), an unresolvable one UNRESOLVED
+(DIR-INCOMPLETE-08, -09).
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| DIR-CLOSED-01 | an active change request with an explicit link to an open target is linked | `vector:DIR-CLOSED-01` |
+| DIR-CLOSED-02 | the same change request and target id stay linked when the target moves from open to closed; the linkage share is unchanged | `vector:DIR-CLOSED-02`, `test_change_request_aggregates` |
+| DIR-CLOSED-03 | a link to a closed target is linked when the target identity resolves authoritatively | `vector:DIR-CLOSED-03`, `test_a_closed_register_target_is_still_a_resolved_reference` |
+| DIR-CLOSED-04 | a reference to a target the complete register positively lacks is unlinked with the missing-reference diagnostic; linkage is never fabricated | `vector:DIR-CLOSED-04` |
+| DIR-CLOSED-05 | closing a target cannot by itself worsen the Direction band | `vector:DIR-CLOSED-05` |
+| DIR-CLOSED-06 | reopening a target cannot by itself improve the Direction band | `vector:DIR-CLOSED-06` |
+| DIR-CLOSED-07 | Horizon's open-target counts still exclude the closed target a change request stays linked to, so the two Vitals may diverge | `vector:DIR-CLOSED-07` |
+| DIR-CLOSED-08 | every active change request linked to one closed target is FULLY_LINKED with the single-target diagnostic: traceability, not alignment | `vector:DIR-CLOSED-08` |
+| DIR-CLOSED-09 | adopting the repair changes the Direction rule id: the first comparison across it is INCOMPARABLE for Direction alone, while an unaffected Vital still compares | `vector:DIR-CLOSED-09` |
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| DIR-INCOMPLETE-01 | N=5, L=0, U=3, R=2: every completion k in {0,1,2} is SCATTERED | `vector:DIR-INCOMPLETE-01` |
+| DIR-INCOMPLETE-02 | N=5, L=3, U=1, R=1: every completion k in {3,4} is MIXED | `vector:DIR-INCOMPLETE-02` |
+| DIR-INCOMPLETE-03 | N=4, L=2, U=0, R=2: completions reach MIXED and FULLY_LINKED, so no band | `vector:DIR-INCOMPLETE-03` |
+| DIR-INCOMPLETE-04 | N=5, L=1, U=1, R=3: completions reach SCATTERED and MIXED, so no band | `vector:DIR-INCOMPLETE-04` |
+| DIR-INCOMPLETE-05 | N=1, L=0, U=0, R=1: completions reach SCATTERED and FULLY_LINKED; never DEGRADED FULLY_LINKED | `vector:DIR-INCOMPLETE-05` |
+| DIR-INCOMPLETE-06 | a marker to an authoritatively resolved closed target is LINKED; closing or reopening the target alone does not change the linkage | `vector:DIR-INCOMPLETE-06` |
+| DIR-INCOMPLETE-07 | a marker to T that a complete authoritative lookup proves absent is UNLINKED: N=1, L=0, U=1, R=0 is exactly SCATTERED with the missing-reference diagnostic | `vector:DIR-INCOMPLETE-07`, `test_a_reference_the_complete_register_lacks_is_missing_and_one_the_register_could_not_answer_is_unknown` |
+| DIR-INCOMPLETE-08 | a marker to T while the target list is PARTIAL and T is not in the observed subset, with no direct lookup, is UNRESOLVED: no band | `vector:DIR-INCOMPLETE-08` |
+| DIR-INCOMPLETE-09 | a marker whose target resolution is unavailable, forbidden, unknown, errored or stale is UNRESOLVED, never LINKED by fallback | `vector:DIR-INCOMPLETE-09`, `test_unreadable_linkage_evidence_is_unresolved_not_unlinked_and_not_a_failed_project`, `test_a_milestone_without_a_number_is_unresolved_linkage_not_a_failed_project` |
+| DIR-INCOMPLETE-10 | a PARTIAL global target enumeration does not degrade Direction when every referenced target is resolved on its own | `vector:DIR-INCOMPLETE-10` |
+| DIR-INCOMPLETE-11 | partial link evidence leaves two change requests unresolved, but N/L/U/R forces SCATTERED for every completion | `vector:DIR-INCOMPLETE-11` |
+| DIR-INCOMPLETE-12 | partial link evidence admits MIXED and FULLY_LINKED, so no band | `vector:DIR-INCOMPLETE-12` |
+| DIR-INCOMPLETE-13 | linkage capability that is neither positively present nor absent is UNKNOWN with no band | `vector:DIR-INCOMPLETE-13` |
+| DIR-INCOMPLETE-14 | an active-change inventory that is PARTIAL leaves N unproven: UNKNOWN with no band | `vector:DIR-INCOMPLETE-14` |
+| DIR-INCOMPLETE-15 | reversed and reshuffled enumeration, page boundaries, marker order and target order leave L/U/R, the reachable bands, the status, the band and the diagnostics unchanged | `vector:DIR-INCOMPLETE-15` |
+| DIR-INCOMPLETE-16 | several active change requests all linked to one authoritatively resolved closed target, with complete evidence, are exactly FULLY_LINKED: neutral, no concentration threshold | `vector:DIR-INCOMPLETE-16` |
+| readable link dominates | a resolved reference links a change request even when another of its linkage fields is unreadable | `test_a_readable_link_is_not_undone_by_an_unreadable_field` |
+| contradictory counts | `L + U + R != N` is refused before classification, and the command line reports it as an input error | `vector:HOR-PARTIAL-15` (the Horizon analogue), `test_observations_whose_counts_contradict_each_other_are_an_input_error` |
+
+## Target marker syntax (PV-AUDIT-TARGET-MARKER-SYNTAX-001)
+
+The audit's regressions `LINK-MARKER-01..08` reached this repository only as
+the categories its handoff names; the tests below cover each category and do
+not claim the individual case texts.
+
+| Category | Meaning | Test |
+| --- | --- | --- |
+| exact marker | a standalone marker links, at the start of the text, after a newline, a space, a tab or punctuation | `test_an_exact_marker_links_wherever_it_stands_alone` |
+| embedded prefix | `NotTarget:`, `SubTarget:`, `PreTarget:` and any marker glued to a preceding word character link nothing | `test_a_marker_embedded_in_a_larger_token_links_nothing`, `test_a_marker_ending_in_a_word_character_needs_a_boundary_after_it_too` |
+| custom marker | a configured marker replaces the default and is matched exactly | `test_a_custom_marker_replaces_the_default_and_is_matched_exactly` |
+| multiple markers | several markers keep their order and link each target once | `test_several_markers_keep_their_order_and_link_each_target_once` |
+| prose without the marker | a lowercase, pluralised or paraphrased marker links nothing | `test_prose_without_the_configured_marker_links_nothing` |
+| end to end | under file planning only the standalone marker becomes a reference, and Direction counts only it | `test_embedded_markers_do_not_link_end_to_end` |
+
+## Horizon: partial enumeration (PV-HORIZON-PARTIAL-001)
+
+Rule `horizon.bands.v2`, adopted in 0.2.0. The sixteen cases of the accepted
+contract, stated as target inventories and derived, so the counts, their
+observed-subset proof and the capability a returned target proves are executed
+where they are made. HOR-PARTIAL-15 states the contradictory counts directly
+and expects their refusal (`expect.rejected`).
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| HOR-PARTIAL-01 | capability present, complete and fresh, zero open targets: exactly UNDECLARED (the positive-zero control) | `vector:HOR-PARTIAL-01` |
+| HOR-PARTIAL-02 | complete and fresh, one open target with no future boundary: exactly DECLARED | `vector:HOR-PARTIAL-02` |
+| HOR-PARTIAL-03 | complete and fresh, an open target exactly 28 days out and none later: exactly VISIBLE; the frame is unchanged | `vector:HOR-PARTIAL-03` |
+| HOR-PARTIAL-04 | complete and fresh, an open target strictly beyond 28 days: exactly EXTENDED | `vector:HOR-PARTIAL-04` |
+| HOR-PARTIAL-05 | explicit targets positively unsupported and no planning register configured: exactly UNDECLARED, a descriptive state, not missing evidence | `vector:HOR-PARTIAL-05` |
+| HOR-PARTIAL-06 | capability unknown, forbidden, errored, stale, unavailable or an unresolved partial: UNKNOWN, never UNDECLARED by default | `vector:HOR-PARTIAL-06` |
+| HOR-PARTIAL-07 | PH0: a partial enumeration returned no open target, so every band is reachable: UNKNOWN, never UNDECLARED | `vector:HOR-PARTIAL-07` |
+| HOR-PARTIAL-08 | PH1: returned open targets without a future boundary reach DECLARED, VISIBLE and EXTENDED: UNKNOWN, DECLARED is never a representative | `vector:HOR-PARTIAL-08` |
+| HOR-PARTIAL-09 | PH2: a returned open target within or exactly at 28 days reaches VISIBLE and EXTENDED: UNKNOWN, VISIBLE is never a bound | `vector:HOR-PARTIAL-09` |
+| HOR-PARTIAL-10 | PH3: a returned open target strictly beyond 28 days forces EXTENDED in every completion: DEGRADED / EXTENDED / EXACT | `vector:HOR-PARTIAL-10` |
+| HOR-PARTIAL-11 | a returned closed target beyond 28 days and an open target without a boundary: the closed one forces nothing, PH1, UNKNOWN | `vector:HOR-PARTIAL-11` |
+| HOR-PARTIAL-12 | only closed returned targets, one beyond 28 days: PH0, UNKNOWN, never UNDECLARED or EXTENDED | `vector:HOR-PARTIAL-12` |
+| HOR-PARTIAL-13 | the same PH3 evidence in reversed order, other page boundaries and an equivalent provider-neutral record shape: identical DEGRADED / EXTENDED / EXACT | `vector:HOR-PARTIAL-13` |
+| HOR-PARTIAL-14 | the same PH2 subset under record and page permutations: identical UNKNOWN, pagination order cannot manufacture exactness | `vector:HOR-PARTIAL-14` |
+| HOR-PARTIAL-15 | a derived tuple no target population can produce (beyond above future, future above open) fails validation before evaluation, never UNKNOWN or DEGRADED compensation | `vector:HOR-PARTIAL-15` |
+| HOR-PARTIAL-16 | PH3 is the direct proof: whatever else the returned subset holds, and whatever the omitted records are, the observed open target beyond 28 days keeps every completion EXTENDED | `vector:HOR-PARTIAL-16` |
+
+## Debt: partial register (PV-DEBT-PARTIAL-001)
+
+Rule `debt.bands.v2`, adopted in 0.2.0 together with the observed-subset proof
+issue #39 asked Debt to require: a PARTIAL open count is a lower bound only
+when its coverage says so.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| DEBT-PARTIAL-01 | a partial enumeration with no confirmed open item cannot manufacture CLEAR | `vector:DEBT-PARTIAL-01` |
+| DEBT-PARTIAL-02 | a returned subset of closed debt items only is still not CLEAR: the closed count is a diagnostic, omitted open items stay possible | `vector:DEBT-PARTIAL-02` |
+| DEBT-PARTIAL-03 | one confirmed open item forces PRESENT: DEGRADED / PRESENT / EXACT with the partial receipt retained | `vector:DEBT-PARTIAL-03` |
+| DEBT-PARTIAL-04 | thirty-seven confirmed open items remain PRESENT, never ACCUMULATED or any quantitative severity | `vector:DEBT-PARTIAL-04` |
+| DEBT-PARTIAL-05 | the size of the omitted tail cannot erase a confirmed open item: two different partial receipts give the same band | `vector:DEBT-PARTIAL-05` |
+| DEBT-PARTIAL-06 | provider naming, item order, page order and page boundaries do not change the normalized result | `vector:DEBT-PARTIAL-06` |
+| DEBT-PARTIAL-07 | positively absent debt authority stays exactly UNINSTRUMENTED; the repair does not turn positive absence into UNKNOWN | `vector:DEBT-PARTIAL-07` |
+| DEBT-PARTIAL-08 | uncertain mapping authority is never inferred from a partial payload that happens to hold an apparent open debt record | `vector:DEBT-PARTIAL-08` |
+| DEBT-PARTIAL-09 | a complete, fresh positive zero remains exactly CLEAR | `vector:DEBT-PARTIAL-09` |
+| DEBT-PARTIAL-10 | a complete, fresh positive open count remains exactly PRESENT | `vector:DEBT-PARTIAL-10` |
+| DEBT-PARTIAL-11 | a partial zero stays UNKNOWN beside one hundred closed items: closed history cannot prove current open emptiness | `vector:DEBT-PARTIAL-11` |
+| DEBT-PARTIAL-12 | a forced PRESENT under partial acquisition stays visibly DEGRADED, never AVAILABLE, with the acquisition machine-visible | `vector:DEBT-PARTIAL-12` |
+| DEBT-PARTIAL-13 | a stale positive count is not a confirmed current open item: UNKNOWN, as before the repair | `vector:DEBT-PARTIAL-13` |
+| DEBT-PARTIAL-14 | one confirmed current open item survives other returned or tail records that stay unresolved under the partial receipt | `vector:DEBT-PARTIAL-14` |
+| DEBT-PARTIAL-15 | a versioned project-local quantitative policy does not replace the canonical core under partial positive evidence | `vector:DEBT-PARTIAL-15` |
+| DEBT-PARTIAL-16 | a project-local policy cannot turn a partial zero into any canonical conclusion | `vector:DEBT-PARTIAL-16` |
+| subset proof | a PARTIAL open count whose coverage is missing, not a subset, an estimate, contradictory or malformed is no lower bound, and Debt is UNKNOWN (issue #39) | `test_a_partial_debt_count_without_the_subset_proof_is_not_a_lower_bound` |
+| PD1 in the tests | a confirmed open item under partial acquisition is DEGRADED / PRESENT / EXACT, a stale one proves nothing | `test_partial_register_with_observed_items_is_degraded_present`, `test_a_stale_partial_register_proves_nothing_about_now` |
+
 ## Activity coverage (PV-REV-ACTIVITY-COVERAGE-001)
 
 Reading 3 of issue #9, accepted: the interval stays the full canonical gap and
@@ -357,6 +471,8 @@ accepted case.
 | corpus | every vector in the corpus runs, and every declared kind is exercised | `test_conformance_vector`, `test_every_kind_the_format_declares_is_exercised_by_the_corpus` |
 | variants | one case over several evidence shapes passes only when every shape does, and a failure names the shape | `test_variants_hold_every_evidence_shape_to_the_one_expectation` |
 | ci kind | provider-native outcomes are normalized before Integrity sees them; a provider without a normalization is rejected | `test_the_ci_kind_normalizes_provider_native_outcomes_before_integrity_sees_them` |
+| derive | a vital case over inventories runs the derivation first, under the two settings it reads, and no others | `test_derive_runs_the_derivation_before_the_vital_is_evaluated`, `test_derive_names_only_the_settings_the_derivation_reads` |
+| rejected | a case expecting refused evidence passes only when the evaluation raises with that code, and the refusal is its whole expectation | `test_a_rejected_case_passes_only_when_the_evidence_is_refused_with_that_code`, `test_rejected_is_the_whole_expectation_and_names_a_code` |
 | activity kind | the interval and the coverage notes of the activity member are checked | `test_the_activity_kind_checks_the_interval_and_the_coverage_it_discloses` |
 
 Cases not yet implemented as tests (T3, T6, T8, T9, R5..R53, ART-05,

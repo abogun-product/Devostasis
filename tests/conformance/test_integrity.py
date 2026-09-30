@@ -300,3 +300,14 @@ def test_a_parent_level_failure_is_still_a_proven_failure():
     integrity_inputs(obs, True, revs)
     result = integrity.evaluate(obs)
     assert (result.band, result.evaluation_status) == ("FAILING", "AVAILABLE") and result.derived["failed_count_14d"] == 1
+
+
+def test_a_record_without_its_revision_identity_is_a_defect_not_a_crash():
+    """Durable history is keyed by immutable revision (PV-HIST-002): a record that names none cannot be counted or carried."""
+    anonymous = revision("x", "2026-09-01T00:00:00Z", [parent("p", "VERIFY_PASS")], "VERIFY_PASS", "PASS_ONLY_OBSERVED")
+    del anonymous["revision"]
+    obs = obs_set()
+    integrity_inputs(obs, True, passing_revisions(4) + [anonymous])
+    result = integrity.evaluate(obs)
+    assert (result.band, result.evaluation_status) == (None, "UNKNOWN")
+    assert any(code.startswith("REVISION_RECORD_INCONSISTENT") for code in result.diagnostics)

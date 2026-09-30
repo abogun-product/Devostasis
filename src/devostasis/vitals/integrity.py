@@ -161,8 +161,10 @@ HISTORY_CONTRIBUTION = {"FAILURE_OBSERVED": VERIFY_FAIL, "PASS_ONLY_OBSERVED": V
 
 
 def _record_consistent(record: Any) -> bool:
-    """A revision record's history state is in the vocabulary and its contribution is the one PV-CI-UNIT-004 derives from it."""
-    if not isinstance(record, dict) or not isinstance(record.get("history_state"), str) or record["history_state"] not in HISTORY_CONTRIBUTION:
+    """A revision record names its immutable revision, its history state is in the vocabulary, and its contribution is the one PV-CI-UNIT-004 derives from it."""
+    if not isinstance(record, dict) or not isinstance(record.get("revision"), str) or not record["revision"]:
+        return False
+    if not isinstance(record.get("history_state"), str) or record["history_state"] not in HISTORY_CONTRIBUTION:
         return False
     if not isinstance(record.get("current_verdict"), (str, type(None))):
         return False
@@ -188,7 +190,7 @@ def _unknown(obs: ObservationSet, history: dict[str, Any], diagnostics: list[str
 
 def _bearing(history: Reconciled, revisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """The reconciled records of the current inventory that carry any verification history."""
-    records = [history.records[r["revision"]] for r in revisions if r["revision"] in history.records]
+    records = [history.records[r.get("revision")] for r in revisions if isinstance(r, dict) and r.get("revision") in history.records]
     return [r for r in records if r["parents"] or r.get("unresolved")]
 
 

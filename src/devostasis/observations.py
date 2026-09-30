@@ -32,6 +32,20 @@ VALUE_TYPES = frozenset({"count", "ratio", "duration", "boolean", "enum", "strin
 
 NOT_REQUESTED = "NOT_REQUESTED"
 
+# What the value of a PARTIAL envelope is, recorded in its coverage
+# (PV-REV-PR-031-003). The one semantics a consumer may read as a lower bound
+# is a count over the records an incomplete enumeration did return: the
+# records it did not return can only add to it. status=PARTIAL alone proves
+# nothing about the value, so absent, other or malformed semantics are never
+# promoted to a floor.
+VALUE_SEMANTICS = "value_semantics"
+OBSERVED_SUBSET_COUNT = "OBSERVED_SUBSET_COUNT"
+SUBSET_NOT_PROVEN = "PARTIAL_SUBSET_NOT_PROVEN"
+NOT_A_SUBSET = "PARTIAL_NOT_AN_OBSERVED_SUBSET"
+COVERAGE_MALFORMED = "PARTIAL_COVERAGE_MALFORMED"
+COVERAGE_CONTRADICTORY = "PARTIAL_COVERAGE_CONTRADICTS_STATUS"
+VALUE_NOT_A_COUNT = "PARTIAL_VALUE_NOT_A_COUNT"
+
 
 class ObservationError(ValueError):
     """Raised when an envelope violates the observation contract."""
@@ -274,6 +288,36 @@ class ObservationSet:
 
     def digest(self) -> str:
         return canonical.digest(self.to_dict())
+
+
+def subset_count_problem(item: Observation) -> str | None:
+    """Why a PARTIAL count is not a proven observed-subset lower bound, or None when it is.
+
+    Proof is the coverage the envelope carries: ``complete`` false and
+    ``value_semantics`` ``OBSERVED_SUBSET_COUNT``, over a non-negative integer
+    value. Missing semantics is not proof; other semantics (an estimate, an
+    aggregate, anything not monotone in the records returned) is proof of the
+    opposite; malformed or self-contradicting coverage is neither, and is
+    reported as such rather than raised.
+    """
+    coverage = item.coverage
+    if coverage is None:
+        return SUBSET_NOT_PROVEN
+    if not isinstance(coverage, dict):
+        return COVERAGE_MALFORMED
+    complete = coverage.get("complete")
+    if complete is True:
+        return COVERAGE_CONTRADICTORY
+    semantics = coverage.get(VALUE_SEMANTICS)
+    if semantics is None:
+        return SUBSET_NOT_PROVEN
+    if not isinstance(semantics, str) or complete is not False:
+        return COVERAGE_MALFORMED
+    if semantics != OBSERVED_SUBSET_COUNT:
+        return f"{NOT_A_SUBSET}:{semantics}"
+    if isinstance(item.value, bool) or not isinstance(item.value, int) or item.value < 0:
+        return VALUE_NOT_A_COUNT
+    return None
 
 
 def unavailable(observation_id: str, value_type: str, reason_code: str, **extra: Any) -> Observation:

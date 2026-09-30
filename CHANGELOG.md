@@ -108,13 +108,19 @@ accepted judgements, and their `rule_id` moved with them.
   (issue #12 finding 4). `semantic_config`, the field the comparison reads,
   must be the projection of the validated stored config
   (`SEMANTIC_CONFIG_MISMATCH`); every identity field the manifest repeats must
-  agree with the preimage (`IDENTITY_FIELD_MISMATCH`); the manifest receipt
+  be present in both copies and agree with the preimage
+  (`IDENTITY_FIELD_MISMATCH`), with the fields a bundle must carry and the
+  renderers it may name decided by its exact lineage
+  (`UNSUPPORTED_ARTIFACT_LINEAGE`, `RENDERER_VERSION_NOT_IN_LINEAGE`;
+  `PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001`, whose concrete case was a bundle
+  that lost its manifest `renderer_version`, kept its id, skipped the report
+  replay and verified with any report at all); the manifest receipt
   must hash to `source_receipts_digest` and be the receipt inside
   `observations.json` (`RECEIPT_DIGEST_MISMATCH`, `RECEIPT_COPY_MISMATCH`);
   and `snapshot.json` must name the evidence the bundle carries
   (`OBSERVATIONS_DIGEST_MISMATCH`). A manifest of the wrong shape is a
-  problem, not an `AttributeError`. All 254 bundles of the fleet's store still
-  verify.
+  problem, not an `AttributeError`. All 308 bundles of the fleet's store
+  (both lineages, all four renderers) still verify.
 - **A build over evidence derived under another configuration is refused**
   (issue #27, `CONFIG_MISMATCH`). `observe` records the digest of the
   configuration its aggregates were derived under; `build` with different

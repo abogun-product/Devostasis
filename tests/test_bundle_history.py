@@ -5,7 +5,8 @@ import json
 import pytest
 
 from devostasis import canonical
-from devostasis.bundle import BundleError, verify_dir, verify_members
+from devostasis.bundle import DUPLICATED_IDENTITY_FIELDS, LINEAGES, BundleError, verify_dir, verify_members
+from devostasis.contracts import ARTIFACT_CONTRACT_VERSION, RENDERER_VERSION
 from devostasis.config import single_project
 from devostasis.history import FilesystemHistoryStore, ImmutabilityError
 from devostasis.runner import build_from_observations
@@ -456,6 +457,70 @@ def test_every_identity_field_the_manifest_repeats_must_agree_with_the_preimage(
         forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
         problems = verify_members(_rehash(forged))
         assert any(p.startswith(f"IDENTITY_FIELD_MISMATCH: {key}") for p in problems), key
+
+
+def test_a_duplicated_identity_field_deleted_from_either_copy_fails_verification(tmp_path):
+    """PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001: presence is bound, not only equality."""
+    bundle = build_from_observations(_project(), _obs(), FilesystemHistoryStore(tmp_path))
+    for key in DUPLICATED_IDENTITY_FIELDS:
+        forged = dict(bundle.members)
+        manifest = json.loads(forged["manifest.json"])
+        del manifest[key]
+        forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+        # The preimage is untouched, so the bundle id still recomputes.
+        problems = verify_members(forged)
+        assert any(p.startswith(f"IDENTITY_FIELD_MISMATCH: {key}") and "absent from the manifest" in p for p in problems), key
+
+        forged = dict(bundle.members)
+        manifest = json.loads(forged["manifest.json"])
+        del manifest["identity_preimage"][key]
+        forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+        problems = verify_members(_rehash(forged))
+        assert any(p.startswith(f"IDENTITY_FIELD_MISMATCH: {key}") for p in problems), key
+
+
+def test_deleting_the_renderer_version_no_longer_skips_the_report_replay_silently(tmp_path):
+    """The concrete bypass of the audit: without the field the replay was skipped and the bundle verified."""
+    bundle = build_from_observations(_project(), _obs(), FilesystemHistoryStore(tmp_path))
+    forged = dict(bundle.members)
+    forged["report.md"] = b"# Anything at all\n"
+    manifest = json.loads(forged["manifest.json"])
+    del manifest["renderer_version"]
+    manifest["members"]["report.md"] = canonical.digest_bytes(forged["report.md"])
+    forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+    problems = verify_members(forged)
+    assert problems, "a report nobody can replay must not verify"
+    assert any(p.startswith("IDENTITY_FIELD_MISMATCH: renderer_version") for p in problems)
+
+    for field in ("renderer_version", "artifact_contract_version"):
+        forged = dict(bundle.members)
+        manifest = json.loads(forged["manifest.json"])
+        del manifest[field]
+        del manifest["identity_preimage"][field]
+        forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+        assert verify_members(_rehash(forged)), f"a consistent forgery without {field} in either copy still fails"
+
+
+def test_an_unknown_lineage_or_a_renderer_outside_its_lineage_fails_verification(tmp_path):
+    bundle = build_from_observations(_project(), _obs(), FilesystemHistoryStore(tmp_path))
+    for key, value, code in (
+        ("artifact_contract_version", "devostasis.bundle.v9", "UNSUPPORTED_ARTIFACT_LINEAGE"),
+        ("renderer_version", "devostasis.render.v1", "RENDERER_VERSION_NOT_IN_LINEAGE"),
+        ("renderer_version", "devostasis.render.v999", "RENDERER_VERSION_NOT_IN_LINEAGE"),
+    ):
+        forged = dict(bundle.members)
+        manifest = json.loads(forged["manifest.json"])
+        manifest[key] = value
+        manifest["identity_preimage"][key] = value
+        forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+        problems = verify_members(_rehash(forged))
+        assert any(p.startswith(code) for p in problems), (key, value, problems)
+
+
+def test_the_lineage_table_carries_the_lineage_and_renderer_this_version_writes():
+    assert ARTIFACT_CONTRACT_VERSION in LINEAGES
+    assert RENDERER_VERSION in LINEAGES[ARTIFACT_CONTRACT_VERSION]["renderers"]
+    assert LINEAGES[ARTIFACT_CONTRACT_VERSION]["identity_fields"] == DUPLICATED_IDENTITY_FIELDS
 
 
 def test_the_receipt_and_the_evidence_are_bound_to_the_identity(tmp_path):

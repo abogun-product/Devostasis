@@ -68,6 +68,8 @@ IDENTITY_FIELD_MISMATCH = "IDENTITY_FIELD_MISMATCH"
 RECEIPT_DIGEST_MISMATCH = "RECEIPT_DIGEST_MISMATCH"
 RECEIPT_COPY_MISMATCH = "RECEIPT_COPY_MISMATCH"
 OBSERVATIONS_DIGEST_MISMATCH = "OBSERVATIONS_DIGEST_MISMATCH"
+UNSUPPORTED_LINEAGE = "UNSUPPORTED_ARTIFACT_LINEAGE"
+RENDERER_NOT_IN_LINEAGE = "RENDERER_VERSION_NOT_IN_LINEAGE"
 
 # Fields the manifest repeats from the identity preimage. Every one of them
 # must agree: the preimage is what bundle_id commits to, the manifest copy is
@@ -90,6 +92,25 @@ DUPLICATED_IDENTITY_FIELDS = (
     "previous_bundle_id",
     "comparison_status",
 )
+
+# The stored lineages verification dispatches on, keyed by the preimage's
+# ``artifact_contract_version`` as an exact token
+# (PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001): the duplicated identity fields a
+# bundle of that lineage carries, each present in both copies, and the
+# renderers it was written with, which is what gates the report replay.
+# ``devostasis.bundle.v1`` predates the gauges and demand members. The tokens
+# are literal on purpose: moving RENDERER_VERSION or ARTIFACT_CONTRACT_VERSION
+# must add a row here, never silently retire the row older bundles need.
+LINEAGES: dict[str, dict[str, tuple[str, ...]]] = {
+    "devostasis.bundle.v1": {
+        "identity_fields": tuple(key for key in DUPLICATED_IDENTITY_FIELDS if key not in ("gauge_contract", "demand_contract")),
+        "renderers": ("devostasis.render.v1", "devostasis.render.v2"),
+    },
+    "devostasis.bundle.v2": {
+        "identity_fields": DUPLICATED_IDENTITY_FIELDS,
+        "renderers": ("devostasis.render.v3", "devostasis.render.v4"),
+    },
+}
 
 
 @dataclass
@@ -304,6 +325,37 @@ def _check_semantic_binding(members: dict[str, bytes], manifest: dict[str, Any],
     return []
 
 
+def _check_identity_fields(manifest: dict[str, Any], preimage: dict[str, Any]) -> list[str]:
+    """Presence and equality of every identity field the manifest repeats, under the stored lineage.
+
+    Comparing only the fields both copies carry let a deletion pass: without
+    its manifest ``renderer_version`` a bundle kept its id and silently lost
+    the report replay that field gates. A field the lineage requires must be
+    in the preimage, and a field in either copy must be in both, equal.
+    """
+    problems: list[str] = []
+    lineage_name = preimage.get("artifact_contract_version")
+    lineage = LINEAGES.get(lineage_name) if isinstance(lineage_name, str) else None
+    if lineage is None:
+        problems.append(f"{UNSUPPORTED_LINEAGE}: artifact_contract_version {lineage_name!r} is not a lineage this verifier dispatches on")
+    required = lineage["identity_fields"] if lineage is not None else ()
+    for key in DUPLICATED_IDENTITY_FIELDS:
+        in_preimage, in_manifest = key in preimage, key in manifest
+        if key in required and not in_preimage:
+            problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is required by the {lineage_name} lineage and absent from the identity preimage")
+        elif in_preimage and not in_manifest:
+            problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {preimage[key]!r} in the identity preimage and absent from the manifest")
+        elif in_manifest and not in_preimage:
+            problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {manifest[key]!r} in the manifest and absent from the identity preimage")
+        elif in_preimage and preimage[key] != manifest[key]:
+            problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {manifest[key]!r} in the manifest and {preimage[key]!r} in the identity preimage")
+    if lineage is not None and preimage.get("renderer_version") not in lineage["renderers"]:
+        problems.append(
+            f"{RENDERER_NOT_IN_LINEAGE}: renderer_version {preimage.get('renderer_version')!r} is not a renderer the {lineage_name} lineage was written with"
+        )
+    return problems
+
+
 def _check_evidence_binding(members: dict[str, bytes], manifest: dict[str, Any], preimage: dict[str, Any]) -> list[str]:
     """The receipt and the evidence the manifest names must be the ones the identity hashes."""
     problems: list[str] = []
@@ -430,9 +482,7 @@ def verify_members(members: dict[str, bytes]) -> list[str]:
         for key in ("bundle_id", "members", "run_meta"):
             if key in preimage:
                 problems.append(f"identity preimage must not contain post-identity field {key} (ART-22)")
-        for key in DUPLICATED_IDENTITY_FIELDS:
-            if key in preimage and key in manifest and preimage[key] != manifest[key]:
-                problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {manifest[key]!r} in the manifest and {preimage[key]!r} in the identity preimage")
+        problems.extend(_check_identity_fields(manifest, preimage))
         problems.extend(_check_evidence_binding(members, manifest, preimage))
 
     # B4: the stored effective config is the semantic authority (ART-25, then ART-23).

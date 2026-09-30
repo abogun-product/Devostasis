@@ -133,7 +133,15 @@ directory and performs, in this order:
    `CANONICAL_MEMBER_PROFILE_MISMATCH` (ART-23);
 5. the metadata the manifest repeats is bound to what the identity hashes
    (issue #12 finding 4): every identity field the manifest copies from the
-   preimage agrees with it (`IDENTITY_FIELD_MISMATCH`), the manifest receipt
+   preimage is present in both copies and agrees with it
+   (`IDENTITY_FIELD_MISMATCH`); which fields a bundle must carry is decided
+   by its lineage, the exact `artifact_contract_version` of the preimage
+   (`devostasis.bundle.v1` predates `gauge_contract` and `demand_contract`),
+   a lineage this verifier does not know is `UNSUPPORTED_ARTIFACT_LINEAGE`,
+   and a `renderer_version` that is not one of the renderers its lineage was
+   written with is `RENDERER_VERSION_NOT_IN_LINEAGE`
+   (`PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001`: a deleted manifest copy of
+   `renderer_version` used to pass and skip the replay it gates); the manifest receipt
    hashes to `source_receipts_digest` (`RECEIPT_DIGEST_MISMATCH`), the
    receipt inside `observations.json` is that receipt
    (`RECEIPT_COPY_MISMATCH`), `snapshot.json` names the evidence the bundle
@@ -143,10 +151,13 @@ directory and performs, in this order:
    not an object, or whose `members`, `receipt`, `identity_preimage` or
    `semantic_config` is not one, is a verification problem, never an
    exception;
-6. only when steps 3 and 4 passed, and the renderer version matches, is
-   `report.md` re-rendered from the immutable machine members and the
+6. only when steps 3 and 4 passed, and the renderer version is the current
+   one, is `report.md` re-rendered from the immutable machine members and the
    `display` of the stored config (never from current defaults) and compared
-   byte for byte (ART-12/ART-24). A bundle whose stored config failed the
+   byte for byte (ART-12/ART-24). A bundle written by an earlier renderer of
+   its lineage verifies without the replay, because that renderer is not
+   carried; step 5 is what keeps a bundle from claiming one it was not
+   written with. A bundle whose stored config failed the
    checks reports that the replay was skipped instead of replaying from an
    untrusted source.
 

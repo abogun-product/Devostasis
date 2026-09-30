@@ -2,9 +2,16 @@
 calibration repairs adopted by rule versions pulse.bands.v1 (PULSE-CAP-01..05) and
 flow.bands.v1 (FLOW-EQ-01..06, FLOW-PREC-03..06, FLOW-PREC-09)."""
 
-from devostasis.observations import PARTIAL, STALE, UNAVAILABLE, UNKNOWN
+import pytest
+
+from devostasis import canonical, normalize
+from devostasis.config import single_project
+from devostasis.observations import PARTIAL, STALE, UNAVAILABLE, UNKNOWN, ObservationSet
 from devostasis.vitals import clutter, flow, pulse
 from helpers import MEDIAN_HOURS, MEDIAN_SECONDS, add, clutter_inputs, flow_inputs, obs_set, pulse_inputs
+
+# The coverage by which a PARTIAL count proves it is an observed subset (PV-REV-PR-031-003).
+SUBSET = {"complete": False, "value_semantics": "OBSERVED_SUBSET_COUNT"}
 
 
 def test_pulse_band_table():
@@ -312,7 +319,7 @@ def test_clutter_partial_branch_count_without_classified_retention_is_unknown():
     """Issue #26 as reconciled: a capped head resolution proves a floor only with CLASSIFIED retention semantics."""
     obs = obs_set()
     clutter_inputs(obs, issues_open=0, issues_stale=0, cr_open=0, cr_stale=0, stale_branches=0)
-    obs.replace(add(obs_set(), "git.nondefault_branches.stale_count_30d", 3, status=PARTIAL, reason_code="BRANCH_HEADS_UNRESOLVED"))
+    obs.replace(add(obs_set(), "git.nondefault_branches.stale_count_30d", 3, status=PARTIAL, reason_code="BRANCH_HEADS_UNRESOLVED", coverage=SUBSET))
     result = clutter.evaluate(obs)
     assert result.band is None and result.evaluation_status == "UNKNOWN"
     assert "CLUTTER_BRANCH_FLOOR_NOT_PROVEN:UNDECLARED" in result.diagnostics
@@ -327,7 +334,7 @@ def test_clutter_partial_branch_count_without_classified_retention_is_unknown():
 def test_clutter_partial_branch_count_that_is_unclassified_proves_nothing():
     obs = obs_set()
     clutter_inputs(obs, issues_open=0, issues_stale=0, cr_open=0, cr_stale=0, stale_branches=0)
-    obs.replace(add(obs_set(), "git.nondefault_branches.stale_count_30d", 30, status=PARTIAL, reason_code="BRANCH_HEADS_UNRESOLVED"))
+    obs.replace(add(obs_set(), "git.nondefault_branches.stale_count_30d", 30, status=PARTIAL, reason_code="BRANCH_HEADS_UNRESOLVED", coverage=SUBSET))
     add(obs, "git.nondefault_branches.retention_semantics", "UNCLASSIFIED", "enum")
     result = clutter.evaluate(obs)
     assert result.band is None and result.evaluation_status == "UNKNOWN"
@@ -366,19 +373,164 @@ def test_clu_incomplete_20_provider_and_order_invariance_is_exact_over_the_whole
     first = obs_set()
     add(first, "forge.issues.open_count", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
     add(first, "forge.issues.stale_open_count_30d", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
-    add(first, "forge.change_requests.open_count", 5, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"complete": False, "page_size": 100})
-    add(first, "forge.change_requests.stale_open_count_14d", 5, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"complete": False, "page_size": 100})
+    add(first, "forge.change_requests.open_count", 5, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"complete": False, "page_size": 100, "value_semantics": "OBSERVED_SUBSET_COUNT"})
+    add(first, "forge.change_requests.stale_open_count_14d", 5, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"complete": False, "page_size": 100, "value_semantics": "OBSERVED_SUBSET_COUNT"})
     add(first, "git.nondefault_branches.stale_count_30d", 2)
     add(first, "git.nondefault_branches.retention_semantics", "CLASSIFIED", "enum")
     second = obs_set()
     add(second, "git.nondefault_branches.retention_semantics", "CLASSIFIED", "enum")
-    add(second, "forge.change_requests.stale_open_count_14d", 5, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"complete": False, "page_size": 30})
+    add(second, "forge.change_requests.stale_open_count_14d", 5, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"complete": False, "page_size": 30, "value_semantics": "OBSERVED_SUBSET_COUNT"})
     add(second, "forge.issues.stale_open_count_30d", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
     add(second, "git.nondefault_branches.stale_count_30d", 2)
-    add(second, "forge.change_requests.open_count", 5, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"complete": False, "page_size": 30})
+    add(second, "forge.change_requests.open_count", 5, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"complete": False, "page_size": 30, "value_semantics": "OBSERVED_SUBSET_COUNT"})
     add(second, "forge.issues.open_count", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
     assert clutter.evaluate(first).to_dict() == clutter.evaluate(second).to_dict()
     assert clutter.evaluate(first).band == "CLUTTERED"
+
+
+# --------------------------------------------------------------------------- CLU-PARTIAL-TRUST-01..08 (PV-REV-PR-031-003)
+
+
+def _partial_work(coverage, value=5):
+    """Issues disabled, and a partial change-request enumeration that observed ``value`` stale items out of ``value`` open."""
+    obs = obs_set()
+    add(obs, "forge.issues.open_count", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
+    add(obs, "forge.issues.stale_open_count_30d", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
+    add(obs, "forge.change_requests.open_count", value, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage=coverage)
+    add(obs, "forge.change_requests.stale_open_count_14d", value, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage=coverage)
+    add(obs, "git.nondefault_branches.stale_count_30d", 0)
+    return obs
+
+
+def test_clu_partial_trust_01_a_proven_subset_of_stale_work_contributes_its_observed_count():
+    result = clutter.evaluate(_partial_work(SUBSET))
+    assert (result.band, result.evaluation_status, result.band_semantics) == ("CLUTTERED", "DEGRADED", "CONSERVATIVE_LOWER_BOUND")
+    assert result.derived["confirmed_stale_work_lower_bound"] == 5
+    assert not any(code.startswith(clutter.PARTIAL_NOT_TRUSTED) for code in result.diagnostics)
+
+
+def test_clu_partial_trust_02_a_proven_subset_of_branches_with_classified_retention_contributes():
+    obs = obs_set()
+    clutter_inputs(obs, issues_open=0, issues_stale=0, cr_open=0, cr_stale=0, stale_branches=0)
+    obs.replace(add(obs_set(), "git.nondefault_branches.stale_count_30d", 20, status=PARTIAL, reason_code="BRANCH_HEADS_UNRESOLVED", coverage=SUBSET))
+    add(obs, "git.nondefault_branches.retention_semantics", "CLASSIFIED", "enum")
+    result = clutter.evaluate(obs)
+    assert (result.band, result.evaluation_status, result.band_semantics) == ("HEAVY", "DEGRADED", "EXACT")
+    assert result.derived["confirmed_stale_branch_lower_bound"] == 20
+
+
+@pytest.mark.parametrize("coverage", [None, {"complete": False}, {"complete": False, "page_size": 30}], ids=["none", "complete-flag-only", "pagination-only"])
+def test_clu_partial_trust_03_a_partial_count_without_subset_proof_cannot_establish_a_floor(coverage):
+    result = clutter.evaluate(_partial_work(coverage, value=30))
+    assert result.band is None and result.evaluation_status == "UNKNOWN", "30 unproven stale items would have been a HEAVY floor"
+    for oid in ("forge.change_requests.open_count", "forge.change_requests.stale_open_count_14d"):
+        assert f"CLUTTER_PARTIAL_NOT_TRUSTED:{oid}:PARTIAL_SUBSET_NOT_PROVEN" in result.diagnostics
+
+
+@pytest.mark.parametrize("semantics", ["ESTIMATE", "AGGREGATE_ONLY", "UNKNOWN", "SAMPLED"])
+def test_clu_partial_trust_04_coverage_that_describes_a_non_subset_cannot_establish_a_floor(semantics):
+    result = clutter.evaluate(_partial_work({"complete": False, "value_semantics": semantics}, value=30))
+    assert result.band is None and result.evaluation_status == "UNKNOWN"
+    assert f"CLUTTER_PARTIAL_NOT_TRUSTED:forge.change_requests.stale_open_count_14d:PARTIAL_NOT_AN_OBSERVED_SUBSET:{semantics}" in result.diagnostics
+
+
+@pytest.mark.parametrize(
+    "coverage, value, reason",
+    [
+        ("OBSERVED_SUBSET_COUNT", 30, "PARTIAL_COVERAGE_MALFORMED"),
+        ({"complete": True, "value_semantics": "OBSERVED_SUBSET_COUNT"}, 30, "PARTIAL_COVERAGE_CONTRADICTS_STATUS"),
+        ({"complete": "false", "value_semantics": "OBSERVED_SUBSET_COUNT"}, 30, "PARTIAL_COVERAGE_MALFORMED"),
+        ({"value_semantics": "OBSERVED_SUBSET_COUNT"}, 30, "PARTIAL_COVERAGE_MALFORMED"),
+        ({"complete": False, "value_semantics": ["OBSERVED_SUBSET_COUNT"]}, 30, "PARTIAL_COVERAGE_MALFORMED"),
+        (SUBSET, -3, "PARTIAL_VALUE_NOT_A_COUNT"),
+        (SUBSET, "30", "PARTIAL_VALUE_NOT_A_COUNT"),
+        (SUBSET, True, "PARTIAL_VALUE_NOT_A_COUNT"),
+    ],
+    ids=["not-an-object", "complete-true", "complete-not-boolean", "complete-absent", "semantics-not-a-string", "negative", "string", "boolean"],
+)
+def test_clu_partial_trust_05_malformed_or_contradictory_coverage_fails_closed_without_an_exception(coverage, value, reason):
+    result = clutter.evaluate(_partial_work(coverage, value=value))
+    assert result.band is None and result.evaluation_status == "UNKNOWN"
+    assert f"CLUTTER_PARTIAL_NOT_TRUSTED:forge.change_requests.stale_open_count_14d:{reason}" in result.diagnostics
+
+
+def test_clu_partial_trust_06_an_untrusted_member_is_not_counted_beside_trusted_ones():
+    """A proven open count and an unproven stale count of one component: the component is unresolved, not half counted."""
+    obs = obs_set()
+    add(obs, "forge.issues.open_count", 10, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage=SUBSET)
+    add(obs, "forge.issues.stale_open_count_30d", 30, status=PARTIAL, reason_code="PAGINATION_CAPPED")
+    add(obs, "forge.change_requests.open_count", 0)
+    add(obs, "forge.change_requests.stale_open_count_14d", 0)
+    add(obs, "git.nondefault_branches.stale_count_30d", 3)
+    result = clutter.evaluate(obs)
+    assert result.band is None and result.evaluation_status == "UNKNOWN"
+    assert "CLUTTER_PARTIAL_NOT_TRUSTED:forge.issues.stale_open_count_30d:PARTIAL_SUBSET_NOT_PROVEN" in result.diagnostics
+    assert not any(code.startswith("CLUTTER_PARTIAL_NOT_TRUSTED:forge.issues.open_count") for code in result.diagnostics), "the proven member is not blamed"
+
+    # The higher-precedence rule is unchanged: an unproven required change-request count is missing required evidence.
+    required = _partial_work({"complete": False}, value=30)
+    result = clutter.evaluate(required)
+    assert any(code.startswith("MISSING_REQUIRED:forge.change_requests.stale_open_count_14d:PARTIAL/FRESH") for code in result.diagnostics)
+
+
+def test_clu_partial_trust_07_derived_and_saved_evidence_reach_the_same_decision():
+    """The proof is carried by the evidence: derived from a capped enumeration, then saved and reloaded, one decision."""
+    now = "2026-09-05T12:00:00Z"
+    stale_open = [
+        {"number": i, "title": "stale", "state": "OPEN", "created_at": "2026-06-01T00:00:00Z", "updated_at": "2026-07-01T00:00:00Z",
+         "merged_at": None, "closed_at": None, "target_id": None, "target_state": None, "url": f"u{i}"}
+        for i in range(1, 8)
+    ]
+    live = obs_set(now)
+    add(live, normalize.INV_CRS, stale_open, "series", status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"open_complete": False, "window_complete": False})
+    add(live, "forge.issues.open_count", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
+    add(live, "forge.issues.stale_open_count_30d", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
+    add(live, "git.nondefault_branches.stale_count_30d", 0)
+    normalize.derive(live, single_project("acme/widget"))
+    stale = live.get("forge.change_requests.stale_open_count_14d")
+    assert stale.status == PARTIAL and stale.coverage["value_semantics"] == "OBSERVED_SUBSET_COUNT"
+
+    saved = ObservationSet.from_dict(canonical.loads(canonical.pretty_json(live.to_dict())))
+    decided = clutter.evaluate(live).to_dict()
+    assert decided == clutter.evaluate(saved).to_dict()
+    assert (decided["band"], decided["evaluation_status"]) == ("CLUTTERED", "DEGRADED")
+
+
+def test_clu_partial_trust_08_complete_and_optional_unavailable_evidence_are_unchanged():
+    exact = obs_set()
+    clutter_inputs(exact, issues_open=10, issues_stale=3, cr_open=4, cr_stale=2, stale_branches=2)
+    result = clutter.evaluate(exact)
+    assert (result.band, result.evaluation_status, result.band_semantics) == ("CLUTTERED", "AVAILABLE", "EXACT")
+
+    optional = obs_set()
+    add(optional, "forge.issues.open_count", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
+    add(optional, "forge.issues.stale_open_count_30d", status=UNAVAILABLE, reason_code="ISSUES_DISABLED")
+    add(optional, "forge.change_requests.open_count", 1)
+    add(optional, "forge.change_requests.stale_open_count_14d", 0)
+    add(optional, "git.nondefault_branches.stale_count_30d", 4)
+    result = clutter.evaluate(optional)
+    assert (result.band, result.evaluation_status, result.band_semantics) == ("LIGHT", "DEGRADED", "CONSERVATIVE_LOWER_BOUND")
+    assert not any(code.startswith(clutter.PARTIAL_NOT_TRUSTED) for code in result.diagnostics)
+
+
+def test_a_derived_count_proves_its_subset_only_when_partial_and_only_as_a_count():
+    """Complete evidence keeps its coverage bytes (and bundle identity); a median never claims to be a lower bound."""
+    now = "2026-09-05T12:00:00Z"
+    items = [
+        {"number": 1, "title": "m", "state": "MERGED", "created_at": "2026-09-01T00:00:00Z", "updated_at": "2026-09-01T10:00:00Z",
+         "merged_at": "2026-09-01T10:00:00Z", "closed_at": "2026-09-01T10:00:00Z", "target_id": None, "target_state": None, "url": "u1"},
+    ]
+    complete = obs_set(now)
+    add(complete, normalize.INV_CRS, items, "series", coverage={"open_complete": True, "window_complete": True})
+    normalize.derive(complete, single_project("acme/widget"))
+    assert "value_semantics" not in complete.get("forge.change_requests.merged_count_28d").coverage
+
+    capped = obs_set(now)
+    add(capped, normalize.INV_CRS, items, "series", status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage={"open_complete": False, "window_complete": False})
+    normalize.derive(capped, single_project("acme/widget"))
+    assert capped.get("forge.change_requests.merged_count_28d").coverage["value_semantics"] == "OBSERVED_SUBSET_COUNT"
+    median = capped.get(MEDIAN_SECONDS)
+    assert median.status == PARTIAL and "value_semantics" not in median.coverage
 
 
 def test_t5_issue_only_provenance_needs_every_channel_positively_observed():

@@ -87,6 +87,18 @@ relevant coverage flag):
 | `planning.linkage.active_change_requests_count_28d`, `.active_change_requests_linked_to_open_target_count_28d`, `.links_per_target_28d` | change requests with milestone linkage |
 | `debt.registry.capability` (`CONFIGURED`, `UNCONFIGURED`), `debt.mapping`, `debt.items.open_count`, `.open_stale_count_30d`, `.closed_count_28d` | issues filtered by the configured label mapping |
 
+A count aggregate derived from an incomplete inventory is `PARTIAL`, and its
+coverage says what its value is: `{"complete": false, "source_coverage": ...,
+"value_semantics": "OBSERVED_SUBSET_COUNT"}`, a count of the records the
+enumeration did return, which the records it did not return can only
+increase. That declaration is what lets a Vital read a `PARTIAL` value as a
+lower bound (`PV-REV-PR-031-003`); `PARTIAL` alone never does. Every count
+above carries it; `oldest_open_age_days`, the two medians and
+`links_per_target_28d` never do, because a maximum, a median or a record of a
+subset is not a lower bound of anything a Vital classifies. A complete
+aggregate's coverage is unchanged, so this declaration moves no bundle
+identity built over complete evidence.
+
 Definitions: "stale" means open and not updated for the stated number of days;
 "active" change requests are those updated within the 28-day frame; "linked"
 means the change request carries an explicit reference to an open planning

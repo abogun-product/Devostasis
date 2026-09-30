@@ -214,8 +214,17 @@ threshold or a window. The change-request component is required; the issue
 and branch components are optional.
 
 **Incomplete evidence.** A component is *incomplete* when it is explicitly
-`UNAVAILABLE` (issues or branches only) or `PARTIAL` with a value, which is a
-trustworthy observed subset. The band is then a *confirmed burden floor*
+`UNAVAILABLE` (issues or branches only) or `PARTIAL` with a value that is a
+trustworthy observed subset. Trustworthy is proven by the evidence, not
+implied by the status (`PV-REV-PR-031-003`, cases `CLU-PARTIAL-TRUST-01..08`):
+every `PARTIAL` member's coverage must carry `complete = false` and
+`value_semantics = OBSERVED_SUBSET_COUNT` over a non-negative integer, the
+declaration that the value counts records the incomplete enumeration did
+return (see [observations.md](observations.md)). A `PARTIAL` member without
+that proof, with other semantics, or with malformed or self-contradicting
+coverage makes its component unresolved, diagnosed
+`CLUTTER_PARTIAL_NOT_TRUSTED:<observation>:<reason>`, and is never counted
+beside the trusted members. The band is then a *confirmed burden floor*
 built only from facts omitted records cannot erase:
 
 - observed stale work counts, complete or partial, add to
@@ -249,9 +258,9 @@ under the lower-bound rows is a `NON_AUTHORITATIVE_CONSERVATIVE_SUPERSET`,
 never a claim that every listed band is exactly reachable.
 
 A `FORBIDDEN`, `UNKNOWN` or `ERROR` component, a stale one, a `PARTIAL`
-count without a value, a required change-request component that is not
-complete or partial, and declared retention semantics that cannot be read
-all yield `UNKNOWN`, as before.
+count without a value or without subset proof, a required change-request
+component that is not complete or a proven partial subset, and declared
+retention semantics that cannot be read all yield `UNKNOWN`, as before.
 
 **Unclassified branches (T7).** A stale branch is residue only when it is
 known to be one. When every component is complete, the branch inventory

@@ -13,7 +13,11 @@ threshold or window moved.
 * Complete, fresh evidence classifies exactly, as it always did.
 * An explicitly ``UNAVAILABLE`` optional component (issues, branches) or a
   ``PARTIAL`` count-bearing component that carries a trustworthy observed
-  subset makes the cell *incomplete*. The band is then a confirmed burden
+  subset makes the cell *incomplete*. Trustworthy is a property the evidence
+  proves, not one ``PARTIAL`` implies: the coverage must say the value is an
+  ``OBSERVED_SUBSET_COUNT`` (``PV-REV-PR-031-003``, cases
+  ``CLU-PARTIAL-TRUST-01..08``); a ``PARTIAL`` count without that proof, with
+  other semantics or with malformed coverage leaves its component unresolved. The band is then a confirmed burden
   floor built only from facts omitted records cannot erase: observed stale
   work counts, classified stale branch counts, and the stale-work ratio only
   when every open and stale count of the issue and change-request domain is
@@ -40,7 +44,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from ..canonical import ratio
-from ..observations import AVAILABLE, FRESH, PARTIAL, UNAVAILABLE, ObservationSet
+from ..observations import AVAILABLE, FRESH, PARTIAL, UNAVAILABLE, ObservationSet, subset_count_problem
 from ..policy import CLUTTER
 from .common import (
     EVAL_AVAILABLE,
@@ -80,6 +84,7 @@ INCOMPLETE_COMPONENT = "CLUTTER_INCOMPLETE_COMPONENT"
 CONFIRMED_FLOOR = "CLUTTER_CONFIRMED_BURDEN_FLOOR"
 RATIO_NOT_PROOF = "CLUTTER_RATIO_NOT_PROOF_INCOMPLETE_DENOMINATOR"
 BRANCH_FLOOR_NOT_PROVEN = "CLUTTER_BRANCH_FLOOR_NOT_PROVEN"
+PARTIAL_NOT_TRUSTED = "CLUTTER_PARTIAL_NOT_TRUSTED"
 
 # Acquisition classes of one component, in the sense of the accepted contract.
 COMPLETE = "COMPLETE"
@@ -146,7 +151,13 @@ class Component:
 
 
 def _acquire(obs: ObservationSet, name: str, ids: tuple[str, ...]) -> Component:
-    """Classify a component: complete, a trustworthy partial subset, explicitly unavailable, or unresolved."""
+    """Classify a component: complete, a trustworthy partial subset, explicitly unavailable, or unresolved.
+
+    A ``PARTIAL`` member is a trustworthy subset only when its coverage proves
+    it (``OBSERVED_SUBSET_COUNT``, CLU-PARTIAL-TRUST-01..08): status alone is
+    not proof, and an untrusted member makes the whole component unresolved
+    rather than being counted beside the trusted ones.
+    """
     items = [obs.get(oid) for oid in ids]
     if all(item is not None and item.good for item in items):
         return Component(name, ids, COMPLETE, {oid: as_int(item.value) for oid, item in zip(ids, items)})
@@ -156,9 +167,18 @@ def _acquire(obs: ObservationSet, name: str, ids: tuple[str, ...]) -> Component:
         item is not None and item.status in (AVAILABLE, PARTIAL) and item.freshness == FRESH and item.has_value for item in items
     )
     if subset and any(item.status == PARTIAL for item in items):
+        untrusted = [(item.observation_id, subset_count_problem(item)) for item in items if item.status == PARTIAL]
+        untrusted = [(oid, problem) for oid, problem in untrusted if problem is not None]
+        if untrusted:
+            return Component(name, ids, UNRESOLVED, {}, [f"{PARTIAL_NOT_TRUSTED}:{oid}:{problem}" for oid, problem in untrusted])
         reasons = [item.reason_code or "INCOMPLETE" for item in items if item.status == PARTIAL]
         return Component(name, ids, INCOMPLETE_PARTIAL, {oid: as_int(item.value) for oid, item in zip(ids, items)}, reasons)
     return Component(name, ids, UNRESOLVED, {}, [f"{obs.status_of(oid)}/{obs.freshness_of(oid)}" for oid in ids])
+
+
+def _trust_diagnostics(*components: Component) -> list[str]:
+    """The reasons an unresolved component's PARTIAL members were not read as lower bounds."""
+    return [reason for component in components if component.kind == UNRESOLVED for reason in component.reasons if reason.startswith(PARTIAL_NOT_TRUSTED)]
 
 
 def _retention(obs: ObservationSet) -> tuple[str | None, bool]:
@@ -200,20 +220,25 @@ def _result(obs: ObservationSet, band: str | None, status: str, semantics: str |
 def evaluate(obs: ObservationSet) -> VitalResult:
     cr = _acquire(obs, "change_requests", (CR_OPEN, CR_STALE))
     if cr.kind in (UNRESOLVED, INCOMPLETE_UNAVAILABLE):
-        # Required evidence: wholly unavailable, forbidden, errored, stale or
-        # valueless change-request counts leave nothing to bound.
+        # Required evidence: wholly unavailable, forbidden, errored, stale,
+        # valueless or unproven-partial change-request counts leave nothing to bound.
         diagnostics = [f"MISSING_REQUIRED:{oid}:{obs.status_of(oid)}/{obs.freshness_of(oid)}" for oid in cr.ids if not obs.is_good(oid)]
-        return unknown_result(VITAL_ID, VITAL_VERSION, RULE_ID, obs, IDS, diagnostics, SHARED, GROUPS)
+        return unknown_result(VITAL_ID, VITAL_VERSION, RULE_ID, obs, IDS, diagnostics + _trust_diagnostics(cr), SHARED, GROUPS)
     issues = _acquire(obs, "issues", (ISSUES_OPEN, ISSUES_STALE))
     if issues.kind == UNRESOLVED:
-        return unknown_result(VITAL_ID, VITAL_VERSION, RULE_ID, obs, IDS, [f"COMPONENT_UNRESOLVED:issues:{obs.status_of(ISSUES_OPEN)}/{obs.status_of(ISSUES_STALE)}"], SHARED, GROUPS)
+        return unknown_result(
+            VITAL_ID, VITAL_VERSION, RULE_ID, obs, IDS,
+            [f"COMPONENT_UNRESOLVED:issues:{obs.status_of(ISSUES_OPEN)}/{obs.status_of(ISSUES_STALE)}"] + _trust_diagnostics(issues),
+            SHARED, GROUPS,
+        )
     branches = _acquire(obs, "branches", (BRANCHES_STALE,))
     retention, retention_resolved = _retention(obs)
     if branches.kind == UNRESOLVED or not retention_resolved:
         return unknown_result(
             VITAL_ID, VITAL_VERSION, RULE_ID, obs, IDS,
             [f"COMPONENT_UNRESOLVED:branches:{obs.status_of(BRANCHES_STALE)}/{obs.freshness_of(BRANCHES_STALE)}"]
-            + ([] if retention_resolved else [f"COMPONENT_UNRESOLVED:branch_retention:{obs.status_of(BRANCHES_RETENTION)}/{obs.freshness_of(BRANCHES_RETENTION)}"]),
+            + ([] if retention_resolved else [f"COMPONENT_UNRESOLVED:branch_retention:{obs.status_of(BRANCHES_RETENTION)}/{obs.freshness_of(BRANCHES_RETENTION)}"])
+            + _trust_diagnostics(branches),
             SHARED, GROUPS,
         )
 

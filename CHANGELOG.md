@@ -50,7 +50,16 @@ accepted judgements, and their `rule_id` moved with them.
   band is the floor the observed facts prove. Observed stale work and
   classified stale branches prove it; the ratio proves it only over a
   complete issue and change-request domain; an `UNCLASSIFIED` branch count
-  proves nothing. `HEAVY` is `DEGRADED / EXACT` (terminal), `CLUTTERED` and
+  proves nothing. A `PARTIAL` count counts as an observed subset only when
+  its coverage says so (`complete = false`,
+  `value_semantics = OBSERVED_SUBSET_COUNT`, which the derivation now records
+  on every count aggregate of an incomplete inventory and on nothing else);
+  without that proof, with other semantics or with malformed coverage the
+  component is unresolved and diagnosed `CLUTTER_PARTIAL_NOT_TRUSTED`
+  (review `PV-REV-PR-031-003`, cases `CLU-PARTIAL-TRUST-01..08`; before, any
+  fresh `PARTIAL` value was promoted to a floor on its status alone, so a
+  saved observation set could prove `HEAVY` with an estimate).
+  `HEAVY` is `DEGRADED / EXACT` (terminal), `CLUTTERED` and
   `LIGHT` are `DEGRADED` lower bounds with a conservative superset, and a
   floor of nothing is `UNKNOWN` with no band. Before, an unavailable
   component with nothing else observed produced `DEGRADED CLEAN`, a band

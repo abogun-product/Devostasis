@@ -12,7 +12,7 @@ from typing import Any, Callable
 
 from . import canonical, timeutil
 from .config import ResolvedProject
-from .observations import AVAILABLE, PARTIAL, UNAVAILABLE, VALUE_BEARING, Observation, ObservationSet
+from .observations import AVAILABLE, OBSERVED_SUBSET_COUNT, PARTIAL, UNAVAILABLE, VALUE_BEARING, VALUE_SEMANTICS, Observation, ObservationSet
 from .policy import CLUTTER, FLOW, PLANNING, PULSE
 
 INV_REPO = "forge.repository.metadata"
@@ -45,8 +45,16 @@ def _derived(
     extra_sources: list[str] | None = None,
     reason_override: str | None = None,
     notes: str | None = None,
+    subset_count: bool = False,
 ) -> None:
-    """Add an aggregate derived from ``source``; status follows the source and the coverage flag."""
+    """Add an aggregate derived from ``source``; status follows the source and the coverage flag.
+
+    ``subset_count`` declares the aggregate a count of the source records that
+    satisfy a predicate, which the records an incomplete enumeration did not
+    return can only increase. Only then does a ``PARTIAL`` value say so in its
+    coverage (``OBSERVED_SUBSET_COUNT``), which is what lets a Vital read it as
+    a lower bound; a median, a maximum or a record never claims it.
+    """
     if observation_id in obs:
         return
     evidence = {"derived_from": [source.observation_id] + (extra_sources or [])}
@@ -72,13 +80,16 @@ def _derived(
         return
     value = compute(source.value)
     status = AVAILABLE if (source.status == AVAILABLE and complete) else PARTIAL
+    coverage = {"complete": status == AVAILABLE, "source_coverage": source.coverage}
+    if status == PARTIAL and subset_count:
+        coverage[VALUE_SEMANTICS] = OBSERVED_SUBSET_COUNT
     obs.add(
         Observation(
             observation_id=observation_id,
             status=status,
             value_type=value_type,
             value=value,
-            coverage={"complete": status == AVAILABLE, "source_coverage": source.coverage},
+            coverage=coverage,
             reason_code=None if status == AVAILABLE else (reason_override or "SOURCE_COVERAGE_INCOMPLETE"),
             **common,
         )
@@ -118,12 +129,12 @@ def derive(obs: ObservationSet, project: ResolvedProject) -> ObservationSet:
     if commits is not None:
         _derived(
             obs, "git.default_branch.commits.count_28d", "count", commits,
-            lambda items: len(items), complete=_flag(commits, "complete"),
+            lambda items: len(items), complete=_flag(commits, "complete"), subset_count=True,
         )
         _derived(
             obs, "git.default_branch.commit_active_days_28d", "count", commits,
             lambda items: len({timeutil.utc_day(timeutil.parse_ts(item["committed_at"])) for item in items}),
-            complete=_flag(commits, "complete"),
+            complete=_flag(commits, "complete"), subset_count=True,
         )
 
     crs = obs.get(INV_CRS)
@@ -140,13 +151,13 @@ def derive(obs: ObservationSet, project: ResolvedProject) -> ObservationSet:
         def _updated_in_window(items):
             return [item for item in items if item.get("updated_at") and timeutil.parse_ts(item["updated_at"]) >= since_flow]
 
-        _derived(obs, "forge.change_requests.open_count", "count", crs, lambda items: len(_open(items)), complete=open_ok)
-        _derived(obs, "forge.change_requests.merged_count_28d", "count", crs, lambda items: len(_merged_in_window(items)), complete=window_ok)
-        _derived(obs, "forge.change_requests.updated_count_28d", "count", crs, lambda items: len(_updated_in_window(items)), complete=window_ok)
+        _derived(obs, "forge.change_requests.open_count", "count", crs, lambda items: len(_open(items)), complete=open_ok, subset_count=True)
+        _derived(obs, "forge.change_requests.merged_count_28d", "count", crs, lambda items: len(_merged_in_window(items)), complete=window_ok, subset_count=True)
+        _derived(obs, "forge.change_requests.updated_count_28d", "count", crs, lambda items: len(_updated_in_window(items)), complete=window_ok, subset_count=True)
         _derived(
             obs, "forge.change_requests.stale_open_count_14d", "count", crs,
             lambda items: len([i for i in _open(items) if timeutil.parse_ts(i["updated_at"]) < stale_cr]),
-            complete=open_ok,
+            complete=open_ok, subset_count=True,
         )
         if crs.has_value and _open(crs.value):
             _derived(
@@ -187,10 +198,10 @@ def derive(obs: ObservationSet, project: ResolvedProject) -> ObservationSet:
         def _unknown_refs(items):
             return len([ref for item in _active(items) for ref in target_refs(item) if ref.get("state") == "UNKNOWN"])
 
-        _derived(obs, "planning.linkage.active_change_requests_count_28d", "count", crs, lambda items: len(_active(items)), complete=window_ok)
-        _derived(obs, "planning.linkage.active_change_requests_linked_to_open_target_count_28d", "count", crs, lambda items: len(_linked(items)), complete=window_ok)
+        _derived(obs, "planning.linkage.active_change_requests_count_28d", "count", crs, lambda items: len(_active(items)), complete=window_ok, subset_count=True)
+        _derived(obs, "planning.linkage.active_change_requests_linked_to_open_target_count_28d", "count", crs, lambda items: len(_linked(items)), complete=window_ok, subset_count=True)
         _derived(obs, "planning.linkage.links_per_target_28d", "record", crs, _links_per_target, complete=window_ok)
-        _derived(obs, "planning.linkage.unknown_target_reference_count_28d", "count", crs, _unknown_refs, complete=window_ok)
+        _derived(obs, "planning.linkage.unknown_target_reference_count_28d", "count", crs, _unknown_refs, complete=window_ok, subset_count=True)
 
     issues = obs.get(INV_ISSUES)
     if issues is not None:
@@ -200,16 +211,16 @@ def derive(obs: ObservationSet, project: ResolvedProject) -> ObservationSet:
         def _open_issues(items):
             return [item for item in items if item.get("state") == "OPEN"]
 
-        _derived(obs, "forge.issues.open_count", "count", issues, lambda items: len(_open_issues(items)), complete=open_ok)
+        _derived(obs, "forge.issues.open_count", "count", issues, lambda items: len(_open_issues(items)), complete=open_ok, subset_count=True)
         _derived(
             obs, "forge.issues.stale_open_count_30d", "count", issues,
             lambda items: len([i for i in _open_issues(items) if timeutil.parse_ts(i["updated_at"]) < stale_issue]),
-            complete=open_ok,
+            complete=open_ok, subset_count=True,
         )
         _derived(
             obs, "forge.issues.updated_count_28d", "count", issues,
             lambda items: len([i for i in items if timeutil.parse_ts(i["updated_at"]) >= since_pulse]),
-            complete=window_ok,
+            complete=window_ok, subset_count=True,
         )
 
     _derive_debt(obs, project, issues, stale_issue, since_planning)
@@ -223,7 +234,7 @@ def derive(obs: ObservationSet, project: ResolvedProject) -> ObservationSet:
                 i for i in items if i.get("head_committed_at") and timeutil.parse_ts(i["head_committed_at"]) < stale_branch
             ]),
             complete=heads_ok,
-            reason_override=None if heads_ok else "BRANCH_HEADS_UNRESOLVED",
+            reason_override=None if heads_ok else "BRANCH_HEADS_UNRESOLVED", subset_count=True,
         )
 
     _derive_planning(obs, project, observed_at)
@@ -250,16 +261,16 @@ def _derive_debt(obs: ObservationSet, project: ResolvedProject, issues: Observat
         def _open_items(items):
             return [i for i in items if i.get("state") == "OPEN"]
 
-        _derived(obs, "debt.items.open_count", "count", register, lambda items: len(_open_items(items)), extra_sources=["debt.mapping"])
+        _derived(obs, "debt.items.open_count", "count", register, lambda items: len(_open_items(items)), extra_sources=["debt.mapping"], subset_count=True)
         _derived(
             obs, "debt.items.open_stale_count_30d", "count", register,
             lambda items: len([i for i in _open_items(items) if timeutil.parse_ts(i["updated_at"]) < stale_issue]),
-            extra_sources=["debt.mapping"],
+            extra_sources=["debt.mapping"], subset_count=True,
         )
         _derived(
             obs, "debt.items.closed_count_28d", "count", register,
             lambda items: len([i for i in items if i.get("state") == "CLOSED" and i.get("closed_at") and timeutil.parse_ts(i["closed_at"]) >= since_planning]),
-            extra_sources=["debt.mapping"],
+            extra_sources=["debt.mapping"], subset_count=True,
         )
         return
 
@@ -276,19 +287,19 @@ def _derive_debt(obs: ObservationSet, project: ResolvedProject, issues: Observat
     _derived(
         obs, "debt.items.open_count", "count", issues,
         lambda items: len([i for i in items if i.get("state") == "OPEN" and _mapped(i)]),
-        complete=open_ok, extra_sources=["debt.mapping"],
+        complete=open_ok, extra_sources=["debt.mapping"], subset_count=True,
     )
     _derived(
         obs, "debt.items.open_stale_count_30d", "count", issues,
         lambda items: len([i for i in items if i.get("state") == "OPEN" and _mapped(i) and timeutil.parse_ts(i["updated_at"]) < stale_issue]),
-        complete=open_ok, extra_sources=["debt.mapping"],
+        complete=open_ok, extra_sources=["debt.mapping"], subset_count=True,
     )
     _derived(
         obs, "debt.items.closed_count_28d", "count", issues,
         lambda items: len([
             i for i in items if i.get("state") == "CLOSED" and _mapped(i) and i.get("closed_at") and timeutil.parse_ts(i["closed_at"]) >= since_planning
         ]),
-        complete=window_ok, extra_sources=["debt.mapping"],
+        complete=window_ok, extra_sources=["debt.mapping"], subset_count=True,
     )
 
 

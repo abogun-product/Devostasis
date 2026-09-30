@@ -1,6 +1,6 @@
 {
   "schema": "devostasis.vectors.v1",
-  "notes": "Permanent cases CLU-INCOMPLETE-01..20 of PV-CLUTTER-INCOMPLETE-001 (accepted by PV-REV-CLUTTER-INCOMPLETE-001), transcribed from the contract's Required conformance fixtures section, plus the branch reading PV-ISSUE-026-RECONCILE-001 gave issue #26 (cases 13..16). Adopted in 0.1.9 as rule clutter.bands.v1. Where a case names a range (6..19, 1..5) both ends are stated as variants under the one identifier. Where the contract says 'CF' the evidence is AVAILABLE and FRESH; 'PARTIAL' carries the observed subset as its value; retention semantics are stated explicitly because the accepted branch floor requires CLASSIFIED.",
+  "notes": "Permanent cases CLU-INCOMPLETE-01..20 of PV-CLUTTER-INCOMPLETE-001 (accepted by PV-REV-CLUTTER-INCOMPLETE-001), transcribed from the contract's Required conformance fixtures section, plus the branch reading PV-ISSUE-026-RECONCILE-001 gave issue #26 (cases 13..16). Adopted in 0.1.9 as rule clutter.bands.v1. Where a case names a range (6..19, 1..5) both ends are stated as variants under the one identifier. Where the contract says 'CF' the evidence is AVAILABLE and FRESH; 'PARTIAL' carries the observed subset as its value and says so in its coverage (complete false, value_semantics OBSERVED_SUBSET_COUNT), the machine-verifiable proof PV-REV-PR-031-003 requires before a partial count may prove a floor; retention semantics are stated explicitly because the accepted branch floor requires CLASSIFIED.",
   "vectors": [
     {
       "case": "CLU-INCOMPLETE-01",
@@ -465,13 +465,21 @@
             "observation_id": "forge.change_requests.open_count",
             "status": "PARTIAL",
             "value": 25,
-            "reason_code": "PAGINATION_CAPPED"
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "forge.change_requests.stale_open_count_14d",
             "status": "PARTIAL",
             "value": 25,
-            "reason_code": "PAGINATION_CAPPED"
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "git.nondefault_branches.stale_count_30d",
@@ -521,13 +529,21 @@
             "observation_id": "forge.change_requests.open_count",
             "status": "PARTIAL",
             "value": 5,
-            "reason_code": "PAGINATION_CAPPED"
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "forge.change_requests.stale_open_count_14d",
             "status": "PARTIAL",
             "value": 5,
-            "reason_code": "PAGINATION_CAPPED"
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "git.nondefault_branches.stale_count_30d",
@@ -581,13 +597,21 @@
             "observation_id": "forge.change_requests.open_count",
             "status": "PARTIAL",
             "value": 4,
-            "reason_code": "PAGINATION_CAPPED"
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "forge.change_requests.stale_open_count_14d",
             "status": "PARTIAL",
             "value": 1,
-            "reason_code": "PAGINATION_CAPPED"
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "git.nondefault_branches.stale_count_30d",
@@ -643,13 +667,21 @@
             "observation_id": "forge.change_requests.open_count",
             "status": "PARTIAL",
             "value": 0,
-            "reason_code": "PAGINATION_CAPPED"
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "forge.change_requests.stale_open_count_14d",
             "status": "PARTIAL",
             "value": 0,
-            "reason_code": "PAGINATION_CAPPED"
+            "reason_code": "PAGINATION_CAPPED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "git.nondefault_branches.stale_count_30d",
@@ -704,7 +736,11 @@
             "observation_id": "git.nondefault_branches.stale_count_30d",
             "status": "PARTIAL",
             "value": 20,
-            "reason_code": "BRANCH_HEADS_UNRESOLVED"
+            "reason_code": "BRANCH_HEADS_UNRESOLVED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "git.nondefault_branches.retention_semantics",
@@ -762,7 +798,11 @@
                 "observation_id": "git.nondefault_branches.stale_count_30d",
                 "status": "PARTIAL",
                 "value": 6,
-                "reason_code": "BRANCH_HEADS_UNRESOLVED"
+                "reason_code": "BRANCH_HEADS_UNRESOLVED",
+                "coverage": {
+                  "complete": false,
+                  "value_semantics": "OBSERVED_SUBSET_COUNT"
+                }
               },
               {
                 "observation_id": "git.nondefault_branches.retention_semantics",
@@ -794,7 +834,11 @@
                 "observation_id": "git.nondefault_branches.stale_count_30d",
                 "status": "PARTIAL",
                 "value": 19,
-                "reason_code": "BRANCH_HEADS_UNRESOLVED"
+                "reason_code": "BRANCH_HEADS_UNRESOLVED",
+                "coverage": {
+                  "complete": false,
+                  "value_semantics": "OBSERVED_SUBSET_COUNT"
+                }
               },
               {
                 "observation_id": "git.nondefault_branches.retention_semantics",
@@ -857,7 +901,11 @@
                 "observation_id": "git.nondefault_branches.stale_count_30d",
                 "status": "PARTIAL",
                 "value": 1,
-                "reason_code": "BRANCH_HEADS_UNRESOLVED"
+                "reason_code": "BRANCH_HEADS_UNRESOLVED",
+                "coverage": {
+                  "complete": false,
+                  "value_semantics": "OBSERVED_SUBSET_COUNT"
+                }
               },
               {
                 "observation_id": "git.nondefault_branches.retention_semantics",
@@ -889,7 +937,11 @@
                 "observation_id": "git.nondefault_branches.stale_count_30d",
                 "status": "PARTIAL",
                 "value": 5,
-                "reason_code": "BRANCH_HEADS_UNRESOLVED"
+                "reason_code": "BRANCH_HEADS_UNRESOLVED",
+                "coverage": {
+                  "complete": false,
+                  "value_semantics": "OBSERVED_SUBSET_COUNT"
+                }
               },
               {
                 "observation_id": "git.nondefault_branches.retention_semantics",
@@ -950,7 +1002,11 @@
             "observation_id": "git.nondefault_branches.stale_count_30d",
             "status": "PARTIAL",
             "value": 0,
-            "reason_code": "BRANCH_HEADS_UNRESOLVED"
+            "reason_code": "BRANCH_HEADS_UNRESOLVED",
+            "coverage": {
+              "complete": false,
+              "value_semantics": "OBSERVED_SUBSET_COUNT"
+            }
           },
           {
             "observation_id": "git.nondefault_branches.retention_semantics",
@@ -1165,13 +1221,21 @@
                 "observation_id": "forge.change_requests.open_count",
                 "status": "PARTIAL",
                 "value": 5,
-                "reason_code": "PAGINATION_CAPPED"
+                "reason_code": "PAGINATION_CAPPED",
+                "coverage": {
+                  "complete": false,
+                  "value_semantics": "OBSERVED_SUBSET_COUNT"
+                }
               },
               {
                 "observation_id": "forge.change_requests.stale_open_count_14d",
                 "status": "PARTIAL",
                 "value": 5,
-                "reason_code": "PAGINATION_CAPPED"
+                "reason_code": "PAGINATION_CAPPED",
+                "coverage": {
+                  "complete": false,
+                  "value_semantics": "OBSERVED_SUBSET_COUNT"
+                }
               },
               {
                 "observation_id": "git.nondefault_branches.stale_count_30d",
@@ -1194,7 +1258,8 @@
                 "reason_code": "PAGINATION_CAPPED",
                 "coverage": {
                   "complete": false,
-                  "page_size": 30
+                  "page_size": 30,
+                  "value_semantics": "OBSERVED_SUBSET_COUNT"
                 }
               },
               {
@@ -1218,7 +1283,8 @@
                 "reason_code": "PAGINATION_CAPPED",
                 "coverage": {
                   "complete": false,
-                  "page_size": 30
+                  "page_size": 30,
+                  "value_semantics": "OBSERVED_SUBSET_COUNT"
                 }
               },
               {

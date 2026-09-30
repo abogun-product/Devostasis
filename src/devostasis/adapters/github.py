@@ -14,6 +14,8 @@ milestone or by an explicit marker line (``Target: <id>``) in their text.
 from __future__ import annotations
 
 import base64
+import binascii
+import http.client
 import json
 import math
 import re
@@ -189,27 +191,37 @@ class UrllibTransport:
                 headers = {k.lower(): v for k, v in response.headers.items()}
                 try:
                     body = json.loads(raw.decode("utf-8")) if raw else None
-                except ValueError as exc:
+                except (ValueError, RecursionError) as exc:
                     # A successful status with a body we cannot read is a
                     # provider failure, not a Python error: it has to reach the
                     # collector as a declared status like every other failure.
-                    raise ApiFailure(response.status, ERROR, "MALFORMED_RESPONSE", f"{path} answered {response.status} with a body that is not JSON: {exc}") from exc
+                    # A body nested beyond the decoder's depth is one of them.
+                    raise ApiFailure(response.status, ERROR, "MALFORMED_RESPONSE", f"{path} answered {response.status} with a body that is not readable JSON: {type(exc).__name__}") from exc
                 return response.status, headers, body
         except urllib.error.HTTPError as exc:
-            raw = exc.read()
             headers = {k.lower(): v for k, v in exc.headers.items()} if exc.headers else {}
             try:
+                raw = exc.read()
+            except (http.client.HTTPException, TimeoutError, OSError):
+                # The status and headers arrived; the body did not. The status
+                # is what classifies an error, so it is kept without a body.
+                return exc.code, headers, None
+            try:
                 body = json.loads(raw.decode("utf-8")) if raw else None
-            except ValueError:
+            except (ValueError, RecursionError):
                 body = {"message": raw.decode("utf-8", "replace")[:200]}
             return exc.code, headers, body
         except RedirectRefused as exc:
             raise ApiFailure(0, ERROR, "REDIRECT_REFUSED", str(exc), False) from exc
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            raise NetworkFailure(f"network failure for {path}: {exc}") from exc
+        except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError) as exc:
+            # http.client.IncompleteRead (a body cut off mid-read) and
+            # BadStatusLine are not OSErrors; they are the same network failure.
+            raise NetworkFailure(f"network failure for {path}: {type(exc).__name__}: {exc}") from exc
 
 
 PAGINATION_CAPPED = "PAGINATION_CAPPED"
+# A listing that repeated a row between pages moved while it was read: rows may also be missing.
+LISTING_SHIFTED = "LISTING_SHIFTED"
 BUDGET_EXHAUSTED = "REQUEST_BUDGET_EXHAUSTED"
 NOT_MODIFIED = 304
 
@@ -393,9 +405,17 @@ class GitHubClient:
         max_pages: int,
         stop: Callable[[dict[str, Any]], bool] | None = None,
         items_key: str | None = None,
+        total_key: str | None = None,
     ) -> tuple[list[dict[str, Any]], bool]:
-        """Page-number pagination. Returns (items, complete)."""
+        """Page-number pagination. Returns (items, complete).
+
+        With ``total_key`` the provider's own count is read on every page and
+        a listing that ends short of it is incomplete: a filtered
+        ``/actions/runs`` query stops at 1,000 results and answers the next
+        page empty, which would otherwise read as proof of completeness.
+        """
         items: list[dict[str, Any]] = []
+        total = 0
         params = dict(params or {})
         params["per_page"] = PER_PAGE
         for page in range(1, max_pages + 1):
@@ -410,6 +430,11 @@ class GitHubClient:
                 batch = body.get(items_key)
                 if batch is None:
                     raise ApiFailure(200, ERROR, "UNEXPECTED_PAYLOAD", f"expected {items_key!r} in the answer from {path}, got none")
+                if total_key is not None:
+                    reported = body.get(total_key)
+                    if isinstance(reported, bool) or not isinstance(reported, int) or reported < 0:
+                        raise ApiFailure(200, ERROR, "UNEXPECTED_PAYLOAD", f"{total_key} from {path} is {reported!r}, not a count")
+                    total = max(total, reported)
             else:
                 batch = body
             if not isinstance(batch, list):
@@ -418,7 +443,7 @@ class GitHubClient:
             if stop is not None and batch and stop(batch[-1]):
                 return items, True
             if len(batch) < PER_PAGE:
-                return items, True
+                return items, total <= len(items)
         return items, False
 
 
@@ -788,15 +813,25 @@ class GitHubAdapter:
         body = self.client.get(endpoint, {"ref": ref})
         if not isinstance(body, dict) or body.get("type") != "file":
             raise RegisterError(f"{path} is not a file")
-        if _integer(endpoint, body.get("size", 0), "size") > MAX_REGISTER_BYTES:
+        # The size is required, not defaulted: a missing size must not wave a
+        # body through the byte bound (PV-AUDIT-GITHUB-REGISTER-PAYLOAD-001).
+        if _integer(endpoint, body.get("size"), "size") > MAX_REGISTER_BYTES:
             raise RegisterError(f"{path} exceeds {MAX_REGISTER_BYTES} bytes")
-        if body.get("encoding") != "base64" or not body.get("content"):
+        content = body.get("content")
+        if body.get("encoding") != "base64" or not isinstance(content, str) or not content:
             raise RegisterError(f"{path} has no base64 content")
         try:
-            text = base64.b64decode(body["content"]).decode("utf-8")
-            return json.loads(text)
-        except (ValueError, UnicodeDecodeError) as exc:
-            raise RegisterError(f"{path} is not valid JSON: {exc}") from exc
+            # GitHub wraps the base64 at 60 columns; anything else outside the
+            # alphabet is not a register this adapter will guess at.
+            raw = base64.b64decode("".join(content.split()), validate=True)
+        except (ValueError, binascii.Error) as exc:
+            raise RegisterError(f"{path} is not valid base64: {exc}") from exc
+        if len(raw) > MAX_REGISTER_BYTES:
+            raise RegisterError(f"{path} decodes to more than {MAX_REGISTER_BYTES} bytes")
+        try:
+            return json.loads(raw.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError, RecursionError) as exc:
+            raise RegisterError(f"{path} is not valid JSON: {type(exc).__name__}") from exc
 
     def _collect_commits(self, obs: ObservationSet, base: str, default_branch: str) -> dict[str, dict[str, Any]]:
         since = timeutil.minus_days(self.now, PULSE["window_days"])
@@ -812,7 +847,13 @@ class GitHubAdapter:
         except ApiFailure as exc:
             obs.add(_failure_observation(INV_COMMITS, "series", exc, common))
             return {}
-        items.sort(key=lambda c: (c["committed_at"], c["sha"]))
+        # A push between two pages shifts the listing: the same commit comes
+        # back twice (and another may be skipped). Each commit is counted once,
+        # and a shifted listing is not complete.
+        unique = {item["sha"]: item for item in items}
+        shifted = len(unique) != len(items)
+        items = sorted(unique.values(), key=lambda c: (c["committed_at"], c["sha"]))
+        complete = complete and not shifted
         obs.add(
             Observation(
                 observation_id=INV_COMMITS,
@@ -820,7 +861,7 @@ class GitHubAdapter:
                 value_type="series",
                 value=items,
                 coverage={"window_start": timeutil.format_ts(since), "window_end": self.observed_at, "complete": complete, "branch": default_branch},
-                reason_code=None if complete else self.client.incomplete_reason(),
+                reason_code=None if complete else (LISTING_SHIFTED if shifted else self.client.incomplete_reason()),
                 evidence_ref={"endpoint": path, "branch": default_branch},
                 **common,
             )
@@ -1226,6 +1267,8 @@ class GitHubAdapter:
         app = suite.get("app")
         app_slug = None if app is None else _optional_text(path, _object(path, app, f"{where} app").get("slug"), f"{where} app.slug")
         count = _integer(path, suite.get("latest_check_runs_count"), f"{where} latest_check_runs_count")
+        # The parent record carries the url into the bundle; untyped, a number there failed the canonical encoder.
+        _optional_text(path, suite.get("url"), f"{where} url")
         return {"raw": suite, "app_slug": app_slug, "latest_check_runs_count": count}
 
     def _collect_ci(self, obs: ObservationSet, base: str, default_branch: str, commits_by_sha: dict[str, dict[str, Any]]) -> None:
@@ -1249,6 +1292,7 @@ class GitHubAdapter:
 
         parents_by_sha: dict[str, list[dict[str, Any]]] = {}
         runs_complete = True
+        runs_shifted = False
         attempts_complete = True
         runs_failure: Exception | None = None
         runs_seen = 0
@@ -1259,6 +1303,7 @@ class GitHubAdapter:
                     {"branch": default_branch, "created": f">={timeutil.utc_day(since)}"},
                     MAX_RUN_PAGES,
                     items_key="workflow_runs",
+                    total_key="total_count",
                 )
             except (ApiFailure, NetworkFailure) as exc:
                 runs_failure = exc
@@ -1266,15 +1311,28 @@ class GitHubAdapter:
             attempt_lookups = 0
             runs_path = f"{base}/actions/runs"
             try:
+                seen_runs: set[int] = set()
                 for run in _rows(runs_path, runs):
                     # Every run is validated before the window is applied: a run
                     # whose head cannot be read is not an out-of-window run
-                    # (PV-AUDIT-GITHUB-CI-PAYLOAD-001).
+                    # (PV-AUDIT-GITHUB-CI-PAYLOAD-001). The fields the parent
+                    # record carries into the bundle are typed too: a number
+                    # where a name belongs would otherwise fail the canonical
+                    # encoder and cost the whole project its bundle.
                     sha = _text(runs_path, run.get("head_sha"), "head_sha")
                     run_id = _integer(runs_path, run.get("id"), "id", 1)
                     current_attempt = _integer(runs_path, run.get("run_attempt"), f"run {run_id} run_attempt", 1)
                     _text(runs_path, run.get("status"), f"run {run_id} status")
                     _optional_text(runs_path, run.get("conclusion"), f"run {run_id} conclusion")
+                    for field in ("name", "event", "html_url"):
+                        _optional_text(runs_path, run.get(field), f"run {run_id} {field}")
+                    _optional_integer(runs_path, run.get("workflow_id"), f"run {run_id} workflow_id")
+                    if run_id in seen_runs:
+                        # Page-number pagination over a list that grew between
+                        # pages repeats a run, and may have skipped another.
+                        runs_shifted = True
+                        continue
+                    seen_runs.add(run_id)
                     if sha not in commits_by_sha:
                         continue
                     runs_seen += 1
@@ -1319,13 +1377,20 @@ class GitHubAdapter:
             planned = sorted(window_commits, key=lambda c: (c["committed_at"], c["sha"]), reverse=True)
             suites_planned = len(planned)
             for commit in planned[:MAX_SUITE_REVISIONS]:
-                suites_sampled += 1
                 try:
                     suites, page_complete = self.client.paginate(f"{base}/commits/{commit['sha']}/check-suites", {}, MAX_SUITE_PAGES, items_key="check_suites")
                 except (ApiFailure, NetworkFailure) as exc:
                     suites_failure = exc
                     suites_stop = exc.reason_code if isinstance(exc, ApiFailure) else "NETWORK"
                     break
+                if not page_complete and not suites:
+                    # The budget refused the first page: this revision was not
+                    # examined at all, and must not be counted as if it had
+                    # shown no suites (that made ci.configured a false "false").
+                    suites_pages_complete = False
+                    suites_stop = suites_stop or self.client.incomplete_reason()
+                    break
+                suites_sampled += 1
                 if not page_complete:
                     suites_pages_complete = False
                     suites_stop = suites_stop or self.client.incomplete_reason()
@@ -1368,7 +1433,8 @@ class GitHubAdapter:
             obs.add(_failure_observation(CI_CONFIGURED, "boolean", workflows_failure, common_conf))
         elif suites_failure is not None:
             obs.add(_failure_observation(CI_CONFIGURED, "boolean", suites_failure, common_conf))
-        elif window_commits and suites_sampled < len(window_commits):
+        elif window_commits and not suites_complete:
+            # "false" needs every planned revision read to its last page.
             obs.add(Observation(observation_id=CI_CONFIGURED, status=UNKNOWN, value_type="boolean", reason_code="SAMPLE_INCOMPLETE", **common_conf))
         else:
             obs.add(Observation(observation_id=CI_CONFIGURED, status=AVAILABLE, value_type="boolean", value=False, evidence_ref={"workflows_total": 0, "check_suites_sampled": suites_sampled}, **common_conf))
@@ -1383,9 +1449,11 @@ class GitHubAdapter:
             reason = suites_failure.reason_code if isinstance(suites_failure, ApiFailure) else "NETWORK"
             self.notes.append(f"CHECK_SUITES_UNAVAILABLE:{reason}")
         records = github_ci.build_revision_records(window_commits, parents_by_sha)
-        complete = runs_complete and attempts_complete and suites_complete and (commits_obs.status == AVAILABLE)
+        complete = runs_complete and not runs_shifted and attempts_complete and suites_complete and (commits_obs.status == AVAILABLE)
         reason = None
-        if not runs_complete:
+        if runs_shifted:
+            reason = LISTING_SHIFTED
+        elif not runs_complete:
             reason = self.client.incomplete_reason()
         elif not attempts_complete:
             reason = "ATTEMPT_HISTORY_INCOMPLETE"

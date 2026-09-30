@@ -157,6 +157,24 @@ accepted judgements, and their `rule_id` moved with them.
   bundles written by renderers v1 to v3 are bound by their report digest and
   are now reported as such; replaying them needs the historical renderers,
   which this version does not carry.
+- **Collection no longer claims completeness it did not have** (review of
+  2026-09-30). A filtered `/actions/runs` query stops at 1,000 results and
+  answers the next page empty; that empty page was read as the end, so a busy
+  repository's oldest runs (and their failures) vanished from an `AVAILABLE`
+  series. The listing is now read against the provider's `total_count` and
+  is `PARTIAL` when it ends short. A listing that repeats a commit or a run
+  between pages (a push during pagination) counts it once and is `PARTIAL`
+  with `LISTING_SHIFTED`; it used to count it twice as complete evidence. A
+  revision whose check-suite page the budget refused was counted as
+  examined, which could make `ci.configured` a positive `false`; it is now
+  `UNKNOWN / SAMPLE_INCOMPLETE`. Failures that escaped the inventory boundary
+  and cost the project its bundle are now declared: `http.client`
+  exceptions, a timeout while reading an error body, JSON nested past the
+  decoder's depth, instants outside the representable range (a register
+  date of `0001-01-01T00:00:00+01:00`), register files with non-string
+  content, no `size`, invalid base64 or more bytes than the bound, and run or
+  suite fields (`name`, `event`, `html_url`, `workflow_id`, `url`) of the
+  wrong type, which failed the canonical encoder.
 - **A build over evidence derived under another configuration is refused**
   (issue #27, `CONFIG_MISMATCH`). `observe` records the digest of the
   configuration its aggregates were derived under; `build` with different

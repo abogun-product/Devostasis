@@ -259,6 +259,19 @@ permanent research case identifiers, and none of these rows claims one.
 | GH-CACHE-INTEGRITY | a cache entry is replayed only when complete and still hashing to its digest; anything else is a miss and one refetch (PV-AUDIT-GITHUB-CACHE-INTEGRITY-001) | `test_gh_cache_integrity_01_02_05_unreadable_metadata_is_a_miss_never_an_exception`, `test_gh_cache_integrity_03_07_a_body_that_no_longer_hashes_to_its_digest_is_not_replayed`, `test_gh_cache_integrity_04_06_a_304_over_an_invalid_entry_refetches_once_and_a_valid_one_replays` |
 | CANON-NONFINITE / DECIMAL / JSON-PARSER / UNICODE | the canonical decoder rejects non-finite constants, decimal and exponent numbers, duplicate members and unpaired surrogates; integers of any size and valid Unicode survive (PV-AUDIT-CANONICAL-*-001) | `test_canon_nonfinite_and_decimal_tokens_reject_at_the_decoder`, `test_canon_decimal_07_integers_of_any_size_stay_integers`, `test_canon_json_parser_a_member_named_twice_is_rejected_not_collapsed`, `test_canon_unicode_01_04_an_unpaired_surrogate_is_rejected`, `test_canon_unicode_05_08_a_valid_pair_and_ordinary_unicode_survive`, `test_canon_unicode_06_07_a_direct_surrogate_value_or_key_is_a_canonicalization_error_not_a_unicode_error` |
 
+## Collection completeness (review of 2026-09-30)
+
+Implementation-local labels, as above.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| runs search ceiling | a workflow-runs listing that ends short of the provider's `total_count` (the 1,000-result search ceiling) is PARTIAL; a `total_count` that is not a count is a declared failure | `test_a_runs_listing_that_ends_short_of_the_providers_total_is_partial`, `test_a_total_count_that_is_not_a_count_is_a_declared_failure` |
+| shifted listing | a listing that repeats a commit or a run between pages counts it once and is PARTIAL with `LISTING_SHIFTED` | `test_a_commit_listing_that_repeats_a_commit_between_pages_counts_it_once_and_is_partial`, `test_a_runs_listing_that_repeats_a_run_is_partial_and_the_run_counts_once` |
+| unexamined revision | a revision whose first check-suite page the budget refused is not examined, and `ci.configured` is not a false nobody observed | `test_a_revision_the_budget_refused_is_not_examined_and_configured_is_not_a_false_nobody_observed` |
+| transport failures | `http.client` failures are network failures; an unreadable error body keeps its status; a body nested past the decoder's depth is `MALFORMED_RESPONSE` | `test_http_client_failures_are_network_failures`, `test_an_error_body_that_cannot_be_read_keeps_the_status`, `test_a_body_nested_past_the_decoder_depth_is_a_malformed_response` |
+| out-of-range instants and registers | an instant outside the representable range is a `ValueError`; a register file with non-string content, no size, invalid base64, excessive nesting or more bytes than the bound is a declared failure | `test_an_out_of_range_instant_is_a_value_error_not_an_overflow`, `test_a_malformed_register_file_is_a_declared_failure_not_an_exception` |
+| parent fields typed | a run or suite field the parent record carries into the bundle is typed, so a number there is `UNEXPECTED_PAYLOAD`, not a lost bundle | `test_an_untyped_run_field_is_a_declared_payload_failure_not_a_lost_bundle`, `test_an_untyped_suite_url_is_a_declared_payload_failure` |
+
 ## Band ordering (PV-BAND-ORDER-001)
 
 The fifteen cases the accepted contract requires, under the names it gives

@@ -265,7 +265,7 @@ def test_an_invalid_register_reaches_the_snapshot_as_an_error_observation():
     routes[f"{BASE}/contents/.devostasis/targets.json"] = (
         200,
         {},
-        {"type": "file", "encoding": "base64", "content": base64.b64encode(register.encode("utf-8")).decode("ascii")},
+        {"type": "file", "size": len(register.encode("utf-8")), "encoding": "base64", "content": base64.b64encode(register.encode("utf-8")).decode("ascii")},
     )
     client = GitHubClient(FakeTransport(routes))
     project = single_project("acme/widget", planning={"source": "file", "path": ".devostasis/targets.json"})
@@ -410,7 +410,7 @@ def test_an_invalid_date_reaches_the_snapshot_as_an_error_observation():
     routes[f"{BASE}/contents/.devostasis/targets.json"] = (
         200,
         {},
-        {"type": "file", "encoding": "base64", "content": base64.b64encode(register.encode("utf-8")).decode("ascii")},
+        {"type": "file", "size": len(register.encode("utf-8")), "encoding": "base64", "content": base64.b64encode(register.encode("utf-8")).decode("ascii")},
     )
     targets = _observe(routes, _file_planning_project()).get(INV_TARGETS)
     assert targets.status == ERROR and targets.reason_code == "INVALID_REGISTER"
@@ -521,7 +521,8 @@ def test_an_access_failure_after_four_revisions_makes_the_sample_partial_and_kee
     obs, _, _ = _collect(routes)
     item = obs.get(CI_REVISIONS)
     assert item.status == PARTIAL and item.reason_code == "CHECK_SUITES_INCOMPLETE"
-    assert item.coverage["suites_stop_reason"] == "FORBIDDEN" and item.coverage["suite_revisions_examined"] == 5
+    assert item.coverage["suites_stop_reason"] == "FORBIDDEN"
+    assert item.coverage["suite_revisions_examined"] == 4, "the revision whose request failed was not examined"
     assert "CHECK_SUITES_UNAVAILABLE:FORBIDDEN" in obs.receipt.capability_notes
     failed = [record for record in item.value if record["history_state"] == "FAILURE_OBSERVED"]
     assert len(failed) == 1, "an observed failure is retained"

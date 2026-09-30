@@ -28,7 +28,12 @@ def parse_ts(value: str) -> datetime:
     parsed = datetime.fromisoformat(text)
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
-    return parsed.astimezone(UTC).replace(microsecond=0)
+    try:
+        return parsed.astimezone(UTC).replace(microsecond=0)
+    except OverflowError as exc:
+        # 0001-01-01T00:00:00+01:00 is a valid lexeme whose UTC instant does
+        # not exist; every caller handles a bad timestamp as ValueError.
+        raise ValueError(f"timestamp {value!r} is outside the representable range") from exc
 
 
 def format_ts(value: datetime) -> str:

@@ -204,10 +204,35 @@ def _validate_observations(where: str, observations: Any) -> None:
         raise VectorError(f"{where}: observations must be a non-empty list")
 
 
+CODE_LIST_KEYS = ("diagnostics", "diagnostics_absent", "reason_codes", "reason_codes_absent", "coverage_notes", "coverage_notes_absent")
+
+
+def _require_statement(where: str, holder: dict[str, Any], keys: tuple[str, ...]) -> None:
+    """An expectation that states nothing cannot fail, so it is refused.
+
+    An empty object or list asserts nothing, and an empty code matches every
+    code emitted (codes match by prefix): either would let a typo or an
+    unfinished case pass as proof.
+    """
+    for key in keys:
+        if key not in holder:
+            continue
+        value = holder[key]
+        if isinstance(value, (dict, list)) and not value:
+            raise VectorError(f"{where}: {key} is empty and states nothing")
+        if key in CODE_LIST_KEYS:
+            if not isinstance(value, list):
+                raise VectorError(f"{where}: {key} must be a list of codes")
+            for code in value:
+                if not isinstance(code, str) or not code:
+                    raise VectorError(f"{where}: {key} holds {code!r}, which is not a code (an empty prefix matches everything)")
+
+
 def _validate_vital_expect(where: str, expect: Any) -> None:
     if expect is None:
         raise VectorError(f"{where}: missing keys ['expect']")
     _require_keys(f"{where} expect", expect, VITAL_EXPECT_KEYS, REQUIRED_VITAL_EXPECT_KEYS)
+    _require_statement(f"{where} expect", expect, ("derived",) + CODE_LIST_KEYS)
 
 
 def _validate_vital(where: str, given: dict[str, Any], expect: Any) -> None:
@@ -250,6 +275,7 @@ def _validate_delta_pair(where: str, pair: dict[str, Any], expect: Any) -> None:
         if vital_id not in CORE_VITAL_IDS:
             raise VectorError(f"{where} expect: unknown vital {vital_id!r}")
         _require_keys(f"{where} expect.{vital_id}", row, DELTA_ROW_EXPECT_KEYS, {"transition_class"})
+        _require_statement(f"{where} expect.{vital_id}", row, CODE_LIST_KEYS)
 
 
 def _validate_delta(where: str, given: dict[str, Any], expect: Any) -> None:
@@ -310,10 +336,16 @@ def _validate_ci(where: str, given: dict[str, Any], expect: Any) -> None:
     _require_keys(f"{where} expect", expect, CI_EXPECT_KEYS, set())
     if not expect:
         raise VectorError(f"{where} expect: states nothing; a ci case checks revisions, integrity or both")
+    _require_statement(f"{where} expect", expect, ("revisions", "integrity"))
     for sha, row in (expect.get("revisions") or {}).items():
         _require_keys(f"{where} expect.revisions.{sha}", row, CI_REVISION_EXPECT_KEYS, set())
+        if not row:
+            raise VectorError(f"{where} expect.revisions.{sha}: states nothing")
+        _require_statement(f"{where} expect.revisions.{sha}", row, ("parents",))
         for index, parent in enumerate(row.get("parents") or []):
             _require_keys(f"{where} expect.revisions.{sha}.parents[{index}]", parent, CI_PARENT_EXPECT_KEYS, set())
+            if not parent:
+                raise VectorError(f"{where} expect.revisions.{sha}.parents[{index}]: states nothing")
     if "integrity" in expect:
         _validate_vital_expect(f"{where} integrity", expect["integrity"])
 
@@ -329,6 +361,7 @@ def _validate_activity(where: str, given: dict[str, Any], expect: Any) -> None:
     _require_keys(f"{where} expect", expect, ACTIVITY_EXPECT_KEYS, set())
     if not expect:
         raise VectorError(f"{where} expect: states nothing")
+    _require_statement(f"{where} expect", expect, ("interval", "classes") + CODE_LIST_KEYS)
     if "interval" in expect:
         _require_keys(f"{where} expect.interval", expect["interval"], ACTIVITY_INTERVAL_KEYS, set())
     for name, counts in (expect.get("classes") or {}).items():

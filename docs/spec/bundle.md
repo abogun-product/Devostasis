@@ -134,14 +134,23 @@ directory and performs, in this order:
 5. the metadata the manifest repeats is bound to what the identity hashes
    (issue #12 finding 4): every identity field the manifest copies from the
    preimage is present in both copies and agrees with it
-   (`IDENTITY_FIELD_MISMATCH`); which fields a bundle must carry is decided
-   by its lineage, the exact `artifact_contract_version` of the preimage
-   (`devostasis.bundle.v1` predates `gauge_contract` and `demand_contract`),
-   a lineage this verifier does not know is `UNSUPPORTED_ARTIFACT_LINEAGE`,
-   and a `renderer_version` that is not one of the renderers its lineage was
+   (`IDENTITY_FIELD_MISMATCH`); the preimage has exactly the field set of
+   its lineage, the exact `artifact_contract_version` it names
+   (`devostasis.bundle.v1`: twenty fields, without `gauge_contract`,
+   `demand_contract` and their digests; `devostasis.bundle.v2`: twenty-four),
+   so a field deleted or added is `IDENTITY_PREIMAGE_SHAPE_MISMATCH` (without
+   `source_receipts_digest` the receipt was simply not checked); a lineage
+   this verifier does not know is `UNSUPPORTED_ARTIFACT_LINEAGE`, and a
+   `renderer_version` that is not one of the renderers its lineage was
    written with is `RENDERER_VERSION_NOT_IN_LINEAGE`
    (`PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001`: a deleted manifest copy of
-   `renderer_version` used to pass and skip the replay it gates); the manifest receipt
+   `renderer_version` used to pass and skip the replay it gates); every member
+   the preimage hashes (not a disabled marker) is declared in the manifest,
+   else `IDENTITY_MEMBER_NOT_DECLARED` (a bundle that dropped `delta.json` or
+   `snapshot.json` with its entry kept its id, stopped the replay and
+   verified with any report); `adapters`, which the report prints, is exactly
+   the provider of the bound identity and the collector of the bound receipt
+   (`ADAPTERS_MISMATCH`); the manifest receipt
    hashes to `source_receipts_digest` (`RECEIPT_DIGEST_MISMATCH`), the
    receipt inside `observations.json` is that receipt
    (`RECEIPT_COPY_MISMATCH`), `snapshot.json` names the evidence the bundle

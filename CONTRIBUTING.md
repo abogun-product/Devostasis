@@ -61,7 +61,11 @@ previous one.
    repository "looking right" is not an argument.
 4. **Conformance cases keep their identifiers.** Tests are named after the
    research case they implement (C1..C7, T1..T9, R1..R57, V1-01..V1-15,
-   ART-01..ART-22, RPT-1..RPT-10, ORDER-01..15). A new rule needs a new case
+   ART-01..ART-25, RPT-1..RPT-10, ORDER-01..15, INT-UNKNOWN-01..06,
+   INT-TOTAL-01..14, CLU-INCOMPLETE-01..20, CLU-PARTIAL-TRUST-01..08,
+   ACT-COV-01..05); a repair of a research audit uses the regression labels
+   the audit names, and anything else is an implementation-local label that
+   never claims a research identifier (`DEV-ORDER-01..03`). A new rule needs a new case
    with a new identifier; identifiers are never reused. A case can be a pytest
    function or an executable vector under `tests/vectors`
    ([docs/spec/vectors.md](docs/spec/vectors.md)); either way it is cited in

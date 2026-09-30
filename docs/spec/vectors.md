@@ -6,9 +6,12 @@ states evidence and expected result, and the runner executes it. This page is
 the format; `src/devostasis/vectors.py` is the runner, `devostasis vectors` the
 command, and `schemas/conformance-vector.schema.json` the published schema.
 
-The format exists before the vectors it will carry: the specification names 70
-cases with no test behind them (debt D-1, target B1), and `PV-TEST-001` will
-deliver them. Authored against this format they arrive executable instead of
+The format existed before the vectors it carries: the specification named 70
+cases with no test behind them (debt D-1, target B1). Since 0.1.9 the accepted
+exact vectors of the research process are in the corpus (seven of those 70,
+with sixty-three still to come), beside the accepted families transcribed
+from their contracts (`ORDER`, `INT-UNKNOWN`, `INT-TOTAL`, `CLU-INCOMPLETE`,
+`ACT-COV`). Authored against this format a case arrives executable instead of
 needing translation.
 
 ## A vector file

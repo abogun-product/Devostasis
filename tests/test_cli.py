@@ -108,3 +108,25 @@ def test_build_accepts_a_receipt_that_carries_a_placeholder_instead_of_a_digest(
     obs_path = tmp_path / "observations.json"
     full_inputs(obs_set()).save(obs_path)
     assert main(["build", "--observations", str(obs_path), "--store", str(tmp_path / "store"), "--debt-label", "anything"]) == 0
+
+
+def test_verify_does_not_claim_a_replay_it_did_not_perform(tmp_path, capsys):
+    """A bundle of an earlier renderer is bound by its digest, not replayed; the message says which."""
+    from devostasis import canonical
+
+    obs_path = tmp_path / "observations.json"
+    full_inputs(obs_set()).save(obs_path)
+    store = tmp_path / "store"
+    assert main(["build", "--observations", str(obs_path), "--store", str(store)]) == 0
+    latest = store / "projects" / "github.com" / "acme" / "widget" / "latest"
+    assert main(["verify", "--bundle", str(latest)]) == 0
+    assert "report reproducibility all match" in capsys.readouterr().out
+
+    manifest = json.loads((latest / "manifest.json").read_text("utf-8"))
+    manifest["renderer_version"] = manifest["identity_preimage"]["renderer_version"] = "devostasis.render.v3"
+    manifest["bundle_id"] = canonical.sha256_hex(canonical.canonical_bytes(manifest["identity_preimage"]))
+    (latest / "manifest.json").write_bytes(canonical.pretty_json(manifest).encode("utf-8"))
+    assert main(["verify", "--bundle", str(latest)]) == 0
+    out = capsys.readouterr().out
+    assert "not replayed" in out and "devostasis.render.v3" in out
+    assert "reproducibility all match" not in out

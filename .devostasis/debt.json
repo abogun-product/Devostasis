@@ -7,8 +7,8 @@
       "title": "Conformance cases named in the specification have no executable fixture",
       "state": "open",
       "opened": "2026-09-05",
-      "updated": "2026-09-06",
-      "cost": "docs/spec/conformance.md names T2-T9, R1-R53, ART-05, ART-08-ART-11, ART-15 and RPT-4-RPT-9 with no test behind them, so the public coverage claim is larger than the proof. Since 0.1.8 a case can be written as an executable vector and the runner exists (target B1, docs/spec/vectors.md), but not one of the 70 has evidence yet: the vectors are PV-TEST-001 in the research queue. The interest is unchanged until they arrive."
+      "updated": "2026-09-30",
+      "cost": "docs/spec/conformance.md named T2-T9, R1-R53, ART-05, ART-08-ART-11, ART-15 and RPT-4-RPT-9 with no test behind them, so the public coverage claim is larger than the proof. The vector format and runner exist since 0.1.8, and 0.1.9 transcribed the accepted exact vectors the research process delivered (T2, R1, R2, R3, R4, T4, T5, T7) together with whole accepted families (INT-UNKNOWN, INT-TOTAL, CLU-INCOMPLETE, ACT-COV); sixty-three of the seventy named cases still have no evidence, and several (T3, T6, T8, the bundle and store cases) need a conformance surface this format does not yet carry (issues #20, #23)."
     },
     {
       "id": "D-2",

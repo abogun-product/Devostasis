@@ -8,7 +8,7 @@ UNINSTRUMENTED plus raw diagnostics (PV-VITALS-V1-002).
 
 from __future__ import annotations
 
-from ..observations import PARTIAL, ObservationSet
+from ..observations import FRESH, PARTIAL, ObservationSet
 from .common import (
     EVAL_AVAILABLE,
     EVAL_DEGRADED,
@@ -85,7 +85,9 @@ def evaluate(obs: ObservationSet) -> VitalResult:
         return _result(obs, band, EVAL_AVAILABLE, SEM_EXACT, None, derived, explanation, [])
 
     open_obs = obs.get(OPEN)
-    if open_obs is not None and open_obs.status == PARTIAL and open_obs.has_value and as_int(open_obs.value) > 0:
+    # A stale or freshness-unknown partial register proves nothing about now
+    # (vitals.md: configured debt evidence that is stale yields UNKNOWN).
+    if open_obs is not None and open_obs.status == PARTIAL and open_obs.freshness == FRESH and open_obs.has_value and as_int(open_obs.value) > 0:
         open_count = as_int(open_obs.value)
         derived = dict(derived_base, open_count=open_count, open_count_semantics="LOWER_BOUND")
         return _result(

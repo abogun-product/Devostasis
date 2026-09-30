@@ -55,7 +55,33 @@ and an unsupported conclusion reach the Vital as `UNKNOWN`.
 | INT-UNKNOWN-06 | a newest UNKNOWN over failure-bearing history stays UNKNOWN and the failure is not erased | `vector:INT-UNKNOWN-06` |
 | partial series | a required revision series that is PARTIAL is UNKNOWN with no band, its counts visible (PV-REV-TEST-003) | `test_partial_revision_series_is_unknown_with_its_evidence_preserved` |
 | sample strength | one to three decisive revisions are SPARSE with `CI_SPARSE_SAMPLE`; four are ESTABLISHED | `test_sparse_samples_declare_their_strength_and_established_ones_do_not_carry_the_diagnostic` |
-| unresolved superset | `possible_bands` of a still-verifying newest revision holds every band a completion reaches, never a fixed tail (#12 finding 3) | `test_the_unresolved_superset_is_derived_from_the_completions_the_evidence_admits` |
+| unresolved newest revision | over every history, a newest revision still being verified yields FAILING exactly where the established FAILING predicate already holds and no band elsewhere; the superset this rule version first carried, which could omit the band it emitted, is gone (#12 finding 3, PV-INTEGRITY-TOTALITY-001) | `test_an_unresolved_newest_revision_never_emits_a_band_its_history_does_not_already_prove`, `test_current_unresolved_is_unknown_unless_failing_is_already_established`, `test_a_newest_revision_with_one_workflow_passed_and_one_running_is_already_counted_and_still_unresolved` |
+| verdict vocabulary | a current verdict outside the canonical vocabulary is read as UNKNOWN, never as a non-decisive state an older pass speaks for | `test_a_verdict_outside_the_vocabulary_fails_closed_instead_of_falling_back_to_an_older_pass` |
+| record consistency | a record whose contribution contradicts its own history state is a defect, not a pass | `test_a_record_whose_contribution_contradicts_its_history_is_a_defect_not_a_pass` |
+| unusable series | an unusable required series is UNKNOWN even beside a positive `ci.configured = false` (precedence A of PV-INTEGRITY-TOTALITY-001) | `test_an_unusable_series_is_unknown_even_beside_a_positive_not_configured` |
+
+## Integrity: totality (PV-INTEGRITY-TOTALITY-001)
+
+Accepted by `PV-REV-INT-TOTALITY-001` and adopted in 0.1.9 under the same
+unreleased rule `integrity.bands.v1+ci-unit-004`. The cases are transcribed
+from the contract's Required conformance cases section.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| INT-TOTAL-01 | configured, newest unresolved, no decisive history: UNKNOWN with no band, never NO_DECISIVE_RUNS | `vector:INT-TOTAL-01` |
+| INT-TOTAL-02 | two passes and a newest unresolved revision: UNKNOWN, never SPARSE through an older pass | `vector:INT-TOTAL-02` |
+| INT-TOTAL-03 | one pass, one failure, newest unresolved: UNKNOWN, neither SPARSE_MIXED nor FAILING | `vector:INT-TOTAL-03` |
+| INT-TOTAL-04 | four passes, newest unresolved: UNKNOWN, never CLEAN | `vector:INT-TOTAL-04` |
+| INT-TOTAL-05 | five decisive, one failure, newest unresolved: UNKNOWN, never FLAKY | `vector:INT-TOTAL-05` |
+| INT-TOTAL-06 | four decisive, one failure (the established FAILING predicate), newest unresolved: DEGRADED / FAILING / EXACT, no `possible_bands` | `vector:INT-TOTAL-06` |
+| INT-TOTAL-07 | the same region under RAW_RUNS is PROVISIONAL_NONINDEPENDENT | not materialized: this implementation has no RAW_RUNS sample path (issue #23) |
+| INT-TOTAL-08 | not configured, no decisive evidence, one NOT_EXECUTED record: UNINSTRUMENTED with `CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY` | `vector:INT-TOTAL-08` |
+| INT-TOTAL-09 | the same with one NON_VERIFY_TERMINAL record | `vector:INT-TOTAL-09` |
+| INT-TOTAL-10 | configured with only non-decisive records stays NO_DECISIVE_RUNS | `vector:INT-TOTAL-10` |
+| INT-TOTAL-11 | a newest UNKNOWN stays UNKNOWN over any history, an established FAILING one included | `vector:INT-TOTAL-11` |
+| INT-TOTAL-12 | a PARTIAL required series stays UNKNOWN whatever it holds | `vector:INT-TOTAL-12` |
+| INT-TOTAL-13 | a failure followed by a re-run in progress keeps its contribution in every enumeration order | `vector:INT-TOTAL-13` |
+| INT-TOTAL-14 | equivalent GitHub and GitLab evidence give one result | not materialized: there is no GitLab adapter yet (target C1, issue #34) |
 
 ## Clutter: incomplete evidence (PV-CLUTTER-INCOMPLETE-001, PV-ISSUE-026-RECONCILE-001)
 
@@ -215,6 +241,10 @@ permanent research case identifiers, and none of these rows claims one.
 | project identity binding | the bundle the tail names must carry this project's identity, or its locator for a store without identities | `test_another_projects_bundle_inside_the_history_tree_is_refused_by_identity`, `test_without_identities_the_locator_binds_the_bundle`, `test_an_honest_store_still_verifies_and_compares` |
 | malformed index | an index of the wrong shape is a gap and is never appended to | `test_an_index_of_the_wrong_shape_is_a_history_gap_and_is_never_appended_to` |
 | identity field presence | every identity field the manifest repeats is present in both copies and equal; the exact stored lineage decides which fields are required and which renderers a bundle may name; deleting the manifest `renderer_version` no longer skips the report replay silently (PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001) | `test_a_duplicated_identity_field_deleted_from_either_copy_fails_verification`, `test_deleting_the_renderer_version_no_longer_skips_the_report_replay_silently`, `test_an_unknown_lineage_or_a_renderer_outside_its_lineage_fails_verification`, `test_the_lineage_table_carries_the_lineage_and_renderer_this_version_writes` |
+| preimage shape | the preimage has exactly its lineage's field set; a deleted `source_receipts_digest` no longer switches the receipt binding off (review of 2026-09-30) | `test_a_preimage_field_added_or_removed_is_an_unsupported_shape` |
+| hashed members | a member the identity hashes, deleted together with its manifest entry, fails instead of stopping the replay (review of 2026-09-30) | `test_a_hashed_member_deleted_with_its_entry_no_longer_verifies` |
+| adapter provenance | the `adapters` line the report prints is the provider and collector the identity binds (review of 2026-09-30) | `test_the_adapters_the_report_names_are_bound_to_the_identity` |
+| honest verify | `verify` claims report reproducibility only for a report it replayed; an earlier renderer's report is bound by its digest and said to be (review of 2026-09-30) | `test_verify_does_not_claim_a_replay_it_did_not_perform` |
 | identity lookup fails closed | an unreadable index elsewhere in the store makes the immutable-id lookup fail rather than pass for absence (PV-AUDIT-HISTORYSTORE-001) | `test_an_unreadable_index_elsewhere_makes_the_identity_lookup_fail_closed` |
 | FLEET-COV | an unreadable or malformed project index, or a present but unreadable demand member, stops the fleet surfaces instead of dropping the project; an absent demand member stays the legacy null case (PV-AUDIT-FLEET-INDEX-001, PV-AUDIT-FLEET-COVERAGE-001) | `test_a_corrupt_project_index_stops_the_fleet_surfaces_instead_of_dropping_the_project`, `test_a_single_corrupt_project_is_a_failure_not_an_empty_store`, `test_a_present_but_unreadable_demand_member_is_not_a_pre_demand_bundle`, `test_an_absent_demand_member_is_a_pre_demand_bundle_and_an_unreadable_one_is_a_failure`, `test_the_run_command_reports_a_fleet_surface_failure_as_a_store_error` |
 | HISTORY-PUBLISH | the index is replaced, never truncated; a failure between the index and the copy leaves a stale copy that is recovered, not a gap; a copy of an unknown bundle is still refused (PV-AUDIT-HISTORYSTORE-ATOMIC-PUBLICATION-001) | `test_the_index_is_replaced_never_truncated`, `test_a_stale_copy_left_by_an_interrupted_publication_is_recovered_not_a_gap`, `test_leftovers_of_an_interrupted_latest_publication_are_cleared_by_the_next`, `test_a_copy_of_a_bundle_the_index_does_not_know_is_still_refused` |
@@ -228,6 +258,44 @@ permanent research case identifiers, and none of these rows claims one.
 | GH-REDIRECT-AUTH | a redirect off the API origin is refused and the credential never leaves; same-origin redirects still work (PV-AUDIT-GITHUB-REDIRECT-AUTH-001) | `test_gh_redirect_auth_a_redirect_to_another_origin_is_refused_and_the_token_never_leaves`, `test_gh_redirect_auth_a_same_origin_redirect_is_followed_with_the_credential`, `test_gh_redirect_auth_the_origin_is_the_configured_api_base`, `test_gh_redirect_auth_a_refused_redirect_is_a_declared_transport_failure` |
 | GH-CACHE-INTEGRITY | a cache entry is replayed only when complete and still hashing to its digest; anything else is a miss and one refetch (PV-AUDIT-GITHUB-CACHE-INTEGRITY-001) | `test_gh_cache_integrity_01_02_05_unreadable_metadata_is_a_miss_never_an_exception`, `test_gh_cache_integrity_03_07_a_body_that_no_longer_hashes_to_its_digest_is_not_replayed`, `test_gh_cache_integrity_04_06_a_304_over_an_invalid_entry_refetches_once_and_a_valid_one_replays` |
 | CANON-NONFINITE / DECIMAL / JSON-PARSER / UNICODE | the canonical decoder rejects non-finite constants, decimal and exponent numbers, duplicate members and unpaired surrogates; integers of any size and valid Unicode survive (PV-AUDIT-CANONICAL-*-001) | `test_canon_nonfinite_and_decimal_tokens_reject_at_the_decoder`, `test_canon_decimal_07_integers_of_any_size_stay_integers`, `test_canon_json_parser_a_member_named_twice_is_rejected_not_collapsed`, `test_canon_unicode_01_04_an_unpaired_surrogate_is_rejected`, `test_canon_unicode_05_08_a_valid_pair_and_ordinary_unicode_survive`, `test_canon_unicode_06_07_a_direct_surrogate_value_or_key_is_a_canonicalization_error_not_a_unicode_error` |
+
+## Vitals and vectors (review of 2026-09-30)
+
+Implementation-local labels, as above.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| Pulse over 29 dates | a capped enumeration over all 29 UTC dates the 28-day window touches is evaluated, not a crash | `test_a_capped_enumeration_over_all_29_dates_the_window_touches_is_evaluated_not_a_crash` |
+| Pulse completions | every band an admissible completion reaches is in `possible_bands`, the QUIET threshold included | `test_every_band_a_completion_reaches_is_in_the_possible_set` |
+| Debt freshness | a stale or freshness-unknown partial register is UNKNOWN, never a PRESENT lower bound | `test_a_stale_partial_register_proves_nothing_about_now` |
+| vacuous expectations | an expectation that states nothing (an empty object or list, an empty code) is refused; an exactly compared empty `metric_deltas` is still a statement | `test_an_expectation_that_states_nothing_is_refused`, `test_an_exactly_empty_metric_delta_is_still_a_statement` |
+| schema conditional | every envelope of the corpus satisfies the published schema's value conditional as JSON Schema evaluates it | `test_every_envelope_satisfies_the_schemas_value_conditional` |
+| rule ids documented | every Vital `rule_id` the code declares is in vitals.md | `test_every_vital_rule_id_the_code_declares_is_documented` |
+
+## Store and command line (review of 2026-09-30)
+
+Implementation-local labels, as above.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| index-less scan | without an index, an unreadable or mislabelled bundle directory is a gap, never a comparison against an older bundle and never a baseline; an interrupted write is not a candidate | `test_without_an_index_an_unreadable_newest_bundle_is_a_gap_not_a_comparison_with_an_older_one`, `test_without_an_index_a_single_unreadable_bundle_is_a_gap_not_a_baseline`, `test_an_interrupted_write_is_not_a_candidate` |
+| project index location | a repository named `index.json` is a project, not an index | `test_a_repository_named_index_json_does_not_break_the_store` |
+| reproducible gap reasons | the reasons of a HISTORY_GAP carry no absolute path or exception message; the same damage is one bundle id wherever the store lives | `test_history_gap_reasons_do_not_depend_on_where_the_store_is_checked_out` |
+| fleet surfaces | both fleet surfaces are replaced, never truncated | `test_the_fleet_surfaces_are_replaced_never_truncated` |
+| reporting | a fleet-surface failure comes after every project's result in `run` and after the committed bundle in `build`; a cache that cannot be saved is a warning; a missing or unreadable input is an input error (exit 2), not a traceback | `test_run_reports_every_project_before_a_fleet_surface_error`, `test_a_cache_that_cannot_be_saved_is_a_warning_not_the_end_of_the_run`, `test_build_reports_the_committed_bundle_before_a_fleet_surface_error`, `test_a_missing_or_unreadable_input_is_an_input_error_not_a_traceback` |
+
+## Collection completeness (review of 2026-09-30)
+
+Implementation-local labels, as above.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| runs search ceiling | a workflow-runs listing that ends short of the provider's `total_count` (the 1,000-result search ceiling) is PARTIAL; a `total_count` that is not a count is a declared failure | `test_a_runs_listing_that_ends_short_of_the_providers_total_is_partial`, `test_a_total_count_that_is_not_a_count_is_a_declared_failure` |
+| shifted listing | a listing that repeats a commit or a run between pages counts it once and is PARTIAL with `LISTING_SHIFTED` | `test_a_commit_listing_that_repeats_a_commit_between_pages_counts_it_once_and_is_partial`, `test_a_runs_listing_that_repeats_a_run_is_partial_and_the_run_counts_once` |
+| unexamined revision | a revision whose first check-suite page the budget refused is not examined, and `ci.configured` is not a false nobody observed | `test_a_revision_the_budget_refused_is_not_examined_and_configured_is_not_a_false_nobody_observed` |
+| transport failures | `http.client` failures are network failures; an unreadable error body keeps its status; a body nested past the decoder's depth is `MALFORMED_RESPONSE` | `test_http_client_failures_are_network_failures`, `test_an_error_body_that_cannot_be_read_keeps_the_status`, `test_a_body_nested_past_the_decoder_depth_is_a_malformed_response` |
+| out-of-range instants and registers | an instant outside the representable range is a `ValueError`; a register file with non-string content, no size, invalid base64, excessive nesting or more bytes than the bound is a declared failure | `test_an_out_of_range_instant_is_a_value_error_not_an_overflow`, `test_a_malformed_register_file_is_a_declared_failure_not_an_exception` |
+| parent fields typed | a run or suite field the parent record carries into the bundle is typed, so a number there is `UNEXPECTED_PAYLOAD`, not a lost bundle | `test_an_untyped_run_field_is_a_declared_payload_failure_not_a_lost_bundle`, `test_an_untyped_suite_url_is_a_declared_payload_failure` |
 
 ## Band ordering (PV-BAND-ORDER-001)
 

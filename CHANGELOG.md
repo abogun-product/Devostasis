@@ -3,9 +3,9 @@
 All notable changes to this project are documented here. Semantic changes to a
 contract or a policy always come with a version bump of that contract.
 
-## 0.1.9 (unreleased)
+## 0.1.9 (2026-09-30)
 
-Three things in one release. First, the adoption of the research judgements
+Four things in one release. First, the adoption of the research judgements
 that had been delivered and not adopted, which the roadmap's standing
 obligation puts before queued work: one Integrity and one Clutter rule
 version, one accepted diagnostic under an existing rule, eight accepted exact
@@ -13,11 +13,16 @@ vectors and thirty-one cases of three judgements, plus the vector kinds those
 cases needed. Second, the review pass of 2026-09-22 (issue #30). Third, the
 repairs of the research audits of 2026-09-20 to 2026-09-24, which were
 handed off on Drive and had no record in this repository until the review
-of 2026-09-25 catalogued them in issue #35. No threshold,
-window or gauge changed; the two band rules that changed did so under
-accepted judgements, and their `rule_id` moved with them.
+of 2026-09-25 catalogued them in issue #35. Fourth, the review of
+2026-09-30 (issue #48), which found defects in this release's own new code
+(among them an Integrity superset that could omit the band it emitted,
+replaced by the accepted totality rule) and older ones in verification,
+collection, the store and the command line, and filed what needs a decision
+as #38 to #47. No threshold, window or gauge changed; the two band rules
+that changed did so under accepted judgements, and their `rule_id` moved
+with them.
 
-- **Integrity rule `integrity.bands.v1+ci-unit-004`.** Three accepted
+- **Integrity rule `integrity.bands.v1+ci-unit-004`.** Four accepted
   judgements, one rule version, one `RULE_VERSION_BOUNDARY` per project.
   `PV-REV-INTEGRITY-UNKNOWN-001` (issue #13): a newest in-scope revision whose
   current verdict is `UNKNOWN` never inherits an older decisive verdict; the
@@ -31,10 +36,24 @@ accepted judgements, and their `rule_id` moved with them.
   `DEGRADED` path with a fixed three-band tail called a superset is gone.
   `PV-REV-TEST-VECTORS-002` (issue #21): one to three decisive revisions carry
   `sample_strength = SPARSE` and `CI_SPARSE_SAMPLE`, four or more
-  `ESTABLISHED`. The one degraded path left, a newest revision still being
-  verified, now declares a `possible_bands` derived from the completions the
-  evidence admits: the revision fails, passes, or ends without a verdict.
-  Cases `INT-UNKNOWN-01..06`, `T2`, `R1`, `R2` are executable vectors.
+  `ESTABLISHED`. `PV-INTEGRITY-TOTALITY-001` (accepted by
+  `PV-REV-INT-TOTALITY-001`, #33): a newest revision still being verified is
+  spoken for by no older verdict; the history names a band only when it
+  already satisfies FAILING on its own (four or more decisive revisions, a
+  quarter or more failed), `DEGRADED / FAILING / EXACT`, and every other
+  history is `UNKNOWN` with no band, diagnosed `CI_CURRENT_VERIFY_UNRESOLVED`.
+  This rule version first carried a `possible_bands` derived from the
+  completions instead; the review of 2026-09-30 found it could omit the band
+  it emitted (777 of 7,029 shapes, the commonest being one workflow passed
+  and one still running) and could miss bands a completion reaches, and the
+  accepted contract defines no reachability algorithm at all. A positively
+  unconfigured repository with only non-decisive recent records is
+  `UNINSTRUMENTED` with `CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY`;
+  an unusable series is `UNKNOWN` even beside "not configured"; a verdict
+  outside the vocabulary is `UNKNOWN`, never a fallback to an older pass; a
+  record whose contribution contradicts its history is a defect. Cases
+  `INT-UNKNOWN-01..06`, `INT-TOTAL-01..06` and `08..13`, `T2`, `R1`, `R2` are
+  executable vectors.
 - **Pulse diagnoses issue-only activity** (`PULSE_ISSUE_ONLY_ACTIVITY`,
   permanent case T5, issue #22), under `pulse.bands.v1` as the accepted vector
   requires: provenance, not a judgement about productivity. It is emitted
@@ -130,6 +149,89 @@ accepted judgements, and their `rule_id` moved with them.
   (`OBSERVATIONS_DIGEST_MISMATCH`). A manifest of the wrong shape is a
   problem, not an `AttributeError`. All 308 bundles of the fleet's store
   (both lineages, all four renderers) still verify.
+- **Verification holds the whole identity, not only what a forger left in
+  place** (review of 2026-09-30). The preimage must have exactly its
+  lineage's field set (`IDENTITY_PREIMAGE_SHAPE_MISMATCH`): without
+  `source_receipts_digest` the receipt binding was simply skipped. Every
+  member the preimage hashes must be declared (`IDENTITY_MEMBER_NOT_DECLARED`):
+  a bundle that dropped `delta.json` or `snapshot.json` together with its
+  entry kept its id, stopped the replay and verified with any report. The
+  `adapters` line the report prints must be the provider and collector the
+  identity binds (`ADAPTERS_MISMATCH`). And `verify` no longer says "report
+  reproducibility all match" for a report it did not replay: the 74 stored
+  bundles written by renderers v1 to v3 are bound by their report digest and
+  are now reported as such; replaying them needs the historical renderers,
+  which this version does not carry.
+- **Collection no longer claims completeness it did not have** (review of
+  2026-09-30). A filtered `/actions/runs` query stops at 1,000 results and
+  answers the next page empty; that empty page was read as the end, so a busy
+  repository's oldest runs (and their failures) vanished from an `AVAILABLE`
+  series. The listing is now read against the provider's `total_count` and
+  is `PARTIAL` when it ends short. A listing that repeats a commit or a run
+  between pages (a push during pagination) counts it once and is `PARTIAL`
+  with `LISTING_SHIFTED`; it used to count it twice as complete evidence. A
+  revision whose check-suite page the budget refused was counted as
+  examined, which could make `ci.configured` a positive `false`; it is now
+  `UNKNOWN / SAMPLE_INCOMPLETE`. Failures that escaped the inventory boundary
+  and cost the project its bundle are now declared: `http.client`
+  exceptions, a timeout while reading an error body, JSON nested past the
+  decoder's depth, instants outside the representable range (a register
+  date of `0001-01-01T00:00:00+01:00`), register files with non-string
+  content, no `size`, invalid base64 or more bytes than the bound, and run or
+  suite fields (`name`, `event`, `html_url`, `workflow_id`, `url`) of the
+  wrong type, which failed the canonical encoder.
+- **Workflows, documentation and tests** (review of 2026-09-30).
+  `released-pins.yml` no longer runs on push: the file reaches master only
+  in a release merge, the one moment its pins cannot resolve, and its single
+  push run (a8726f5, 72 seconds before v0.1.8 was tagged) kept this
+  repository's own Integrity `FAILING` for two weeks. The reusable
+  `observe-self.yml` passes `devostasis-ref` to the shell through the
+  environment instead of interpolating it, and trims debt labels without
+  `xargs`, which rewrote quotes and backslashes and failed on an apostrophe.
+  The README's self-observation snippet carries the `permissions` block it
+  needs (a called workflow can only narrow the caller's token, so without it
+  GitHub refuses the run), and deployment.md says that instead of promising
+  `FORBIDDEN` Vitals; its cache snippet keeps the token, `id` and
+  `continue-on-error` of the step it extends; the store layout names a
+  `.gitattributes` so a Windows clone does not break every report digest.
+  `build`'s `CONFIG_MISMATCH` says which part of the configuration it can
+  and cannot be passed. The example fleet table, the vector page, debt D-1,
+  CONTRIBUTING's case families and the `--now` paragraph (which promised
+  what #19 still breaks) say what is true now. The suite no longer sleeps
+  three real seconds, runs from any working directory, and the pin guards
+  are case-insensitive; one register assertion that could not fail now can.
+- **Vitals and vectors** (review of 2026-09-30). Pulse crashed with
+  `IndexError` when a capped commit enumeration covered all 29 UTC dates a
+  28-day window touches (the completion grid stopped at 28 and was empty),
+  which cost the project its bundle; the grid now reaches 29 and includes
+  the one-event QUIET threshold it missed, and an empty set would be
+  `UNKNOWN` as `PV-PULSE-REQUIRED-LOWER-BOUND-001` says. Debt read a stale
+  or freshness-unknown partial register as a `PRESENT` lower bound; it is
+  `UNKNOWN`, as vitals.md always said. The vector runner refuses an
+  expectation that states nothing (an empty object or list, an empty code,
+  which as a prefix matched every code), and the published vector schema
+  requires `status` in its value conditional: without it the schema rejected
+  39 of the 64 vectors the runner accepts. vitals.md lists all seven rule
+  ids (it said four Vitals kept their V0 ids; Clutter moved in this
+  release), and a drift test now reads them from the code.
+- **The store and the command line tell the truth about what they did**
+  (review of 2026-09-30). Without an index, the scan for the newest bundle
+  skipped a directory whose manifest it could not read, so the next run
+  compared against an older bundle, or called a store with history
+  `BASELINE`; such a directory now makes the state unverified and the
+  comparison a `HISTORY_GAP` (`INDEXLESS_CANDIDATE_UNREADABLE`). A
+  repository named `index.json` was read as a project index and broke every
+  identity lookup; index files are now found at their exact depth. Problem
+  texts carried absolute store paths and exception messages into the delta
+  of a `HISTORY_GAP` bundle, so the same damage gave a different bundle id
+  per checkout (and a local path inside a committed store); they are now
+  store-relative and name exceptions by type. The fleet surfaces are moved
+  into place instead of being truncated first. `run` prints every project's
+  result before a fleet-surface failure, and `build` its committed bundle; a
+  conditional cache that cannot be saved is a warning, written after the
+  fleet surfaces, not a traceback that skips them; and `evaluate`, `build`,
+  `render`, `gauges`, `demand` and `actions-summary` answer a missing or
+  unreadable input with `input error` and exit 2.
 - **A build over evidence derived under another configuration is refused**
   (issue #27, `CONFIG_MISMATCH`). `observe` records the digest of the
   configuration its aggregates were derived under; `build` with different

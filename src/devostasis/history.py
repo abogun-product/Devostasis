@@ -64,6 +64,7 @@ LOCATOR_PART = re.compile(r"[A-Za-z0-9._-]+")
 INDEX_TAIL_INVALID = "INDEX_TAIL_INVALID"
 PROJECT_IDENTITY_MISMATCH = "PROJECT_IDENTITY_MISMATCH"
 BUNDLE_BINDING_MISMATCH = "BUNDLE_BINDING_MISMATCH"
+INDEXLESS_CANDIDATE_UNREADABLE = "INDEXLESS_CANDIDATE_UNREADABLE"
 
 
 class HistoryStoreError(Exception):
@@ -137,6 +138,21 @@ class FilesystemHistoryStore:
     def projects_root(self) -> Path:
         return self.root / "projects"
 
+    def _rel(self, path: Path | str | None) -> str:
+        """A path as the store names it: relative to its root, in POSIX form.
+
+        Problem texts reach the delta of a HISTORY_GAP bundle, and so its
+        identity: an absolute path, or an exception message that differs by
+        operating system and Python version, made the same evidence and the
+        same damage produce a different bundle id per checkout.
+        """
+        if path is None:
+            return "None"
+        try:
+            return Path(path).resolve().relative_to(self.root.resolve()).as_posix()
+        except (ValueError, OSError):
+            return Path(path).name
+
     def project_dir(self, project_key: str) -> Path:
         """The directory a locator names, strictly beneath ``projects/``. Where a project actually lives is ``resolve``."""
         parts = project_key.split("/")
@@ -144,7 +160,7 @@ class FilesystemHistoryStore:
             raise HistoryStoreError(f"project key {project_key!r} is not a <forge>/<owner>/<repo> locator; refusing to derive a store path from it")
         directory = self.projects_root.joinpath(*parts)
         if directory.resolve().parent.parent.parent != self.projects_root.resolve():
-            raise HistoryStoreError(f"project key {project_key!r} does not resolve beneath {self.projects_root}; refusing to derive a store path from it")
+            raise HistoryStoreError(f"project key {project_key!r} does not resolve beneath projects/; refusing to derive a store path from it")
         return directory
 
     def index_path(self, project_key: str) -> Path:
@@ -156,7 +172,10 @@ class FilesystemHistoryStore:
         """Every per-project index, excluding the fleet index that shares the name."""
         if not self.projects_root.exists():
             return []
-        return [path for path in sorted(self.projects_root.rglob("index.json")) if path.parent != self.projects_root]
+        # Exactly three levels down, and files only: rglob also matched a
+        # repository named index.json (a valid name) and read its directory
+        # as an index, which broke every identity lookup of the store.
+        return [path for path in sorted(self.projects_root.glob("*/*/*/index.json")) if path.is_file()]
 
     @staticmethod
     def _identity_of(index: dict[str, Any] | None) -> str | None:
@@ -173,10 +192,10 @@ class FilesystemHistoryStore:
         try:
             index = canonical.load_file(path)
         except Exception as exc:  # noqa: BLE001
-            raise HistoryStoreError(f"index unreadable at {directory}: {exc}") from exc
+            raise HistoryStoreError(f"index unreadable at {self._rel(directory)}: {type(exc).__name__}") from exc
         problems = index_problems(index)
         if problems:
-            raise HistoryStoreError(f"index invalid at {directory}: {'; '.join(problems)}")
+            raise HistoryStoreError(f"index invalid at {self._rel(directory)}: {'; '.join(problems)}")
         return index
 
     def find_by_identity(self, immutable_project_id: str | None) -> Path | None:
@@ -281,23 +300,37 @@ class FilesystemHistoryStore:
             return None, f"{INDEX_TAIL_INVALID}: index tail path {path!r} is not the canonical history path of bundle {bundle_id}"
         candidate = directory.joinpath(*parts)
         if candidate.resolve().parent.parent.parent.parent != (directory / "history").resolve():
-            return None, f"{INDEX_TAIL_INVALID}: index tail path {path!r} resolves outside {directory / 'history'}"
+            return None, f"{INDEX_TAIL_INVALID}: index tail path {path!r} resolves outside {self._rel(directory / 'history')}"
         return candidate, None
 
-    def _newest_immutable(self, directory: Path) -> tuple[Path | None, str | None]:
-        """The newest immutable bundle directory when no index names one: scanned, ordered like the index."""
+    def _newest_immutable(self, directory: Path) -> tuple[Path | None, str | None, list[str]]:
+        """The newest immutable bundle directory when no index names one: scanned, ordered like the index.
+
+        Every bundle directory is a candidate, and one whose manifest is
+        missing, unreadable or names another bundle is reported, never
+        skipped: it may be the newest, so passing over it compared the next
+        run against an older bundle, or called a store with history BASELINE.
+        Only an interrupted write (``*.staging``) is not a candidate.
+        """
         newest: tuple[str, str, Path] | None = None
-        for manifest_path in (directory / "history").glob("*/*/*/*/manifest.json"):
+        problems: list[str] = []
+        for candidate in sorted((directory / "history").glob("*/*/*/*")):
+            if not candidate.is_dir() or candidate.name.endswith(".staging"):
+                continue
             try:
-                manifest = canonical.load_file(manifest_path)
-            except Exception:  # noqa: BLE001
+                manifest = canonical.load_file(candidate / "manifest.json")
+            except Exception as exc:  # noqa: BLE001
+                problems.append(f"{INDEXLESS_CANDIDATE_UNREADABLE}: {self._rel(candidate)}: {type(exc).__name__}")
                 continue
-            if not isinstance(manifest, dict) or manifest_path.parent.name != manifest.get("bundle_id"):
+            if not isinstance(manifest, dict) or candidate.name != manifest.get("bundle_id"):
+                problems.append(f"{INDEXLESS_CANDIDATE_UNREADABLE}: {self._rel(candidate)} does not carry the bundle it is named after")
                 continue
-            key = (str(manifest.get("observed_at") or ""), str(manifest.get("bundle_id") or ""), manifest_path.parent)
+            key = (str(manifest.get("observed_at") or ""), str(manifest.get("bundle_id") or ""), candidate)
             if newest is None or key[:2] > newest[:2]:
                 newest = key
-        return (newest[2], newest[1]) if newest else (None, None)
+        if newest is None:
+            return None, None, problems
+        return newest[2], newest[1], problems
 
     def _identity_problem(self, index: dict[str, Any], project_key: str, immutable_project_id: str | None, manifest: dict[str, Any], bundle_dir: Path | None) -> str | None:
         """Why the loaded bundle is not this project's: the identity the history records, or its locator, disagrees."""
@@ -306,11 +339,11 @@ class FilesystemHistoryStore:
         actual = self._identity_of({"project_identity": manifest.get("project_identity")})
         if expected is not None:
             if actual != expected:
-                return f"{PROJECT_IDENTITY_MISMATCH}: immutable bundle at {bundle_dir} belongs to project {actual}, this history is project {expected}"
+                return f"{PROJECT_IDENTITY_MISMATCH}: immutable bundle at {self._rel(bundle_dir)} belongs to project {actual}, this history is project {expected}"
             return None
         expected_key = index.get("project_key") or project_key
         if manifest.get("project_key") != expected_key:
-            return f"{PROJECT_IDENTITY_MISMATCH}: immutable bundle at {bundle_dir} was written for {manifest.get('project_key')!r}, this history is {expected_key!r}"
+            return f"{PROJECT_IDENTITY_MISMATCH}: immutable bundle at {self._rel(bundle_dir)} was written for {manifest.get('project_key')!r}, this history is {expected_key!r}"
         return None
 
     def latest(self, project_key: str, immutable_project_id: str | None = None) -> LatestState:
@@ -353,7 +386,11 @@ class FilesystemHistoryStore:
                 problems.append(f"immutable bundle {expected_id} named by the index tail is missing at {tail.get('path')}")
                 bundle_dir = None
         else:
-            bundle_dir, expected_id = self._newest_immutable(directory)
+            bundle_dir, expected_id, scan_problems = self._newest_immutable(directory)
+            if scan_problems:
+                # History exists but its order cannot be proven: a gap, not a
+                # comparison against whichever bundle happened to be readable.
+                return LatestState(True, False, None, None, None, scan_problems)
             if bundle_dir is None:
                 if not latest_dir.exists():
                     return LatestState(False, False, None, None, None, [])
@@ -362,18 +399,18 @@ class FilesystemHistoryStore:
         members = load_bundle_dir(bundle_dir) if bundle_dir is not None else {}
         if not members:
             if not problems:
-                problems.append(f"immutable bundle directory {bundle_dir} is empty")
+                problems.append(f"immutable bundle directory {self._rel(bundle_dir)} is empty")
             return LatestState(True, False, expected_id, None, None, problems)
         problems.extend(verify_members(members))
         try:
             manifest = canonical.loads(members["manifest.json"].decode("utf-8"))
             snapshot = canonical.loads(members["snapshot.json"].decode("utf-8")) if "snapshot.json" in members else None
         except Exception as exc:  # noqa: BLE001
-            return LatestState(True, False, expected_id, None, None, problems + [f"immutable bundle unreadable: {exc}"])
+            return LatestState(True, False, expected_id, None, None, problems + [f"immutable bundle unreadable: {type(exc).__name__}"])
         if not isinstance(manifest, dict):
             return LatestState(True, False, expected_id, None, None, problems + ["immutable bundle manifest is not an object"])
         if expected_id and manifest.get("bundle_id") != expected_id:
-            problems.append(f"immutable bundle at {bundle_dir} carries {manifest.get('bundle_id')}, the index names {expected_id}")
+            problems.append(f"immutable bundle at {self._rel(bundle_dir)} carries {manifest.get('bundle_id')}, the index names {expected_id}")
         identity_problem = self._identity_problem(index, project_key, immutable_project_id, manifest, bundle_dir)
         if identity_problem is not None:
             problems.append(identity_problem)
@@ -572,10 +609,10 @@ class FilesystemHistoryStore:
             tail = index["bundles"][-1]
             bundle_dir, problem = self._tail_dir(project_dir, tail)
             if problem is not None:
-                raise HistoryStoreError(f"{project_dir}: {problem}")
+                raise HistoryStoreError(f"{self._rel(project_dir)}: {problem}")
             identity = index.get("project_identity") or {}
             if not isinstance(identity, dict):
-                raise HistoryStoreError(f"{project_dir}: index project_identity is not an object")
+                raise HistoryStoreError(f"{self._rel(project_dir)}: index project_identity is not an object")
             entries.append(
                 {
                     "project_key": index.get("project_key"),
@@ -604,8 +641,7 @@ class FilesystemHistoryStore:
                 return candidate.relative_to(projects_root).as_posix()
         return None
 
-    @staticmethod
-    def _latest_demand(bundle_dir: Path) -> dict[str, Any] | None:
+    def _latest_demand(self, bundle_dir: Path) -> dict[str, Any] | None:
         """The demand member of the newest bundle, or None when the bundle predates the demand interface.
 
         Bundles written before the demand interface existed have no such
@@ -619,9 +655,9 @@ class FilesystemHistoryStore:
         try:
             document = canonical.load_file(path)
         except Exception as exc:  # noqa: BLE001
-            raise HistoryStoreError(f"demand member unreadable at {path}: {exc}") from exc
+            raise HistoryStoreError(f"demand member unreadable at {self._rel(path)}: {type(exc).__name__}") from exc
         if not isinstance(document, dict):
-            raise HistoryStoreError(f"demand member at {path} is not an object")
+            raise HistoryStoreError(f"demand member at {self._rel(path)} is not an object")
         return document
 
     def _demand_rows(self, bundle_dir: Path) -> list[dict[str, Any]]:

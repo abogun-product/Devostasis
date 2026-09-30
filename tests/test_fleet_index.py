@@ -8,6 +8,7 @@ between identical runs, and never grow an aggregate or a cross-project order.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -17,6 +18,8 @@ from devostasis.contracts import CORE_VITAL_IDS
 from devostasis.history import FilesystemHistoryStore
 from devostasis.runner import build_from_observations, write_fleet_index
 from helpers import full_inputs, obs_set
+
+SCHEMAS = Path(__file__).resolve().parent.parent / "schemas"
 
 
 def _store_with(tmp_path, projects=("acme/widget",), observed_at="2026-09-05T12:00:00Z"):
@@ -143,7 +146,7 @@ def test_an_empty_store_writes_nothing(tmp_path):
 
 @pytest.mark.parametrize("key", ["schema", "canonical_semantics", "aggregate", "cross_project_order", "projects"])
 def test_the_document_matches_its_published_schema(tmp_path, key):
-    schema = canonical.load_file("schemas/fleet-index.schema.json")
+    schema = canonical.load_file(SCHEMAS / "fleet-index.schema.json")
     document = _index(_store_with(tmp_path))
     assert key in schema["required"] and key in document
     entry_schema = schema["properties"]["projects"]["items"]

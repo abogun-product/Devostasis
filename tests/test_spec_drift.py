@@ -72,3 +72,12 @@ def test_every_contract_identifier_the_code_declares_is_documented():
     }
     missing = sorted(f"{name}={value}" for name, value in values.items() if value not in documented)
     assert not missing, f"contract identifiers absent from docs/spec: {missing}"
+
+
+def test_every_vital_rule_id_the_code_declares_is_documented():
+    """rule_id lives in vitals/*.py, which the contract-identifier guard above does not read."""
+    from devostasis.vitals import clutter, debt, direction, flow, horizon, integrity, pulse
+
+    vitals_page = (ROOT / "docs" / "spec" / "vitals.md").read_text(encoding="utf-8")
+    missing = sorted(module.RULE_ID for module in (clutter, debt, direction, flow, horizon, integrity, pulse) if f"`{module.RULE_ID}`" not in vitals_page)
+    assert not missing, f"rule ids absent from docs/spec/vitals.md: {missing}"

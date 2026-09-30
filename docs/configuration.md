@@ -91,9 +91,12 @@ and Metadata permissions on the repositories you observe.
 
 ## Reproducible runs
 
-`--now 2026-09-05T12:00:00Z` fixes the observation timestamp so that two
-collections of the same evidence produce the same bundle identity. Windows are
-computed from that timestamp.
+`--now 2026-09-05T12:00:00Z` fixes the observation timestamp, and every window
+is computed from it. It does not yet make two collections of the same evidence
+one bundle: the receipt's `started_at` and `ended_at` are wall-clock and
+identity-bearing, so collections that land in different seconds differ (issue
+#19, whose repair is the accepted `PV-BUNDLE-ID-003`). A `build` from one saved
+observation set is reproducible.
 
 ## Command-line equivalents
 

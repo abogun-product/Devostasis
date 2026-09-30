@@ -16,7 +16,7 @@ from .adapters.github import CollectionError, GitHubAdapter, GitHubClient, Urlli
 from .bundle import Bundle, BundleError, build_bundle
 from .config import Config, ResolvedProject
 from .contracts import OBSERVATION_CONTRACT_VERSION, VITALS_CONTRACT_VERSION
-from .history import FilesystemHistoryStore, HistoryStoreError
+from .history import FilesystemHistoryStore, HistoryStoreError, _write_atomic
 from .observations import ObservationSet
 from .policy import POLICY_VERSION
 from .vitals import build_snapshot, evaluate_all
@@ -108,7 +108,9 @@ def check_receipt_config(project: ResolvedProject, obs: ObservationSet) -> None:
     if recorded != resolved:
         raise BundleError(
             f"{CONFIG_MISMATCH}: the observations were collected under effective configuration {recorded}, "
-            f"this build resolves {resolved}; pass the planning and debt options the observation used, or observe again"
+            f"this build resolves {resolved}. The digest covers the whole effective configuration (planning, debt, activity, "
+            f"display, demand, the observations member); build accepts only the planning and debt options, so pass the ones the "
+            f"observation used, and observe again when the difference is anywhere else"
         )
 
 
@@ -187,16 +189,43 @@ def run_project(
 
 
 def write_fleet_index(store: FilesystemHistoryStore) -> Path | None:
-    """Write both fleet surfaces: the Markdown overview for people, the index for machines."""
+    """Write both fleet surfaces: the Markdown overview for people, the index for machines.
+
+    Each is written beside itself and moved into place, so a reader (or a
+    full disk) never leaves a truncated index.json behind a README that
+    already lists the new project.
+    """
     entries = store.all_projects()
     if not entries:
         return None
     directory = store.root / "projects"
     directory.mkdir(parents=True, exist_ok=True)
-    path = directory / "README.md"
-    path.write_bytes(render.render_fleet_index(entries).encode("utf-8"))
-    canonical.write_pretty(directory / "index.json", fleet.build_index(entries))
-    return path
+    readme = render.render_fleet_index(entries).encode("utf-8")
+    index = canonical.pretty_json(fleet.build_index(entries)).encode("utf-8")
+    _write_atomic(directory / "index.json", index)
+    _write_atomic(directory / "README.md", readme)
+    return directory / "README.md"
+
+
+class FleetSurfaceError(HistoryStoreError):
+    """The projects of a run are done and their bundles committed; the fleet surfaces could not be written.
+
+    It carries the outcomes, so the run still reports every project before it
+    reports the store failure.
+    """
+
+    def __init__(self, message: str, outcomes: list["RunOutcome"], cache_warning: str | None = None) -> None:
+        super().__init__(message)
+        self.outcomes = outcomes
+        self.cache_warning = cache_warning
+
+
+class RunOutcomes(list):
+    """The outcomes of a run, plus a warning when the conditional cache could not be kept."""
+
+    def __init__(self, outcomes=(), cache_warning: str | None = None) -> None:
+        super().__init__(outcomes)
+        self.cache_warning = cache_warning
 
 
 def run_all(
@@ -242,7 +271,17 @@ def run_all(
                     conditional_hits=client.conditional_hits,
                 )
             )
+    # The fleet surfaces first: they are part of the result. The cache is an
+    # optimization, and failing to keep it costs requests next time, never
+    # this run's surfaces or its report.
+    cache_warning: str | None = None
     if cache is not None:
-        cache.save()
-    write_fleet_index(store)
-    return outcomes
+        try:
+            cache.save()
+        except OSError as exc:
+            cache_warning = f"conditional cache not saved: {type(exc).__name__}: {exc}"
+    try:
+        write_fleet_index(store)
+    except HistoryStoreError as exc:
+        raise FleetSurfaceError(str(exc), outcomes, cache_warning) from exc
+    return RunOutcomes(outcomes, cache_warning)

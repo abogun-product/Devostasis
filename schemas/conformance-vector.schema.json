@@ -347,7 +347,7 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "status": { "enum": ["UNAVAILABLE", "FORBIDDEN", "UNKNOWN", "ERROR"] } } },
+          "if": { "required": ["status"], "properties": { "status": { "enum": ["UNAVAILABLE", "FORBIDDEN", "UNKNOWN", "ERROR"] } } },
           "then": { "properties": { "value": { "type": "null" } } }
         }
       ]

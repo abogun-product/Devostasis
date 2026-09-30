@@ -555,3 +555,40 @@ def test_t5_issue_only_provenance_needs_every_channel_positively_observed():
     add(capped, "forge.issues.updated_count_28d", 1)
     result = pulse.evaluate(capped)
     assert result.evaluation_status == "DEGRADED" and "PULSE_ISSUE_ONLY_ACTIVITY" not in result.diagnostics
+
+
+# --------------------------------------------------------------------------- review of 2026-09-30: Pulse bounded inference
+
+
+def test_a_capped_enumeration_over_all_29_dates_the_window_touches_is_evaluated_not_a_crash():
+    """The 28-day window touches 29 UTC dates; the completion grid stopped at 28 and was empty."""
+    observed_at = "2026-09-30T12:00:00Z"
+    items = [{"sha": f"c{day:02d}", "committed_at": f"2026-09-{day:02d}T13:00:00Z", "title": "x"} for day in range(2, 31)]
+    for status in ("AVAILABLE", "PARTIAL"):
+        obs = obs_set(observed_at)
+        add(obs, normalize.INV_COMMITS, items, "series", status=status, reason_code=None if status == "AVAILABLE" else "PAGINATION_CAPPED", coverage={"complete": status == "AVAILABLE"})
+        normalize.derive(obs, single_project("acme/widget"))
+        assert obs.value_of("git.default_branch.commit_active_days_28d") == 29
+        result = pulse.evaluate(obs)
+        assert result.band == "SURGING", status
+
+
+def test_every_band_a_completion_reaches_is_in_the_possible_set():
+    """Brute force over capped inputs: the grid must contain every threshold, the QUIET one included."""
+    from devostasis.policy import PULSE
+
+    for commits in range(0, 12):
+        for days in range(0, 6):
+            for issue_updates in (0, 3):
+                obs = obs_set()
+                add(obs, "git.default_branch.commits.count_28d", commits, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage=SUBSET)
+                add(obs, "git.default_branch.commit_active_days_28d", days, status=PARTIAL, reason_code="PAGINATION_CAPPED", coverage=SUBSET)
+                add(obs, "forge.change_requests.updated_count_28d", 0)
+                add(obs, "forge.issues.updated_count_28d", issue_updates)
+                result = pulse.evaluate(obs)
+                reached = {
+                    pulse.classify(d, e + issue_updates, (1 if e > 0 else 0) + (1 if issue_updates else 0))
+                    for d in range(days, PULSE["window_days"] + 2)
+                    for e in range(commits, commits + 60)
+                }
+                assert reached <= set(result.possible_bands or [result.band]), (commits, days, issue_updates, reached, result.possible_bands)

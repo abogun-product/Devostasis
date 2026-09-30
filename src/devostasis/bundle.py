@@ -70,6 +70,9 @@ RECEIPT_COPY_MISMATCH = "RECEIPT_COPY_MISMATCH"
 OBSERVATIONS_DIGEST_MISMATCH = "OBSERVATIONS_DIGEST_MISMATCH"
 UNSUPPORTED_LINEAGE = "UNSUPPORTED_ARTIFACT_LINEAGE"
 RENDERER_NOT_IN_LINEAGE = "RENDERER_VERSION_NOT_IN_LINEAGE"
+PREIMAGE_SHAPE_MISMATCH = "IDENTITY_PREIMAGE_SHAPE_MISMATCH"
+MEMBER_NOT_DECLARED = "IDENTITY_MEMBER_NOT_DECLARED"
+ADAPTERS_MISMATCH = "ADAPTERS_MISMATCH"
 
 # Fields the manifest repeats from the identity preimage. Every one of them
 # must agree: the preimage is what bundle_id commits to, the manifest copy is
@@ -93,21 +96,49 @@ DUPLICATED_IDENTITY_FIELDS = (
     "comparison_status",
 )
 
+# The identity preimage of each stored lineage, field for field. Every bundle
+# of the fleet's store carries exactly one of these two sets.
+_PREIMAGE_V1 = (
+    "bundle_identity_contract",
+    "artifact_contract_version",
+    "vitals_contract_version",
+    "observation_contract_version",
+    "ci_unit_contract_version",
+    "policy_version",
+    "config_version",
+    "renderer_version",
+    "canonical_serialization_version",
+    "effective_config_contract",
+    "effective_config_digest",
+    "project_identity",
+    "observed_at",
+    "previous_bundle_id",
+    "comparison_status",
+    "snapshot_digest",
+    "delta_digest",
+    "activity_digest",
+    "observations_digest",
+    "source_receipts_digest",
+)
+_PREIMAGE_V2 = _PREIMAGE_V1 + ("gauge_contract", "demand_contract", "gauges_digest", "demand_digest")
+
 # The stored lineages verification dispatches on, keyed by the preimage's
 # ``artifact_contract_version`` as an exact token
-# (PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001): the duplicated identity fields a
-# bundle of that lineage carries, each present in both copies, and the
-# renderers it was written with, which is what gates the report replay.
-# ``devostasis.bundle.v1`` predates the gauges and demand members. The tokens
-# are literal on purpose: moving RENDERER_VERSION or ARTIFACT_CONTRACT_VERSION
-# must add a row here, never silently retire the row older bundles need.
-LINEAGES: dict[str, dict[str, tuple[str, ...]]] = {
+# (PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001): the exact field set of the
+# identity preimage (a field deleted or added is a different, unsupported
+# shape, and the duplicated identity fields among them are present in both
+# copies), and the renderers the lineage was written with, which is what
+# gates the report replay. ``devostasis.bundle.v1`` predates the gauges and
+# demand members. The tokens are literal on purpose: moving RENDERER_VERSION or
+# ARTIFACT_CONTRACT_VERSION must add a row here, never silently retire the row
+# older bundles need.
+LINEAGES: dict[str, dict[str, Any]] = {
     "devostasis.bundle.v1": {
-        "identity_fields": tuple(key for key in DUPLICATED_IDENTITY_FIELDS if key not in ("gauge_contract", "demand_contract")),
+        "preimage_fields": frozenset(_PREIMAGE_V1),
         "renderers": ("devostasis.render.v1", "devostasis.render.v2"),
     },
     "devostasis.bundle.v2": {
-        "identity_fields": DUPLICATED_IDENTITY_FIELDS,
+        "preimage_fields": frozenset(_PREIMAGE_V2),
         "renderers": ("devostasis.render.v3", "devostasis.render.v4"),
     },
 }
@@ -338,12 +369,14 @@ def _check_identity_fields(manifest: dict[str, Any], preimage: dict[str, Any]) -
     lineage = LINEAGES.get(lineage_name) if isinstance(lineage_name, str) else None
     if lineage is None:
         problems.append(f"{UNSUPPORTED_LINEAGE}: artifact_contract_version {lineage_name!r} is not a lineage this verifier dispatches on")
-    required = lineage["identity_fields"] if lineage is not None else ()
+    else:
+        for key in sorted(lineage["preimage_fields"] - set(preimage)):
+            problems.append(f"{PREIMAGE_SHAPE_MISMATCH}: {key} is a field of the {lineage_name} identity preimage and is absent")
+        for key in sorted(set(preimage) - lineage["preimage_fields"]):
+            problems.append(f"{PREIMAGE_SHAPE_MISMATCH}: {key} is not a field of the {lineage_name} identity preimage")
     for key in DUPLICATED_IDENTITY_FIELDS:
         in_preimage, in_manifest = key in preimage, key in manifest
-        if key in required and not in_preimage:
-            problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is required by the {lineage_name} lineage and absent from the identity preimage")
-        elif in_preimage and not in_manifest:
+        if in_preimage and not in_manifest:
             problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {preimage[key]!r} in the identity preimage and absent from the manifest")
         elif in_manifest and not in_preimage:
             problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {manifest[key]!r} in the manifest and absent from the identity preimage")
@@ -354,6 +387,42 @@ def _check_identity_fields(manifest: dict[str, Any], preimage: dict[str, Any]) -
             f"{RENDERER_NOT_IN_LINEAGE}: renderer_version {preimage.get('renderer_version')!r} is not a renderer the {lineage_name} lineage was written with"
         )
     return problems
+
+
+def _check_hashed_members(manifest: dict[str, Any], preimage: dict[str, Any]) -> list[str]:
+    """A member the identity hashes must be declared: deleting it with its entry must not pass.
+
+    The declared-member loop only checks the members the manifest names, so a
+    bundle that dropped ``delta.json`` or ``snapshot.json`` together with its
+    ``members`` entry kept its id, skipped the report replay (which needs
+    both) and verified with any report.
+    """
+    declared = manifest.get("members") or {}
+    problems: list[str] = []
+    for member, key in PREIMAGE_MEMBER_DIGESTS:
+        if key in preimage and preimage[key] not in (ACTIVITY_DISABLED, OBSERVATIONS_DISABLED) and member not in declared:
+            problems.append(f"{MEMBER_NOT_DECLARED}: {member} is hashed into the identity preimage as {key} but the manifest does not declare it")
+    return problems
+
+
+def _check_adapters(manifest: dict[str, Any]) -> list[str]:
+    """``adapters`` is rendered into the report, so it is bound to the facts the identity hashes.
+
+    Its only honest value is the provider of the bound project identity and the
+    collector version of the bound receipt; anything else is provenance nobody
+    collected under.
+    """
+    identity = manifest.get("project_identity")
+    receipt = manifest.get("receipt")
+    expected = [
+        {
+            "provider": identity.get("provider") if isinstance(identity, dict) else None,
+            "adapter_version": receipt.get("collector_version") if isinstance(receipt, dict) else None,
+        }
+    ]
+    if manifest.get("adapters") != expected:
+        return [f"{ADAPTERS_MISMATCH}: manifest adapters {manifest.get('adapters')!r} are not {expected!r}, the provider and collector the identity binds"]
+    return []
 
 
 def _check_evidence_binding(members: dict[str, bytes], manifest: dict[str, Any], preimage: dict[str, Any]) -> list[str]:
@@ -483,6 +552,8 @@ def verify_members(members: dict[str, bytes]) -> list[str]:
             if key in preimage:
                 problems.append(f"identity preimage must not contain post-identity field {key} (ART-22)")
         problems.extend(_check_identity_fields(manifest, preimage))
+        problems.extend(_check_hashed_members(manifest, preimage))
+        problems.extend(_check_adapters(manifest))
         problems.extend(_check_evidence_binding(members, manifest, preimage))
 
     # B4: the stored effective config is the semantic authority (ART-25, then ART-23).
@@ -528,3 +599,14 @@ def verify_members(members: dict[str, bytes]) -> list[str]:
 
 def verify_dir(directory: str | Path) -> list[str]:
     return verify_members(load_bundle_dir(directory))
+
+
+def report_renderer(directory: str | Path) -> str | None:
+    """The renderer a verified bundle names, which decides whether its report was replayed."""
+    members = load_bundle_dir(directory)
+    try:
+        manifest = canonical.loads(members["manifest.json"].decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+    renderer = manifest.get("renderer_version") if isinstance(manifest, dict) else None
+    return renderer if isinstance(renderer, str) else None

@@ -38,7 +38,17 @@ enumeration is a lower bound of the true activity and is reported as
 
 A capped pagination yields `PARTIAL` with `PAGINATION_CAPPED`; unresolved
 branch heads yield `PARTIAL` with `BRANCH_HEADS_UNRESOLVED`; incomplete
-attempt history yields `PARTIAL` with `ATTEMPT_HISTORY_INCOMPLETE`.
+attempt history yields `PARTIAL` with `ATTEMPT_HISTORY_INCOMPLETE`. The
+workflow-runs listing is read against the provider's own `total_count`: a
+filtered `/actions/runs` query stops at 1,000 results and answers the next
+page empty, so a listing that ends short of its total is `PARTIAL`
+(`PAGINATION_CAPPED`), never complete. A listing that repeats a row between
+pages moved while it was read (page-number pagination over a list that
+grew): each commit and run counts once, and the inventory is `PARTIAL` with
+`LISTING_SHIFTED`, because a row may also have been skipped. A failure below
+`urllib` (`http.client.IncompleteRead`, `BadStatusLine`) is a network
+failure like any other, an error body that cannot be read keeps its status,
+and a body nested beyond the decoder's depth is `MALFORMED_RESPONSE`.
 
 ## Successful payloads are validated before they are read
 
@@ -58,10 +68,10 @@ place (research audits `PV-AUDIT-GITHUB-*-PAYLOAD-001`). Concretely:
 | branches | every row an object with a non-empty `name`, an object `commit` with a non-empty `sha`, boolean `protected`; a head detail that cannot be read leaves that head unresolved (`PARTIAL / BRANCH_HEADS_UNRESOLVED`), never stale or fresh |
 | milestones | every row an object with an integer `number`, null or readable `due_on`, integer or null `open_issues` and `closed_issues` |
 | releases | every row an object with boolean `draft` and `prerelease`; a draft is ignored only once `draft` is positively `true`; every other row needs a non-empty `tag_name` and a readable `published_at`, and one without is a failure, never an omission |
-| workflow runs | an object with a `workflow_runs` list; every run an object with a non-empty `head_sha` (validated before the window is applied), an integer `id`, an integer `run_attempt` >= 1, a `status` string and a null or string `conclusion`; a workflow count that is absent or not a non-negative integer |
+| workflow runs | an object with a `workflow_runs` list and a non-negative integer `total_count`; every run an object with a non-empty `head_sha` (validated before the window is applied), an integer `id`, an integer `run_attempt` >= 1, a `status` string, a null or string `conclusion`, and null or string `name`, `event` and `html_url` and a null or integer `workflow_id`, because the parent record carries them into the bundle; a workflow count that is absent or not a non-negative integer |
 | run attempts | an object whose `id` is the run asked for and whose `run_attempt` is the number asked for; anything else is not this run's history and fails the series |
-| check suites | an object with a `check_suites` list (a missing list is not zero suites); every suite an object with an integer `id`, a `status` string, null or string `conclusion`, null or object `app`, and an integer `latest_check_runs_count`, which is never assumed |
-| register files | an integer `size`; the register document itself is judged by the register contract (`INVALID_REGISTER`) |
+| check suites | an object with a `check_suites` list (a missing list is not zero suites); every suite an object with an integer `id`, a `status` string, null or string `conclusion`, null or object `app`, null or string `url`, and an integer `latest_check_runs_count`, which is never assumed |
+| register files | an integer `size`, required rather than defaulted; string `content` in base64 (line breaks allowed, nothing else outside the alphabet) that decodes to no more than the byte bound; a document nested beyond the decoder's depth is invalid; the register document itself is judged by the register contract (`INVALID_REGISTER`) |
 
 ## Redirects
 
@@ -108,8 +118,10 @@ truncated sample is never an exact favourable result.
 
 `true` when the repository has at least one workflow or any verification
 parent was observed; `false` only when there are zero workflows and no check
-suite on every sampled revision of the window; `UNKNOWN` with
-`SAMPLE_INCOMPLETE` when more revisions exist than could be sampled.
+suite on every revision of the window, each read to its last page; `UNKNOWN`
+with `SAMPLE_INCOMPLETE` when any of them could not be read (more revisions
+than could be sampled, a failed or refused fetch, a page cap). A revision
+whose first suite page the budget refused is not counted as examined.
 
 ## Normalization decisions
 

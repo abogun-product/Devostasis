@@ -274,6 +274,31 @@ when its coverage says so.
 | subset proof | a PARTIAL open count whose coverage is missing, not a subset, an estimate, contradictory or malformed is no lower bound, and Debt is UNKNOWN (issue #39) | `test_a_partial_debt_count_without_the_subset_proof_is_not_a_lower_bound` |
 | PD1 in the tests | a confirmed open item under partial acquisition is DEGRADED / PRESENT / EXACT, a stale one proves nothing | `test_partial_register_with_observed_items_is_degraded_present`, `test_a_stale_partial_register_proves_nothing_about_now` |
 
+## T9: the decision-equivalence reconciliation (PV-TEST-004, PV-T9-GEN-003)
+
+`PV-REV-TEST-004` accepted the final T9 reconciliation with zero
+`CONTRACT_GAP` terminals: each of the nine gap identifiers of `PV-T9-GEN-002`
+maps to one deterministic accepted obligation. 0.2.0 adopts the last of the
+repairs those obligations come from, so the implementation side of T9 is a
+finite generator over the acquisition tokens and the regions each family
+names, which evaluates every cell and holds it to the accepted table
+(`tests/conformance/test_t9_reconciliation.py`, about 1,270 cells). The T9v2
+cell-key serialization itself is the research process's to deliver as
+vectors.
+
+| Gap identifier | Accepted obligation | Test |
+| --- | --- | --- |
+| T9-GAP-HORIZON-PARTIAL-BOUND-001 | PH0..PH2 `UNKNOWN`, PH3 `DEGRADED / EXTENDED / EXACT` (PV-HORIZON-PARTIAL-001) | `test_t9_gap_horizon_partial_bound_001` |
+| T9-GAP-CLUTTER-UNAVAILABLE-COMPONENT-001, T9-GAP-CLUTTER-PARTIAL-FORCED-BOUND-001 | a confirmed floor from positive facts only, never `CLEAN` under incomplete coverage (PV-CLUTTER-INCOMPLETE-001) | `test_t9_gap_clutter_unavailable_component_and_partial_forced_bound` |
+| T9-GAP-DIRECTION-PARTIAL-LINKAGE-001 | the completion set over k in L..L+R (PV-DIRECTION-INCOMPLETE-001) | `test_t9_gap_direction_partial_linkage_001` |
+| T9-GAP-DIRECTION-UNRESOLVED-TARGET-001 | resolved identity LINKED open or closed, positive absence UNLINKED, the rest UNRESOLVED | `test_t9_gap_direction_unresolved_target_001` |
+| T9-GAP-INTEGRITY-UNRESOLVED-BAND-001 | `DEGRADED / FAILING / EXACT` only over an established FAILING history, else `UNKNOWN` (PV-INTEGRITY-TOTALITY-001) | `test_t9_gap_integrity_unresolved_band_001` |
+| T9-GAP-INTEGRITY-PARTIAL-SUPERSET-001 | the false gap: a PARTIAL required series is `UNKNOWN`, no `possible_bands` (PV-REV-TEST-003) | `test_t9_gap_integrity_partial_superset_001` |
+| T9-GAP-INTEGRITY-UNCONFIGURED-RECENT-001 | `UNINSTRUMENTED` with the non-decisive history kept visible | `test_t9_gap_integrity_unconfigured_recent_001` |
+| T9-GAP-DEBT-PARTIAL-BOUND-001 | confirmed open `DEGRADED / PRESENT / EXACT`, none confirmed `UNKNOWN` (PV-DEBT-PARTIAL-001) | `test_t9_gap_debt_partial_bound_001` |
+| section 4 precedence | unknown history outranks every conservative branch | `test_t9_section_4_unknown_history_outranks_the_unresolved_failing_branch` |
+| finiteness | nine identifiers, none without cells | `test_t9_generator_covers_every_family` |
+
 ## Activity coverage (PV-REV-ACTIVITY-COVERAGE-001)
 
 Reading 3 of issue #9, accepted: the interval stays the full canonical gap and
@@ -511,9 +536,10 @@ accepted case.
 | rejected | a case expecting refused evidence passes only when the evaluation raises with that code, and the refusal is its whole expectation | `test_a_rejected_case_passes_only_when_the_evidence_is_refused_with_that_code`, `test_rejected_is_the_whole_expectation_and_names_a_code` |
 | activity kind | the interval and the coverage notes of the activity member are checked | `test_the_activity_kind_checks_the_interval_and_the_coverage_it_discloses` |
 
-Cases not yet implemented as tests (T3, T6, T8, T9, R5..R53, ART-05,
+Cases not yet implemented as tests (T3, T6, T8, R5..R53, ART-05,
 ART-08..ART-11, ART-15, RPT-4..RPT-6, RPT-9) are listed in the ROADMAP under the
-synthetic fixture suite. The research process delivers them as executable JSON
+synthetic fixture suite; T9 is implemented by its generator since 0.2.0, and
+its cell-key vectors are still the research process's to deliver. The research process delivers them as executable JSON
 vectors in the format of [vectors.md](vectors.md), one accepted family per
 unit; the ones accepted so far (T2, R1, R2, R3, R4, T4, T5, T7) are in the
 corpus above, and so are the twenty cases of `PV-CLUTTER-INCOMPLETE-001`,

@@ -106,7 +106,9 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
       - name: Install Devostasis
-        run: python -m pip install --quiet "git+https://github.com/drevendev/devostasis@${{ inputs.devostasis-ref }}"
+        env:
+          DEVOSTASIS_REF: ${{ inputs.devostasis-ref }}
+        run: python -m pip install --quiet "git+https://github.com/drevendev/devostasis@${DEVOSTASIS_REF}"
       - name: Fetch the history store for comparison
         if: inputs.history-repo != ''
         env:
@@ -138,7 +140,10 @@ jobs:
           elif [ -n "$DEBT_LABELS" ]; then
             IFS=',' read -ra labels <<< "$DEBT_LABELS"
             for label in "${labels[@]}"; do
-              label="$(echo "$label" | xargs)"
+              # Trim surrounding whitespace only; xargs also ate quotes and
+              # backslashes and failed on an apostrophe ("won't fix").
+              label="${label#"${label%%[![:space:]]*}"}"
+              label="${label%"${label##*[![:space:]]}"}"
               if [ -n "$label" ]; then args+=(--debt-label "$label"); fi
             done
             args+=(--debt-mapping-version "$DEBT_MAPPING_VERSION")

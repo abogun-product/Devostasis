@@ -73,7 +73,8 @@ def _routes(**overrides):
 
 def _collect(routes, **project):
     transport = FakeTransport(routes)
-    client = GitHubClient(transport)
+    # A retryable answer must not make the suite wait for real backoff.
+    client = GitHubClient(transport, sleep=lambda seconds: None)
     adapter = GitHubAdapter(client, NOW)
     obs = adapter.collect(single_project("acme/widget", **project))
     return obs, transport, client

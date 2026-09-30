@@ -9,11 +9,14 @@ vector whose expectation is wrong fails.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
 from devostasis import vectors
 from devostasis.cli import main
+
+SCHEMAS = Path(__file__).resolve().parent.parent / "schemas"
 
 CLUTTER_OBSERVATIONS = [
     {"observation_id": "forge.issues.open_count", "value": 4},
@@ -146,7 +149,7 @@ def test_the_cli_runs_a_corpus_and_reports_failures(tmp_path, capsys):
 def test_the_published_vector_schema_and_the_runner_agree_on_the_shape():
     from devostasis import canonical
 
-    schema = canonical.load_file("schemas/conformance-vector.schema.json")
+    schema = canonical.load_file(SCHEMAS / "conformance-vector.schema.json")
     entry = schema["properties"]["vectors"]["items"]
     assert set(entry["required"]) == vectors.REQUIRED_VECTOR_KEYS
     assert set(entry["properties"]) == vectors.VECTOR_KEYS
@@ -196,8 +199,8 @@ def test_the_schema_publishes_the_partial_envelope_the_runner_actually_accepts()
     """
     from devostasis import canonical
 
-    schema = canonical.load_file("schemas/conformance-vector.schema.json")
-    observation = canonical.load_file("schemas/observation.schema.json")
+    schema = canonical.load_file(SCHEMAS / "conformance-vector.schema.json")
+    observation = canonical.load_file(SCHEMAS / "observation.schema.json")
     envelope = schema["$defs"]["envelope"]
     assert envelope["required"] == ["observation_id"]
     assert set(envelope["properties"]) == set(observation["properties"])

@@ -175,6 +175,26 @@ accepted judgements, and their `rule_id` moved with them.
   content, no `size`, invalid base64 or more bytes than the bound, and run or
   suite fields (`name`, `event`, `html_url`, `workflow_id`, `url`) of the
   wrong type, which failed the canonical encoder.
+- **Workflows, documentation and tests** (review of 2026-09-30).
+  `released-pins.yml` no longer runs on push: the file reaches master only
+  in a release merge, the one moment its pins cannot resolve, and its single
+  push run (a8726f5, 72 seconds before v0.1.8 was tagged) kept this
+  repository's own Integrity `FAILING` for two weeks. The reusable
+  `observe-self.yml` passes `devostasis-ref` to the shell through the
+  environment instead of interpolating it, and trims debt labels without
+  `xargs`, which rewrote quotes and backslashes and failed on an apostrophe.
+  The README's self-observation snippet carries the `permissions` block it
+  needs (a called workflow can only narrow the caller's token, so without it
+  GitHub refuses the run), and deployment.md says that instead of promising
+  `FORBIDDEN` Vitals; its cache snippet keeps the token, `id` and
+  `continue-on-error` of the step it extends; the store layout names a
+  `.gitattributes` so a Windows clone does not break every report digest.
+  `build`'s `CONFIG_MISMATCH` says which part of the configuration it can
+  and cannot be passed. The example fleet table, the vector page, debt D-1,
+  CONTRIBUTING's case families and the `--now` paragraph (which promised
+  what #19 still breaks) say what is true now. The suite no longer sleeps
+  three real seconds, runs from any working directory, and the pin guards
+  are case-insensitive; one register assertion that could not fail now can.
 - **Vitals and vectors** (review of 2026-09-30). Pulse crashed with
   `IndexError` when a capped commit enumeration covered all 29 UTC dates a
   28-day window touches (the completion grid stopped at 28 and was empty),

@@ -108,7 +108,9 @@ def check_receipt_config(project: ResolvedProject, obs: ObservationSet) -> None:
     if recorded != resolved:
         raise BundleError(
             f"{CONFIG_MISMATCH}: the observations were collected under effective configuration {recorded}, "
-            f"this build resolves {resolved}; pass the planning and debt options the observation used, or observe again"
+            f"this build resolves {resolved}. The digest covers the whole effective configuration (planning, debt, activity, "
+            f"display, demand, the observations member); build accepts only the planning and debt options, so pass the ones the "
+            f"observation used, and observe again when the difference is anywhere else"
         )
 
 

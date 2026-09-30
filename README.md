@@ -203,6 +203,13 @@ A project can also observe itself from its own GitHub Actions, with no
 secret at all, and branch its next steps on the demand levels:
 
 ```yaml
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  actions: read
+  checks: read
+
 jobs:
   vitals:
     uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.1.9
@@ -221,9 +228,9 @@ fleet observer with a companion history repository, and self-observation.
 
 The fleet overview written to `projects/README.md`:
 
-| Project | Observed at | Comparison | Pulse | Flow | Integrity | Clutter | Horizon | Direction | Debt |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| acme/widget | 2026-09-05T12:00:00Z | COMPARABLE | STEADY | MOVING | CLEAN | LIGHT | EXTENDED | MIXED | PRESENT |
+| Project | Observed at | Comparison | Attention | Pulse | Flow | Integrity | Clutter | Horizon | Direction | Debt | Report |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| acme/widget | 2026-09-05T12:00:00Z | BASELINE | integrity HIGH | SURGING 82 | MOVING 10 | FLAKY 62 | LIGHT 10 | EXTENDED 84 | MIXED 50 | PRESENT 11 | [report](github.com/acme/widget/latest/report.md) |
 
 A complete synthetic bundle is checked in under
 [examples/sample-bundle](examples/sample-bundle); its

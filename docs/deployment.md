@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   vitals:
-    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.1.8
+    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.1.9
     with:
       debt-labels: "type:debt"          # optional: issue labels that mark debt items
       # planning-source: file             # optional: targets register instead of milestones
@@ -52,9 +52,11 @@ is a `BASELINE` bundle, which is enough to decide the current focus; with it
 the run compares against the latest bundle of that store without writing to
 it.
 
-The caller's `permissions` block must grant the five read scopes above, or
-the token cannot see issues, pull requests and workflow runs and the
-corresponding Vitals come back FORBIDDEN.
+The caller's `permissions` block must grant the five read scopes above. A
+called workflow can only narrow the caller's token, never widen it, so when
+the caller grants less (the default for a new repository is read-only
+contents) GitHub refuses the run before it starts, with an error naming the
+scope the nested `observe` job asks for, and no bundle is produced at all.
 
 ### The worked example is this repository
 
@@ -108,8 +110,16 @@ Create a private repository, for example `devostasis-history`, with:
 ```text
 devostasis.json                 the fleet configuration (store.path = ".")
 .github/workflows/observe.yml   the daily job below
+.gitattributes                  * -text   (store the bundles byte for byte)
 projects/                       written by the job
 ```
+
+`report.md` and `effective-config.json` are verified by the digest of their
+bytes. A clone with `core.autocrlf=true` (the Git for Windows default) would
+check them out with CRLF line endings, and every report would then fail
+`devostasis verify` and turn the next local comparison into a
+`HISTORY_GAP`. `* -text` (or `* text=auto eol=lf`) in the store's
+`.gitattributes` keeps the checkout identical to what was committed.
 
 The history repository must be at least as private as the most private
 repository it observes; bundles contain issue and pull request titles,
@@ -151,7 +161,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install Devostasis
-        run: python -m pip install --quiet "git+https://github.com/drevendev/devostasis@v0.1.8"
+        run: python -m pip install --quiet "git+https://github.com/drevendev/devostasis@v0.1.9"
       - name: Observe every configured project
         id: run
         continue-on-error: true
@@ -181,8 +191,17 @@ Add `--cache .devostasis-cache` and, if the fleet is large, a per-project
           key: devostasis-etags-${{ github.run_id }}
           restore-keys: devostasis-etags-
       - name: Observe every configured project
+        id: run
+        continue-on-error: true
+        env:
+          DEVOSTASIS_GITHUB_TOKEN: ${{ secrets.DEVOSTASIS_TOKEN }}
         run: devostasis run --config devostasis.json --store . --cache .devostasis-cache
 ```
+
+Only the `--cache` flag and the cache step are new; the `id`, the
+`continue-on-error` and the token are the ones of the step above, and without
+them the fleet runs unauthenticated and one failing project stops the job
+before the bundles are committed.
 
 The cache holds provider bodies, so it is as sensitive as the store: keep it
 inside the private repository's own workspace and never in a public artifact.

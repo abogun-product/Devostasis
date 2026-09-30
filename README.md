@@ -153,7 +153,7 @@ comes first is the consumer's policy, and no accepted contract defines it.
 Requires Python 3.12 or newer. The runtime uses the standard library only.
 
 ```bash
-pip install git+https://github.com/drevendev/devostasis@v0.1.8
+pip install git+https://github.com/drevendev/devostasis@v0.1.9
 ```
 
 Observe one repository (a GitHub token is read from `DEVOSTASIS_GITHUB_TOKEN`,
@@ -203,9 +203,16 @@ A project can also observe itself from its own GitHub Actions, with no
 secret at all, and branch its next steps on the demand levels:
 
 ```yaml
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  actions: read
+  checks: read
+
 jobs:
   vitals:
-    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.1.8
+    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.1.9
   decide:
     needs: vitals
     runs-on: ubuntu-latest
@@ -221,9 +228,9 @@ fleet observer with a companion history repository, and self-observation.
 
 The fleet overview written to `projects/README.md`:
 
-| Project | Observed at | Comparison | Pulse | Flow | Integrity | Clutter | Horizon | Direction | Debt |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| acme/widget | 2026-09-05T12:00:00Z | COMPARABLE | STEADY | MOVING | CLEAN | LIGHT | EXTENDED | MIXED | PRESENT |
+| Project | Observed at | Comparison | Attention | Pulse | Flow | Integrity | Clutter | Horizon | Direction | Debt | Report |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| acme/widget | 2026-09-05T12:00:00Z | BASELINE | integrity HIGH | SURGING 82 | MOVING 10 | FLAKY 62 | LIGHT 10 | EXTENDED 84 | MIXED 50 | PRESENT 11 | [report](github.com/acme/widget/latest/report.md) |
 
 A complete synthetic bundle is checked in under
 [examples/sample-bundle](examples/sample-bundle); its
@@ -237,7 +244,10 @@ A complete synthetic bundle is checked in under
 - Integrity works on immutable revisions, not on runs. One revision
   contributes at most one verdict to the 14-day sample; once a revision was
   observed to fail, that failure stays in its history for the rest of the
-  window even if a retry of the same revision passes.
+  window even if a retry of the same revision passes. A newest revision whose
+  verification outcome is unknown makes the whole Vital `UNKNOWN` rather than
+  inheriting an older pass, and one to three decisive revisions are a sparse
+  sample that says so.
 - `NO_QUEUE` for Flow, `UNDECLARED` for Horizon and Direction, and
   `UNINSTRUMENTED` for Integrity and Debt are descriptive states, never
   healthy defaults.
@@ -255,12 +265,14 @@ A complete synthetic bundle is checked in under
 
 ## Status
 
-Version 0.1.0 is the minimum viable version: GitHub only, seven Vitals,
-immutable bundles, filesystem history store, Markdown report. The
-[ROADMAP](ROADMAP.md) lists what is deliberately deferred: a GitLab adapter,
-consumer demand interfaces for autonomous development systems, additional
-instruments (test state, coverage, deployments), an HTML renderer and a
-calibration corpus.
+Version 0.1.x is the minimum viable engine: GitHub only, seven Vitals,
+immutable bundles, a filesystem history store with a fleet index, a Markdown
+report, the demand interface, gauges, the accepted band ordering and an
+executable conformance vector format. The [ROADMAP](ROADMAP.md) lists what is
+deliberately deferred (a GitLab adapter, additional instruments such as test
+state, coverage and deployments, an HTML renderer, a calibration corpus) and
+which accepted research judgements are still waiting to be adopted. The
+[CHANGELOG](CHANGELOG.md) records every contract and policy version change.
 
 ## Provenance
 

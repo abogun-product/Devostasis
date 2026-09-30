@@ -114,4 +114,4 @@ def test_the_registers_produce_the_bands_they_are_meant_to(change_requests, expe
     assert bands["horizon"]["band"] == "DECLARED" and bands["horizon"]["evaluation_status"] == "AVAILABLE"
     assert bands["debt"]["band"] == "PRESENT" and bands["debt"]["evaluation_status"] == "AVAILABLE"
     assert bands["direction"]["band"] == expected_direction
-    assert obs.value_of("debt.items.open_stale_count_30d") == 0 or bands["debt"]["band"] == "PRESENT"
+    assert isinstance(obs.value_of("debt.items.open_stale_count_30d"), int), "the register yields a readable stale count"

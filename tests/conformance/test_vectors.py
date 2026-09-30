@@ -54,7 +54,41 @@ def test_every_envelope_in_the_corpus_is_one_the_published_schema_accepts():
     for vector in ALL:
         if vector.kind != "vital":
             continue
-        for stated in vector.given["observations"]:
-            keys = set(stated)
-            assert required <= keys, f"{vector.case}: envelope is missing {sorted(required - keys)}"
-            assert keys <= allowed, f"{vector.case}: envelope states {sorted(keys - allowed)}, which the schema does not declare"
+        shapes = vector.given["variants"] if "variants" in vector.given else [vector.given]
+        for shape in shapes:
+            for stated in shape["observations"]:
+                keys = set(stated)
+                assert required <= keys, f"{vector.case}: envelope is missing {sorted(required - keys)}"
+                assert keys <= allowed, f"{vector.case}: envelope states {sorted(keys - allowed)}, which the schema does not declare"
+
+
+def _envelopes():
+    for vector in ALL:
+        if vector.kind == "vital":
+            shapes = vector.given["variants"] if "variants" in vector.given else [vector.given]
+            for shape in shapes:
+                yield vector.case, shape["observations"]
+        elif vector.kind == "activity":
+            yield vector.case, vector.given["observations"]
+
+
+def test_every_envelope_satisfies_the_schemas_value_conditional():
+    """The conditional of the envelope, evaluated as JSON Schema 2020-12 evaluates it.
+
+    Without ``required: [status]`` in its ``if``, an envelope that omits the
+    status (the normal form: the runner defaults it to AVAILABLE) satisfied
+    the ``if`` vacuously and had its value forbidden, so the published schema
+    rejected 39 of 64 vectors the runner accepts.
+    """
+    from devostasis import canonical
+
+    envelope = canonical.load_file(ROOT / "schemas" / "conformance-vector.schema.json")["$defs"]["envelope"]
+    condition = envelope["allOf"][0]["if"]
+    forbidden_statuses = set(condition["properties"]["status"]["enum"])
+    for case, observations in _envelopes():
+        for stated in observations:
+            applies = all(key in stated for key in condition.get("required", [])) and (
+                "status" not in stated or stated["status"] in forbidden_statuses
+            )
+            if applies:
+                assert stated.get("value") is None, f"{case}: the schema forbids the value of {stated['observation_id']}"

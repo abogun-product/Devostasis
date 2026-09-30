@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__, canonical, render
-from .config import PROFILE_MEMBERS, ResolvedProject, member_profile_from_config, validate_effective_config
+from .config import EFFECTIVE_CONFIG_SCHEMA_V1, PROFILE_MEMBERS, ResolvedProject, member_profile_from_config, validate_effective_config
 from .contracts import (
     ARTIFACT_CONTRACT_VERSION,
     BUNDLE_IDENTITY_CONTRACT,
@@ -61,6 +61,87 @@ MEMBER_NAMES = (
 EFFECTIVE_CONFIG_SCHEMA_INVALID = "EFFECTIVE_CONFIG_SCHEMA_INVALID_OR_UNSUPPORTED"
 CANONICAL_MEMBER_PROFILE_MISMATCH = "CANONICAL_MEMBER_PROFILE_MISMATCH"
 EFFECTIVE_CONFIG_PREIMAGE_MISMATCH = "EFFECTIVE_CONFIG_PREIMAGE_MISMATCH"
+# Problem codes of the metadata binding (#12 finding 4): a field that decides
+# comparability or names the evidence must agree with what verification hashes.
+SEMANTIC_CONFIG_MISMATCH = "SEMANTIC_CONFIG_MISMATCH"
+IDENTITY_FIELD_MISMATCH = "IDENTITY_FIELD_MISMATCH"
+RECEIPT_DIGEST_MISMATCH = "RECEIPT_DIGEST_MISMATCH"
+RECEIPT_COPY_MISMATCH = "RECEIPT_COPY_MISMATCH"
+OBSERVATIONS_DIGEST_MISMATCH = "OBSERVATIONS_DIGEST_MISMATCH"
+UNSUPPORTED_LINEAGE = "UNSUPPORTED_ARTIFACT_LINEAGE"
+RENDERER_NOT_IN_LINEAGE = "RENDERER_VERSION_NOT_IN_LINEAGE"
+PREIMAGE_SHAPE_MISMATCH = "IDENTITY_PREIMAGE_SHAPE_MISMATCH"
+MEMBER_NOT_DECLARED = "IDENTITY_MEMBER_NOT_DECLARED"
+ADAPTERS_MISMATCH = "ADAPTERS_MISMATCH"
+
+# Fields the manifest repeats from the identity preimage. Every one of them
+# must agree: the preimage is what bundle_id commits to, the manifest copy is
+# what readers and the comparison read.
+DUPLICATED_IDENTITY_FIELDS = (
+    "bundle_identity_contract",
+    "artifact_contract_version",
+    "vitals_contract_version",
+    "observation_contract_version",
+    "ci_unit_contract_version",
+    "gauge_contract",
+    "demand_contract",
+    "policy_version",
+    "config_version",
+    "renderer_version",
+    "canonical_serialization_version",
+    "effective_config_contract",
+    "project_identity",
+    "observed_at",
+    "previous_bundle_id",
+    "comparison_status",
+)
+
+# The identity preimage of each stored lineage, field for field. Every bundle
+# of the fleet's store carries exactly one of these two sets.
+_PREIMAGE_V1 = (
+    "bundle_identity_contract",
+    "artifact_contract_version",
+    "vitals_contract_version",
+    "observation_contract_version",
+    "ci_unit_contract_version",
+    "policy_version",
+    "config_version",
+    "renderer_version",
+    "canonical_serialization_version",
+    "effective_config_contract",
+    "effective_config_digest",
+    "project_identity",
+    "observed_at",
+    "previous_bundle_id",
+    "comparison_status",
+    "snapshot_digest",
+    "delta_digest",
+    "activity_digest",
+    "observations_digest",
+    "source_receipts_digest",
+)
+_PREIMAGE_V2 = _PREIMAGE_V1 + ("gauge_contract", "demand_contract", "gauges_digest", "demand_digest")
+
+# The stored lineages verification dispatches on, keyed by the preimage's
+# ``artifact_contract_version`` as an exact token
+# (PV-AUDIT-MANIFEST-PREIMAGE-BINDING-001): the exact field set of the
+# identity preimage (a field deleted or added is a different, unsupported
+# shape, and the duplicated identity fields among them are present in both
+# copies), and the renderers the lineage was written with, which is what
+# gates the report replay. ``devostasis.bundle.v1`` predates the gauges and
+# demand members. The tokens are literal on purpose: moving RENDERER_VERSION or
+# ARTIFACT_CONTRACT_VERSION must add a row here, never silently retire the row
+# older bundles need.
+LINEAGES: dict[str, dict[str, Any]] = {
+    "devostasis.bundle.v1": {
+        "preimage_fields": frozenset(_PREIMAGE_V1),
+        "renderers": ("devostasis.render.v1", "devostasis.render.v2"),
+    },
+    "devostasis.bundle.v2": {
+        "preimage_fields": frozenset(_PREIMAGE_V2),
+        "renderers": ("devostasis.render.v3", "devostasis.render.v4"),
+    },
+}
 
 
 @dataclass
@@ -259,6 +340,121 @@ def _member_digest(name: str, data: bytes) -> str:
     return canonical.digest(canonical.loads(data.decode("utf-8")))
 
 
+def semantic_projection(config: dict[str, Any]) -> dict[str, Any]:
+    """The comparability subset of a stored effective config, in the shape the manifest of its lineage records."""
+    if config.get("schema") == EFFECTIVE_CONFIG_SCHEMA_V1:
+        return {"planning_source": config.get("planning_source"), "debt_mapping": config.get("debt_mapping")}
+    return {"planning": config.get("planning"), "debt_mapping": config.get("debt_mapping")}
+
+
+def _check_semantic_binding(members: dict[str, bytes], manifest: dict[str, Any], config: dict[str, Any]) -> list[str]:
+    """#12 finding 4: the manifest's comparability metadata must be the projection of the stored config."""
+    expected = semantic_projection(config)
+    recorded = manifest.get("semantic_config")
+    if recorded != expected:
+        return [f"{SEMANTIC_CONFIG_MISMATCH}: manifest semantic_config {recorded} is not the projection {expected} of the stored effective config"]
+    return []
+
+
+def _check_identity_fields(manifest: dict[str, Any], preimage: dict[str, Any]) -> list[str]:
+    """Presence and equality of every identity field the manifest repeats, under the stored lineage.
+
+    Comparing only the fields both copies carry let a deletion pass: without
+    its manifest ``renderer_version`` a bundle kept its id and silently lost
+    the report replay that field gates. A field the lineage requires must be
+    in the preimage, and a field in either copy must be in both, equal.
+    """
+    problems: list[str] = []
+    lineage_name = preimage.get("artifact_contract_version")
+    lineage = LINEAGES.get(lineage_name) if isinstance(lineage_name, str) else None
+    if lineage is None:
+        problems.append(f"{UNSUPPORTED_LINEAGE}: artifact_contract_version {lineage_name!r} is not a lineage this verifier dispatches on")
+    else:
+        for key in sorted(lineage["preimage_fields"] - set(preimage)):
+            problems.append(f"{PREIMAGE_SHAPE_MISMATCH}: {key} is a field of the {lineage_name} identity preimage and is absent")
+        for key in sorted(set(preimage) - lineage["preimage_fields"]):
+            problems.append(f"{PREIMAGE_SHAPE_MISMATCH}: {key} is not a field of the {lineage_name} identity preimage")
+    for key in DUPLICATED_IDENTITY_FIELDS:
+        in_preimage, in_manifest = key in preimage, key in manifest
+        if in_preimage and not in_manifest:
+            problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {preimage[key]!r} in the identity preimage and absent from the manifest")
+        elif in_manifest and not in_preimage:
+            problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {manifest[key]!r} in the manifest and absent from the identity preimage")
+        elif in_preimage and preimage[key] != manifest[key]:
+            problems.append(f"{IDENTITY_FIELD_MISMATCH}: {key} is {manifest[key]!r} in the manifest and {preimage[key]!r} in the identity preimage")
+    if lineage is not None and preimage.get("renderer_version") not in lineage["renderers"]:
+        problems.append(
+            f"{RENDERER_NOT_IN_LINEAGE}: renderer_version {preimage.get('renderer_version')!r} is not a renderer the {lineage_name} lineage was written with"
+        )
+    return problems
+
+
+def _check_hashed_members(manifest: dict[str, Any], preimage: dict[str, Any]) -> list[str]:
+    """A member the identity hashes must be declared: deleting it with its entry must not pass.
+
+    The declared-member loop only checks the members the manifest names, so a
+    bundle that dropped ``delta.json`` or ``snapshot.json`` together with its
+    ``members`` entry kept its id, skipped the report replay (which needs
+    both) and verified with any report.
+    """
+    declared = manifest.get("members") or {}
+    problems: list[str] = []
+    for member, key in PREIMAGE_MEMBER_DIGESTS:
+        if key in preimage and preimage[key] not in (ACTIVITY_DISABLED, OBSERVATIONS_DISABLED) and member not in declared:
+            problems.append(f"{MEMBER_NOT_DECLARED}: {member} is hashed into the identity preimage as {key} but the manifest does not declare it")
+    return problems
+
+
+def _check_adapters(manifest: dict[str, Any]) -> list[str]:
+    """``adapters`` is rendered into the report, so it is bound to the facts the identity hashes.
+
+    Its only honest value is the provider of the bound project identity and the
+    collector version of the bound receipt; anything else is provenance nobody
+    collected under.
+    """
+    identity = manifest.get("project_identity")
+    receipt = manifest.get("receipt")
+    expected = [
+        {
+            "provider": identity.get("provider") if isinstance(identity, dict) else None,
+            "adapter_version": receipt.get("collector_version") if isinstance(receipt, dict) else None,
+        }
+    ]
+    if manifest.get("adapters") != expected:
+        return [f"{ADAPTERS_MISMATCH}: manifest adapters {manifest.get('adapters')!r} are not {expected!r}, the provider and collector the identity binds"]
+    return []
+
+
+def _check_evidence_binding(members: dict[str, bytes], manifest: dict[str, Any], preimage: dict[str, Any]) -> list[str]:
+    """The receipt and the evidence the manifest names must be the ones the identity hashes."""
+    problems: list[str] = []
+    receipt = manifest.get("receipt")
+    if "source_receipts_digest" in preimage:
+        try:
+            actual = canonical.digest(receipt)
+        except Exception as exc:  # noqa: BLE001
+            actual = f"unhashable ({exc})"
+        if actual != preimage["source_receipts_digest"]:
+            problems.append(f"{RECEIPT_DIGEST_MISMATCH}: the manifest receipt hashes to {actual}, the identity preimage names {preimage['source_receipts_digest']}")
+    observations = None
+    if "observations.json" in members:
+        try:
+            observations = canonical.loads(members["observations.json"].decode("utf-8"))
+        except Exception:  # noqa: BLE001
+            observations = None
+        if isinstance(observations, dict) and observations.get("receipt") != receipt:
+            problems.append(f"{RECEIPT_COPY_MISMATCH}: the receipt in observations.json differs from the manifest receipt")
+    if "snapshot.json" in members and "observations.json" in (manifest.get("members") or {}):
+        try:
+            snapshot = canonical.loads(members["snapshot.json"].decode("utf-8"))
+        except Exception:  # noqa: BLE001
+            snapshot = None
+        declared = manifest["members"]["observations.json"]
+        if isinstance(snapshot, dict) and snapshot.get("observations_digest") != declared:
+            problems.append(f"{OBSERVATIONS_DIGEST_MISMATCH}: snapshot.json was evaluated over {snapshot.get('observations_digest')}, the bundle carries {declared}")
+    return problems
+
+
 def _check_member_profile(members: dict[str, bytes], manifest: dict[str, Any], config: dict[str, Any]) -> list[str]:
     """ART-23: the profile implied by the stored config must match the manifest and the actual members."""
     problems: list[str] = []
@@ -305,6 +501,13 @@ def verify_members(members: dict[str, bytes]) -> list[str]:
         manifest = canonical.loads(members["manifest.json"].decode("utf-8"))
     except Exception as exc:  # noqa: BLE001
         return [f"manifest.json unreadable: {exc}"]
+    if not isinstance(manifest, dict):
+        return [f"manifest.json is not an object but {type(manifest).__name__}"]
+    for key, kind in (("members", dict), ("identity_preimage", dict), ("receipt", dict), ("semantic_config", dict)):
+        if key in manifest and not isinstance(manifest[key], kind):
+            problems.append(f"manifest {key} is not an object but {type(manifest[key]).__name__}")
+    if problems:
+        return problems
 
     declared = manifest.get("members") or {}
     for name, digest in sorted(declared.items()):
@@ -348,6 +551,10 @@ def verify_members(members: dict[str, bytes]) -> list[str]:
         for key in ("bundle_id", "members", "run_meta"):
             if key in preimage:
                 problems.append(f"identity preimage must not contain post-identity field {key} (ART-22)")
+        problems.extend(_check_identity_fields(manifest, preimage))
+        problems.extend(_check_hashed_members(manifest, preimage))
+        problems.extend(_check_adapters(manifest))
+        problems.extend(_check_evidence_binding(members, manifest, preimage))
 
     # B4: the stored effective config is the semantic authority (ART-25, then ART-23).
     config: dict[str, Any] | None = None
@@ -368,6 +575,8 @@ def verify_members(members: dict[str, bytes]) -> list[str]:
         if profile_problems:
             problems.extend(profile_problems)
             authority_ok = False
+    if authority_ok:
+        problems.extend(_check_semantic_binding(members, manifest, config))
 
     # ART-24: replay only from the validated stored config and immutable machine members.
     if "report.md" in members:
@@ -390,3 +599,14 @@ def verify_members(members: dict[str, bytes]) -> list[str]:
 
 def verify_dir(directory: str | Path) -> list[str]:
     return verify_members(load_bundle_dir(directory))
+
+
+def report_renderer(directory: str | Path) -> str | None:
+    """The renderer a verified bundle names, which decides whether its report was replayed."""
+    members = load_bundle_dir(directory)
+    try:
+        manifest = canonical.loads(members["manifest.json"].decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return None
+    renderer = manifest.get("renderer_version") if isinstance(manifest, dict) else None
+    return renderer if isinstance(renderer, str) else None

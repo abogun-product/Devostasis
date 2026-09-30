@@ -73,7 +73,8 @@ def _routes(**overrides):
 
 def _collect(routes, **project):
     transport = FakeTransport(routes)
-    client = GitHubClient(transport)
+    # A retryable answer must not make the suite wait for real backoff.
+    client = GitHubClient(transport, sleep=lambda seconds: None)
     adapter = GitHubAdapter(client, NOW)
     obs = adapter.collect(single_project("acme/widget", **project))
     return obs, transport, client
@@ -135,7 +136,7 @@ def test_c4_pagination_cap_is_partial(monkeypatch):
     assert obs.status_of("git.default_branch.commits.count_28d") == PARTIAL
     bands = {r.vital_id: r for r in evaluate_all(obs)}
     assert bands["pulse"].evaluation_status == "DEGRADED" and bands["pulse"].band_semantics == "CONSERVATIVE_LOWER_BOUND"
-    assert bands["integrity"].evaluation_status == "DEGRADED"
+    assert bands["integrity"].evaluation_status == "UNKNOWN" and bands["integrity"].band is None, "a truncated required series is UNKNOWN (PV-REV-TEST-003)"
 
 
 def test_no_workflows_and_no_check_suites_is_positively_uninstrumented():
@@ -265,7 +266,7 @@ def test_an_invalid_register_reaches_the_snapshot_as_an_error_observation():
     routes[f"{BASE}/contents/.devostasis/targets.json"] = (
         200,
         {},
-        {"type": "file", "encoding": "base64", "content": base64.b64encode(register.encode("utf-8")).decode("ascii")},
+        {"type": "file", "size": len(register.encode("utf-8")), "encoding": "base64", "content": base64.b64encode(register.encode("utf-8")).decode("ascii")},
     )
     client = GitHubClient(FakeTransport(routes))
     project = single_project("acme/widget", planning={"source": "file", "path": ".devostasis/targets.json"})
@@ -277,7 +278,6 @@ def test_an_invalid_register_reaches_the_snapshot_as_an_error_observation():
 def test_a_successful_response_that_is_not_json_becomes_a_declared_provider_failure():
     """HTTP 200 with an unreadable body escaped every handler as a ValueError."""
     import io
-    import urllib.request
 
     from devostasis.adapters.github import ApiFailure, UrllibTransport
 
@@ -292,16 +292,13 @@ def test_a_successful_response_that_is_not_json_becomes_a_declared_provider_fail
             return False
 
     transport = UrllibTransport(token=None)
-    original = urllib.request.urlopen
-    urllib.request.urlopen = lambda request, timeout=None: _Response(b"<html>maintenance</html>")
+    transport._open = lambda request: _Response(b"<html>maintenance</html>")
     try:
         transport.get("/repos/acme/widget")
     except ApiFailure as exc:
         assert exc.reason_code == "MALFORMED_RESPONSE" and exc.status_code == 200
     else:
         raise AssertionError("a 200 with a non-JSON body must be a declared failure")
-    finally:
-        urllib.request.urlopen = original
 
 
 # --------------------------------------------------------------------------- linkage evidence (PV-REV-PR-015)
@@ -414,7 +411,217 @@ def test_an_invalid_date_reaches_the_snapshot_as_an_error_observation():
     routes[f"{BASE}/contents/.devostasis/targets.json"] = (
         200,
         {},
-        {"type": "file", "encoding": "base64", "content": base64.b64encode(register.encode("utf-8")).decode("ascii")},
+        {"type": "file", "size": len(register.encode("utf-8")), "encoding": "base64", "content": base64.b64encode(register.encode("utf-8")).decode("ascii")},
     )
     targets = _observe(routes, _file_planning_project()).get(INV_TARGETS)
     assert targets.status == ERROR and targets.reason_code == "INVALID_REGISTER"
+
+
+# --------------------------------------------------------------------------- malformed payloads and a silent surface switch (review 2026-09-22)
+
+
+def test_a_successful_response_of_the_wrong_shape_costs_one_inventory_not_the_project():
+    """A 200 whose body is not the documented shape used to escape as AttributeError and end the project."""
+    from devostasis.normalize import INV_RELEASES
+
+    obs, _, _ = _collect(_routes(**{f"{BASE}/actions/runs": (200, {}, None)}))
+    revisions = obs.get(CI_REVISIONS)
+    assert revisions.status == ERROR and revisions.reason_code == "UNEXPECTED_PAYLOAD"
+    assert obs.status_of(INV_CRS) == AVAILABLE, "the other inventories were still collected"
+
+    obs, _, _ = _collect(_routes(**{f"{BASE}/actions/runs": (200, {}, {"total_count": 1, "workflow_runs": {"id": 1}})}))
+    assert obs.get(CI_REVISIONS).reason_code == "UNEXPECTED_PAYLOAD"
+
+    obs, _, _ = _collect(_routes(**{f"{BASE}/releases": (200, {}, {"message": "unexpected"})}))
+    releases = obs.get(INV_RELEASES)
+    assert releases.status == ERROR and releases.reason_code == "UNEXPECTED_PAYLOAD"
+    assert obs.status_of(CI_REVISIONS) == AVAILABLE
+
+
+def test_a_failed_workflow_lookup_is_recorded_when_check_suites_supply_the_evidence():
+    """Actions FORBIDDEN, check suites readable: the evidence is parent-level, and the receipt must say why."""
+    actions_suite = {"id": 9, "status": "completed", "conclusion": "success", "app": {"slug": "github-actions"}, "url": "s9", "latest_check_runs_count": 3}
+    routes = _routes(**{
+        f"{BASE}/actions/workflows": (403, {}, {"message": "Resource not accessible by integration"}),
+        f"{BASE}/commits/c1/check-suites": (200, {}, {"total_count": 1, "check_suites": [actions_suite]}),
+        f"{BASE}/commits/c2/check-suites": (200, {}, {"total_count": 0, "check_suites": []}),
+    })
+    obs, transport, _ = _collect(routes)
+    assert not any(path.endswith("/actions/runs") for path, _ in transport.calls), "runs are never asked for without a workflow count"
+    revisions = obs.get(CI_REVISIONS)
+    assert revisions.status == AVAILABLE and revisions.coverage["surface"] == "github_check_suites"
+    assert obs.value_of(CI_CONFIGURED) is True
+    assert "WORKFLOWS_UNAVAILABLE:FORBIDDEN" in obs.receipt.capability_notes
+    assert "CI_SURFACE:GITHUB_CHECK_SUITES_SAMPLED" in obs.receipt.capability_notes
+    assert "CI_SURFACE:GITHUB_ACTIONS_ONLY" not in obs.receipt.capability_notes
+
+    plain, _, _ = _collect(_routes())
+    assert not any(note.startswith("WORKFLOWS_UNAVAILABLE") for note in plain.receipt.capability_notes)
+
+
+# --------------------------------------------------------------------------- check-suite coverage (#12 finding 1)
+
+
+def _window_commits(count):
+    """`count` default-branch commits inside the 14-day Integrity window, newest first in the API order."""
+    return [_commit(f"w{i:03d}", f"2026-09-{5 - (i % 10) // 1 if False else 5:02d}T{(23 - i % 24):02d}:{(59 - i // 24) % 60:02d}:00Z") for i in range(count)]
+
+
+def _suite(suite_id, conclusion="success", app="circleci"):
+    return {"id": suite_id, "status": "completed", "conclusion": conclusion, "app": {"slug": app}, "url": f"s{suite_id}", "latest_check_runs_count": 1}
+
+
+def _suite_routes(commits, suites_by_sha, workflows_total=0):
+    routes = _routes(**{
+        f"{BASE}/commits": _paged(commits),
+        f"{BASE}/actions/workflows": (200, {}, {"total_count": workflows_total, "workflows": []}),
+    })
+    for commit in commits:
+        sha = commit["sha"]
+        suites = suites_by_sha.get(sha, [])
+
+        def handler(params, suites=suites):
+            page = int(params.get("page", 1))
+            per_page = int(params.get("per_page", 100))
+            return 200, {}, {"total_count": len(suites), "check_suites": suites[(page - 1) * per_page: page * per_page]}
+
+        routes[f"{BASE}/commits/{sha}/check-suites"] = handler
+    return routes
+
+
+def test_check_suites_examined_for_every_revision_are_complete_evidence():
+    commits = _window_commits(100)
+    routes = _suite_routes(commits, {c["sha"]: [_suite(i)] for i, c in enumerate(commits)})
+    obs, _, _ = _collect(routes)
+    item = obs.get(CI_REVISIONS)
+    assert item.status == AVAILABLE and item.coverage["suites_complete"] is True
+    assert item.coverage["suite_revisions_planned"] == 100 and item.coverage["suite_revisions_examined"] == 100
+    assert item.coverage["suites_stop_reason"] is None
+
+
+def test_the_hundred_and_first_revision_makes_the_suite_sample_partial():
+    """The exact boundary the review asked for: 101 revisions, suites examined for 100, every one passing."""
+    commits = _window_commits(101)
+    routes = _suite_routes(commits, {c["sha"]: [_suite(i)] for i, c in enumerate(commits)})
+    obs, _, _ = _collect(routes)
+    item = obs.get(CI_REVISIONS)
+    assert item.status == PARTIAL and item.reason_code == "CHECK_SUITES_INCOMPLETE"
+    assert item.coverage["suite_revisions_planned"] == 101 and item.coverage["suite_revisions_examined"] == 100
+    assert item.coverage["suites_stop_reason"] == "CHECK_SUITE_SAMPLE_CAPPED"
+    assert sum(1 for record in item.value if record["parents"]) == 100, "the evidence collected is kept"
+    derive(obs, single_project("acme/widget"))
+    integrity = {r.vital_id: r for r in evaluate_all(obs)}["integrity"]
+    assert integrity.evaluation_status == "UNKNOWN" and integrity.band is None, "a truncated sample is never an exact favourable result"
+
+
+def test_an_access_failure_after_four_revisions_makes_the_sample_partial_and_keeps_what_was_seen():
+    commits = _window_commits(5)
+    suites = {c["sha"]: [_suite(i, "failure" if i == 1 else "success")] for i, c in enumerate(commits)}
+    routes = _suite_routes(commits, suites)
+    routes[f"{BASE}/commits/{commits[4]['sha']}/check-suites"] = (403, {}, {"message": "Resource not accessible by integration"})
+    obs, _, _ = _collect(routes)
+    item = obs.get(CI_REVISIONS)
+    assert item.status == PARTIAL and item.reason_code == "CHECK_SUITES_INCOMPLETE"
+    assert item.coverage["suites_stop_reason"] == "FORBIDDEN"
+    assert item.coverage["suite_revisions_examined"] == 4, "the revision whose request failed was not examined"
+    assert "CHECK_SUITES_UNAVAILABLE:FORBIDDEN" in obs.receipt.capability_notes
+    failed = [record for record in item.value if record["history_state"] == "FAILURE_OBSERVED"]
+    assert len(failed) == 1, "an observed failure is retained"
+    assert obs.value_of(CI_CONFIGURED) is True
+
+
+def test_a_second_page_of_suites_is_read_and_a_capped_page_count_is_partial():
+    from devostasis.adapters import github as github_module
+
+    commits = _window_commits(1)
+    sha = commits[0]["sha"]
+    routes = _suite_routes(commits, {sha: [_suite(i) for i in range(100)] + [_suite(100, "failure")]})
+    obs, transport, _ = _collect(routes)
+    item = obs.get(CI_REVISIONS)
+    assert item.status == AVAILABLE, "101 suites over two pages are complete evidence"
+    assert item.value[0]["history_state"] == "FAILURE_OBSERVED", "the failing suite on the second page is seen"
+    assert [params.get("page") for path, params in transport.calls if path.endswith("/check-suites")] == [1, 2]
+
+    original = github_module.MAX_SUITE_PAGES
+    github_module.MAX_SUITE_PAGES = 1
+    try:
+        obs, _, _ = _collect(routes)
+    finally:
+        github_module.MAX_SUITE_PAGES = original
+    item = obs.get(CI_REVISIONS)
+    assert item.status == PARTIAL and item.coverage["suites_complete"] is False
+    assert item.coverage["suites_stop_reason"] == "PAGINATION_CAPPED"
+
+
+def test_a_spent_budget_makes_the_suite_sample_partial():
+    commits = _window_commits(6)
+    routes = _suite_routes(commits, {c["sha"]: [_suite(i)] for i, c in enumerate(commits)})
+    client = GitHubClient(FakeTransport(routes), budget=12)
+    obs = GitHubAdapter(client, NOW).collect(single_project("acme/widget"))
+    item = obs.get(CI_REVISIONS)
+    assert item.status == PARTIAL and item.reason_code in ("CHECK_SUITES_INCOMPLETE", "REQUEST_BUDGET_EXHAUSTED")
+    assert item.coverage["suites_stop_reason"] == "REQUEST_BUDGET_EXHAUSTED"
+    assert item.coverage["suite_revisions_examined"] < 6
+
+
+def test_the_actions_surface_is_untouched_by_suite_coverage():
+    obs, _, _ = _collect(_routes())
+    item = obs.get(CI_REVISIONS)
+    assert item.status == AVAILABLE and item.coverage["surface"] == "github_actions"
+    assert item.coverage["suites_complete"] is True and item.coverage["suite_revisions_planned"] == 0
+@pytest.mark.parametrize(
+    "body",
+    [
+        None,
+        [],
+        "two",
+        {"total_count": "many", "workflows": []},
+        {"total_count": True, "workflows": []},
+        {"total_count": -1, "workflows": []},
+        {"workflows": []},
+    ],
+    ids=["null", "list", "string", "text count", "boolean count", "negative count", "no count"],
+)
+def test_a_malformed_workflows_answer_is_a_declared_failure_not_an_invented_count(body):
+    """PV-REV-PR-029: a 200 from /actions/workflows of the wrong shape or value must reach the
+    declared per-inventory boundary. Before, a non-object body raised AttributeError and a
+    non-numeric total_count raised ValueError past the WORKFLOWS_UNAVAILABLE fallback."""
+    routes = _routes(**{
+        f"{BASE}/actions/workflows": (200, {}, body),
+        f"{BASE}/commits/c1/check-suites": (200, {}, {"total_count": 0, "check_suites": []}),
+        f"{BASE}/commits/c2/check-suites": (200, {}, {"total_count": 0, "check_suites": []}),
+    })
+    obs, transport, _ = _collect(routes)
+    configured = obs.get(CI_CONFIGURED)
+    assert configured.status == ERROR and configured.reason_code == "UNEXPECTED_PAYLOAD", "no workflow count is invented"
+    assert configured.value is None
+    assert "WORKFLOWS_UNAVAILABLE:UNEXPECTED_PAYLOAD" in obs.receipt.capability_notes
+    assert not any(path.endswith("/actions/runs") for path, _ in transport.calls), "runs are never asked for without a workflow count"
+    assert obs.status_of(INV_CRS) == AVAILABLE and obs.status_of(INV_ISSUES) == AVAILABLE, "independent inventories are still collected"
+    revisions = obs.get(CI_REVISIONS)
+    assert revisions.status == AVAILABLE and revisions.coverage["surface"] == "none", "the check-suite surface was sampled instead"
+    derive(obs, single_project("acme/widget"))
+    integrity = {r.vital_id: r for r in evaluate_all(obs)}["integrity"]
+    assert integrity.evaluation_status == "UNKNOWN" and integrity.band is None, "an unreadable Actions surface is never UNINSTRUMENTED"
+
+
+def test_a_malformed_workflows_answer_still_lets_external_check_suites_supply_the_evidence():
+    """The fallback the note exists for: Actions unreadable, an external suite readable."""
+    suite = {"id": 9, "status": "completed", "conclusion": "failure", "app": {"slug": "circleci"}, "url": "s9", "latest_check_runs_count": 3}
+    routes = _routes(**{
+        f"{BASE}/actions/workflows": (200, {}, {"total_count": None}),
+        f"{BASE}/commits/c1/check-suites": (200, {}, {"total_count": 1, "check_suites": [suite]}),
+        f"{BASE}/commits/c2/check-suites": (200, {}, {"total_count": 0, "check_suites": []}),
+    })
+    obs, _, _ = _collect(routes)
+    assert obs.value_of(CI_CONFIGURED) is True
+    revisions = {r["revision"]: r for r in obs.value_of(CI_REVISIONS)}
+    assert revisions["c1"]["current_verdict"] == "VERIFY_FAIL" and revisions["c1"]["history_provenance"] == "PARENT_LEVEL_ONLY"
+    assert "WORKFLOWS_UNAVAILABLE:UNEXPECTED_PAYLOAD" in obs.receipt.capability_notes
+
+
+def test_a_well_formed_workflows_answer_is_read_as_before():
+    from devostasis.adapters.github import _workflows_total
+
+    assert _workflows_total("/x", {"total_count": 0, "workflows": []}) == 0
+    assert _workflows_total("/x", {"total_count": 7}) == 7

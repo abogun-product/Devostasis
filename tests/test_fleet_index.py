@@ -8,6 +8,7 @@ between identical runs, and never grow an aggregate or a cross-project order.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -17,6 +18,8 @@ from devostasis.contracts import CORE_VITAL_IDS
 from devostasis.history import FilesystemHistoryStore
 from devostasis.runner import build_from_observations, write_fleet_index
 from helpers import full_inputs, obs_set
+
+SCHEMAS = Path(__file__).resolve().parent.parent / "schemas"
 
 
 def _store_with(tmp_path, projects=("acme/widget",), observed_at="2026-09-05T12:00:00Z"):
@@ -106,7 +109,8 @@ def test_the_fleet_index_is_not_mistaken_for_a_project(tmp_path):
 def test_a_bundle_without_a_demand_member_yields_null_levels(tmp_path):
     """Bundles written before the demand interface existed must not get invented levels."""
     store = _store_with(tmp_path)
-    (store.root / "projects" / "github.com" / "acme" / "widget" / "latest" / "demand.json").unlink()
+    for path in (store.root / "projects" / "github.com" / "acme" / "widget").rglob("demand.json"):
+        path.unlink()  # the immutable bundle and its convenience copy alike (#28: the index reads the immutable one)
     write_fleet_index(store)
     entry = _index(store)["projects"][0]
     assert entry["attention_order"] == []
@@ -115,11 +119,23 @@ def test_a_bundle_without_a_demand_member_yields_null_levels(tmp_path):
         assert cell["band"] is not None, vital_id
 
 
-def test_an_unreadable_demand_member_degrades_instead_of_failing(tmp_path):
+def test_an_absent_demand_member_is_a_pre_demand_bundle_and_an_unreadable_one_is_a_failure(tmp_path):
+    """A bundle written before the demand interface has no member and gets null levels; a member
+    that is present but unreadable is corruption, and a fleet surface must not pass it off as the
+    legacy case (PV-AUDIT-FLEET-COVERAGE-001)."""
+    from devostasis.history import HistoryStoreError
+
     store = _store_with(tmp_path)
-    (store.root / "projects" / "github.com" / "acme" / "widget" / "latest" / "demand.json").write_text("{ not json", "utf-8")
+    for path in (store.root / "projects" / "github.com" / "acme" / "widget").rglob("demand.json"):
+        path.unlink()
     write_fleet_index(store)
     assert _index(store)["projects"][0]["vitals"]["flow"]["level"] is None
+
+    store = _store_with(tmp_path / "corrupt")
+    for path in (store.root / "projects" / "github.com" / "acme" / "widget" / "history").rglob("demand.json"):
+        path.write_text("{ not json", "utf-8")
+    with pytest.raises(HistoryStoreError, match="demand member unreadable"):
+        write_fleet_index(store)
 
 
 def test_an_empty_store_writes_nothing(tmp_path):
@@ -130,7 +146,7 @@ def test_an_empty_store_writes_nothing(tmp_path):
 
 @pytest.mark.parametrize("key", ["schema", "canonical_semantics", "aggregate", "cross_project_order", "projects"])
 def test_the_document_matches_its_published_schema(tmp_path, key):
-    schema = canonical.load_file("schemas/fleet-index.schema.json")
+    schema = canonical.load_file(SCHEMAS / "fleet-index.schema.json")
     document = _index(_store_with(tmp_path))
     assert key in schema["required"] and key in document
     entry_schema = schema["properties"]["projects"]["items"]

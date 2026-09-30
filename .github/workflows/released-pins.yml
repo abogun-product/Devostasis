@@ -14,13 +14,15 @@
 
 name: Released pins resolve
 
+# No push trigger: this file reaches master only in a release merge, which is
+# exactly the moment its pins name a tag that does not exist yet. The one push
+# run it ever had (a8726f5, 2026-09-07) failed 72 seconds before v0.1.8 was
+# tagged, and because Integrity keeps a revision's failure for 14 days, it made
+# this repository's own Integrity FAILING for two weeks.
 on:
   schedule:
     - cron: "41 7 * * *"
   workflow_dispatch:
-  push:
-    branches: ["master"]
-    paths: [".github/workflows/released-pins.yml"]
 
 permissions:
   contents: read
@@ -36,7 +38,7 @@ jobs:
         run: |
           {
             grep -oE 'observe-self\.yml@v[0-9][^[:space:]"'"'"']*' README.md docs/deployment.md .github/workflows/observe-self.yml || true
-            grep -oE 'github\.com/drevendev/devostasis@v[0-9][^[:space:]"'"'"']*' README.md docs/deployment.md || true
+            grep -oiE 'github\.com/drevendev/devostasis(\.git)?@v[0-9][^[:space:]"'"'"']*' README.md docs/deployment.md || true
             grep -oE 'default: v[0-9][^[:space:]"'"'"']*' .github/workflows/observe-self.yml || true
           } | grep -oE 'v[0-9][0-9A-Za-z.+-]*' | sort -u > pins.txt
           echo "found:"; cat pins.txt

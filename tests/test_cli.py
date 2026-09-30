@@ -80,3 +80,53 @@ def test_run_rejects_invalid_config(tmp_path, capsys):
     config.write_text(json.dumps({"config_version": "1", "projects": [{"repo": "a/b", "theme": "x"}]}), "utf-8")
     assert main(["run", "--config", str(config), "--store", str(tmp_path / "store")]) == 2
     assert "CONFIG_IDENTITY_UNCLASSIFIED" in capsys.readouterr().err
+
+
+def test_build_refuses_observations_collected_under_another_configuration(tmp_path, capsys):
+    """#27: the receipt names the configuration the aggregates were derived under; a build must resolve the same one."""
+    from devostasis.config import single_project
+    from devostasis.observations import Receipt
+
+    collected_under = single_project("acme/widget", debt={"source": "labels", "labels": ["bug"], "mapping_version": "1"})
+    obs = full_inputs(obs_set())
+    obs.finalize_receipt(Receipt(run_id="run-test", collector_version="test", target=obs.subject, started_at=obs.observed_at, ended_at=obs.observed_at, config_hash=collected_under.effective_config_digest()))
+    obs_path = tmp_path / "observations.json"
+    obs.save(obs_path)
+    store = tmp_path / "store"
+
+    assert main(["build", "--observations", str(obs_path), "--store", str(store)]) == 1
+    err = capsys.readouterr().err
+    assert "CONFIG_MISMATCH" in err and "observe again" in err
+    assert not (store / "projects").exists(), "nothing was persisted"
+
+    assert main(["build", "--observations", str(obs_path), "--store", str(store), "--debt-label", "bug", "--debt-mapping-version", "1"]) == 0
+    assert "BASELINE" in capsys.readouterr().out
+
+
+def test_build_accepts_a_receipt_that_carries_a_placeholder_instead_of_a_digest(tmp_path, capsys):
+    """Fixtures and examples carry no real digest; only a real one is compared."""
+    obs_path = tmp_path / "observations.json"
+    full_inputs(obs_set()).save(obs_path)
+    assert main(["build", "--observations", str(obs_path), "--store", str(tmp_path / "store"), "--debt-label", "anything"]) == 0
+
+
+def test_verify_does_not_claim_a_replay_it_did_not_perform(tmp_path, capsys):
+    """A bundle of an earlier renderer is bound by its digest, not replayed; the message says which."""
+    from devostasis import canonical
+
+    obs_path = tmp_path / "observations.json"
+    full_inputs(obs_set()).save(obs_path)
+    store = tmp_path / "store"
+    assert main(["build", "--observations", str(obs_path), "--store", str(store)]) == 0
+    latest = store / "projects" / "github.com" / "acme" / "widget" / "latest"
+    assert main(["verify", "--bundle", str(latest)]) == 0
+    assert "report reproducibility all match" in capsys.readouterr().out
+
+    manifest = json.loads((latest / "manifest.json").read_text("utf-8"))
+    manifest["renderer_version"] = manifest["identity_preimage"]["renderer_version"] = "devostasis.render.v3"
+    manifest["bundle_id"] = canonical.sha256_hex(canonical.canonical_bytes(manifest["identity_preimage"]))
+    (latest / "manifest.json").write_bytes(canonical.pretty_json(manifest).encode("utf-8"))
+    assert main(["verify", "--bundle", str(latest)]) == 0
+    out = capsys.readouterr().out
+    assert "not replayed" in out and "devostasis.render.v3" in out
+    assert "reproducibility all match" not in out

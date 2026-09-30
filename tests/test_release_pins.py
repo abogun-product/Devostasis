@@ -29,7 +29,9 @@ PINNED_FILES = (
 )
 
 WORKFLOW_REF = re.compile(r"observe-self\.yml@(v[0-9][^\s\"']*)")
-INSTALL_REF = re.compile(r"github\.com/drevendev/devostasis@([^\s\"']+)")
+# Case-insensitive and with the optional .git: GitHub resolves both spellings,
+# so a pin written either way is a pin that must resolve.
+INSTALL_REF = re.compile(r"github\.com/drevendev/devostasis(?:\.git)?@([^\s\"']+)", re.IGNORECASE)
 DEFAULT_REF = re.compile(r"devostasis-ref:.*?\n(?:.*?\n)*?\s*default:\s*(\S+)", re.MULTILINE)
 
 
@@ -48,11 +50,11 @@ def test_the_reusable_workflow_installs_the_version_it_ships_with():
 
 @pytest.mark.parametrize("relative", PINNED_FILES, ids=lambda path: str(path))
 def test_documented_pins_name_the_current_tag(relative: Path):
-    """A literal ref must be this tag. A templated one resolves at run time and is left alone."""
+    """A literal ref must be this tag. A templated one (an expression, or the environment variable the workflow passes it through) resolves at run time and is left alone."""
     text = (ROOT / relative).read_text(encoding="utf-8")
     for pattern, what in ((WORKFLOW_REF, "workflow pin"), (INSTALL_REF, "install ref")):
         for found in pattern.findall(text):
-            if found.startswith("${{"):
+            if found.startswith("${"):
                 continue
             assert found == TAG, f"{relative}: {what} {found} should be {TAG}"
 

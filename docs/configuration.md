@@ -44,7 +44,7 @@ Any other key is rejected with `CONFIG_IDENTITY_UNCLASSIFIED`.
 | `store.path` | C | `.` | history store root, relative to the config file |
 | `token_env` | C | none | extra environment variable to read the token from |
 | `defaults` | B | see below | applies to every project unless overridden |
-| `projects[].repo` | A | required | `owner/name` |
+| `projects[].repo` | A | required | `owner/name`, each of letters, digits, dots, hyphens and underscores; two spellings of one repository are one project |
 | `projects[].planning.source` | B | `milestones` | `milestones` reads GitHub milestones; `file` reads a targets register ([registers](spec/registers.md)); `none` declares planning positively absent |
 | `projects[].planning.path` | B | none | repository path of the targets register, required for `file` |
 | `projects[].planning.link_marker` | B | `Target:` | marker that links a change request to a target id in its text (`file` source) |
@@ -61,6 +61,16 @@ Any other key is rejected with `CONFIG_IDENTITY_UNCLASSIFIED`.
 | `projects[].observations_member` | B | `true` | include `observations.json` (full evidence; turn off to keep stores small) |
 | `projects[].display_name`, `notes` | C | none | ignored by the runtime |
 
+The configuration is read strictly: `activity.enabled` must be a boolean
+(`"false"` is not `false`), `store` must be an object with only `path`, and
+an owner or repository name that is not a name is rejected before anything
+is observed, so nothing that pathlib would read as a path can reach the
+store. GitHub locators are case-insensitive, so two spellings of one
+repository are a duplicate in the configuration; two locators the provider
+resolves to one repository at run time (a redirect, an alias) are one
+project too: the second is refused with `DUPLICATE_PROJECT_IDENTITY` before
+it collects anything, and is never mistaken for a rename of the first.
+
 ## What changes comparability
 
 Changing `planning` (source, path or marker) or `debt` (source, labels, path
@@ -71,17 +81,22 @@ identity but not the comparison.
 
 ## Token
 
-Resolution order: `--token`, `DEVOSTASIS_GITHUB_TOKEN`, `GITHUB_TOKEN`,
-`GH_TOKEN`, the configured `token_env`, then `gh auth token` when the GitHub
-CLI is installed and logged in. Use a fine-grained token with read-only
-Contents, Issues, Pull requests, Actions and Metadata permissions on the
-repositories you observe.
+Resolution order: `--token`, the configured `token_env`,
+`DEVOSTASIS_GITHUB_TOKEN`, `GITHUB_TOKEN`, `GH_TOKEN`, then `gh auth token`
+when the GitHub CLI is installed and logged in. The configured variable comes
+first on purpose: a runner often exports a `GITHUB_TOKEN` of its own, and a
+fleet configuration that names its token must not be overridden by it. Use a
+fine-grained token with read-only Contents, Issues, Pull requests, Actions
+and Metadata permissions on the repositories you observe.
 
 ## Reproducible runs
 
-`--now 2026-09-05T12:00:00Z` fixes the observation timestamp so that two
-collections of the same evidence produce the same bundle identity. Windows are
-computed from that timestamp.
+`--now 2026-09-05T12:00:00Z` fixes the observation timestamp, and every window
+is computed from it. It does not yet make two collections of the same evidence
+one bundle: the receipt's `started_at` and `ended_at` are wall-clock and
+identity-bearing, so collections that land in different seconds differ (issue
+#19, whose repair is the accepted `PV-BUNDLE-ID-003`). A `build` from one saved
+observation set is reproducible.
 
 ## Command-line equivalents
 

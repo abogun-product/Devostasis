@@ -5,6 +5,37 @@ The adapter produces one canonical record per default-branch revision of the
 revision, failure-sticky history, current verdict independent of history).
 This evaluator only counts and classifies; it never re-interprets provider
 outcomes.
+
+Rule ``integrity.bands.v1`` carries three accepted repairs on top of the V0
+band table, none of which moves a threshold or a window:
+
+* **PV-REV-INTEGRITY-UNKNOWN-001** (INT-UNKNOWN-01..06): a newest in-scope
+  revision whose current verdict is ``UNKNOWN`` never inherits an older
+  decisive verdict. ``UNKNOWN`` is the absence of an observation, so the Vital
+  is ``UNKNOWN`` with no band; historical decisive evidence stays in
+  ``derived`` and is never reconstructed as a pass. Positively observed
+  ``NOT_EXECUTED`` and ``NON_VERIFY_TERMINAL`` keep the accepted fallback to
+  the latest decisive revision.
+* **PV-REV-TEST-003**: a required revision series with acquisition status
+  ``PARTIAL`` has no accepted degraded path. It is ``UNKNOWN`` with no band;
+  the counts of the truncated evidence stay visible, marked as such.
+* **PV-REV-TEST-VECTORS-002** (R1, R2): one to three decisive revisions are a
+  ``SPARSE`` sample, four or more an ``ESTABLISHED`` one, and
+  ``CI_SPARSE_SAMPLE`` is emitted whenever the sample is sparse.
+
+* **PV-INTEGRITY-TOTALITY-001** (accepted by PV-REV-INT-TOTALITY-001,
+  INT-TOTAL-01..14): a newest revision still being verified is never spoken
+  for by an older verdict. Only an already-true established historical
+  FAILING predicate names a band, ``DEGRADED / FAILING / EXACT``; every other
+  unresolved region is ``UNKNOWN`` with no band. The accepted contract
+  deliberately defines no ``possible_bands`` reachability algorithm, and the
+  one this rule version first carried (#12 finding 3) could omit the band it
+  emitted. A positively unconfigured repository whose only recent evidence is
+  non-decisive is ``UNINSTRUMENTED``, with that evidence kept visible.
+
+A required series that cannot be used is ``UNKNOWN`` whatever ``ci.configured``
+says, because "no verification evidence" is exactly what it cannot establish,
+and a verdict outside the canonical vocabulary is read as ``UNKNOWN``.
 """
 
 from __future__ import annotations
@@ -17,8 +48,8 @@ from ..policy import INTEGRITY
 from .common import (
     EVAL_AVAILABLE,
     EVAL_DEGRADED,
+    EVAL_UNKNOWN,
     SEM_EXACT,
-    SEM_SUPERSET,
     VitalResult,
     input_meta,
     unknown_result,
@@ -26,7 +57,13 @@ from .common import (
 
 VITAL_ID = "integrity"
 VITAL_VERSION = "PV-VITALS-V1-002/integrity"
-RULE_ID = "integrity.bands.v0+ci-unit-004"
+RULE_ID = "integrity.bands.v1+ci-unit-004"
+UNKNOWN_RULE = "PV-REV-INTEGRITY-UNKNOWN-001"
+PARTIAL_RULE = "PV-REV-TEST-003"
+SPARSE_RULE = "PV-REV-TEST-VECTORS-002"
+TOTALITY_RULE = "PV-INTEGRITY-TOTALITY-001"
+UNRESOLVED_DIAGNOSTIC = "CI_CURRENT_VERIFY_UNRESOLVED"
+UNINSTRUMENTED_WITH_HISTORY = "CI_UNINSTRUMENTED_WITH_RECENT_NONDECISIVE_HISTORY"
 BANDS = ["UNINSTRUMENTED", "NO_RECENT_RUNS", "NO_DECISIVE_RUNS", "SPARSE", "SPARSE_MIXED", "FLAKY", "CLEAN", "FAILING"]
 
 CONFIGURED = "ci.configured"
@@ -43,13 +80,19 @@ NON_VERIFY_TERMINAL = "NON_VERIFY_TERMINAL"
 NOT_EXECUTED = "NOT_EXECUTED"
 VERDICT_UNKNOWN = "UNKNOWN"
 DECISIVE = {VERIFY_PASS, VERIFY_FAIL}
+NON_DECISIVE_TERMINAL = {NON_VERIFY_TERMINAL, NOT_EXECUTED}
+VERDICTS = DECISIVE | NON_DECISIVE_TERMINAL | {VERIFY_UNRESOLVED, VERDICT_UNKNOWN}
+
+SAMPLE_SPARSE = "SPARSE"
+SAMPLE_ESTABLISHED = "ESTABLISHED"
+SPARSE_DIAGNOSTIC = "CI_SPARSE_SAMPLE"
 
 
 def _result(
     obs: ObservationSet,
-    band: str,
+    band: str | None,
     status: str,
-    semantics: str,
+    semantics: str | None,
     possible: list[str] | None,
     derived: dict[str, Any],
     diagnostics: list[str],
@@ -72,8 +115,56 @@ def _result(
     )
 
 
-def _superset(band: str) -> list[str]:
-    return [band] + [b for b in ("FAILING", "FLAKY", "SPARSE_MIXED") if b != band]
+def _newest(records: list[dict[str, Any]]) -> dict[str, Any]:
+    return max(records, key=lambda r: (r.get("committed_at") or "", r.get("revision") or ""))
+
+
+def classify(n: int, f: int, current_reference: str | None) -> str:
+    """The V0 band table over a decisive population and the verdict that speaks for the newest revision."""
+    established = INTEGRITY["established_sample"]
+    fail_num, fail_den = INTEGRITY["failing_ratio"]
+    if n == 0:
+        return "NO_DECISIVE_RUNS"
+    if current_reference == VERIFY_FAIL or (n >= established and f * fail_den >= n * fail_num):
+        return "FAILING"
+    if n >= established and f > 0:
+        return "FLAKY"
+    if n >= established:
+        return "CLEAN"
+    if f >= 1:
+        return "SPARSE_MIXED"
+    return "SPARSE"
+
+
+def sample_strength(n: int) -> str | None:
+    """``SPARSE`` for one to three decisive revisions, ``ESTABLISHED`` from four; none without a sample."""
+    if n <= 0:
+        return None
+    return SAMPLE_SPARSE if n < INTEGRITY["established_sample"] else SAMPLE_ESTABLISHED
+
+
+HISTORY_CONTRIBUTION = {"FAILURE_OBSERVED": VERIFY_FAIL, "PASS_ONLY_OBSERVED": VERIFY_PASS, "NO_DECISIVE_OBSERVED": None}
+
+
+def _record_consistent(record: Any) -> bool:
+    """A revision record's history state is in the vocabulary and its contribution is the one PV-CI-UNIT-004 derives from it."""
+    if not isinstance(record, dict) or not isinstance(record.get("history_state"), str) or record["history_state"] not in HISTORY_CONTRIBUTION:
+        return False
+    if not isinstance(record.get("current_verdict"), (str, type(None))):
+        return False
+    return record.get("historical_contribution") == HISTORY_CONTRIBUTION[record["history_state"]]
+
+
+def _record_label(record: Any) -> str:
+    if isinstance(record, dict) and isinstance(record.get("revision"), str):
+        return record["revision"]
+    return type(record).__name__
+
+
+def established_failing(n: int, f: int) -> bool:
+    """The historical FAILING predicate on its own: an established sample whose failure ratio reaches the threshold."""
+    fail_num, fail_den = INTEGRITY["failing_ratio"]
+    return n >= INTEGRITY["established_sample"] and f * fail_den >= n * fail_num
 
 
 def evaluate(obs: ObservationSet) -> VitalResult:
@@ -90,26 +181,50 @@ def evaluate(obs: ObservationSet) -> VitalResult:
         and isinstance(series.value, list)
     )
     if not series_usable:
-        if configured_known and configured is False:
-            return _result(
-                obs,
-                "UNINSTRUMENTED",
-                EVAL_AVAILABLE,
-                SEM_EXACT,
-                None,
-                {"decisive_count_14d": 0, "failed_count_14d": 0, "revisions_with_verification": 0},
-                diagnostics,
-                "No automated verification is configured for this repository.",
-            )
+        # Precedence A of PV-INTEGRITY-TOTALITY-001: an unusable required series
+        # is UNKNOWN, also beside a positive "not configured", because
+        # UNINSTRUMENTED claims there is no verification evidence and an
+        # unreadable series is exactly what cannot establish that.
         diagnostics.append(f"MISSING_REQUIRED:{REVISIONS}:{obs.status_of(REVISIONS)}/{obs.freshness_of(REVISIONS)}")
         if not configured_known:
             diagnostics.append(f"MISSING_REQUIRED:{CONFIGURED}:{obs.status_of(CONFIGURED)}/{obs.freshness_of(CONFIGURED)}")
         return unknown_result(VITAL_ID, VITAL_VERSION, RULE_ID, obs, IDS, diagnostics, SHARED, GROUPS)
 
     revisions: list[dict[str, Any]] = list(series.value)
+    inconsistent = [r for r in revisions if not _record_consistent(r)]
+    if inconsistent:
+        # A record whose contribution contradicts its own history (or names a
+        # state outside the vocabulary) is a coverage defect, not a pass.
+        diagnostics.extend(f"REVISION_RECORD_INCONSISTENT:{_record_label(r)}" for r in inconsistent)
+        return unknown_result(VITAL_ID, VITAL_VERSION, RULE_ID, obs, IDS, diagnostics, SHARED, GROUPS)
     active = [r for r in revisions if r.get("parents")]
+    decisive = [r for r in active if r.get("historical_contribution") in DECISIVE]
+    failed = [r for r in decisive if r.get("history_state") == "FAILURE_OBSERVED"]
+    n, f = len(decisive), len(failed)
+
     if series.status == PARTIAL:
-        diagnostics.append("REVISION_SERIES_PARTIAL")
+        # PV-REV-TEST-003: a truncated required series has no accepted degraded
+        # path. The counts of what was collected stay visible, marked as
+        # incomplete, and no band is claimed over evidence known to be short.
+        diagnostics.append(f"MISSING_REQUIRED:{REVISIONS}:{PARTIAL}/{series.freshness}")
+        diagnostics.append(f"REVISION_SERIES_PARTIAL:{series.reason_code or 'INCOMPLETE'}")
+        return _result(
+            obs,
+            None,
+            EVAL_UNKNOWN,
+            None,
+            None,
+            {
+                "series_status": PARTIAL,
+                "revisions_in_window": len(revisions),
+                "revisions_with_verification": len(active),
+                "decisive_count_14d": n,
+                "failed_count_14d": f,
+                "partial_series_rule": PARTIAL_RULE,
+            },
+            diagnostics,
+            f"The revision series is incomplete ({series.reason_code or 'truncated'}); {n} decisive revisions were observed, and no band is claimed over evidence known to be short.",
+        )
 
     if not active:
         if configured_known and configured is False:
@@ -126,13 +241,12 @@ def evaluate(obs: ObservationSet) -> VitalResult:
         if not configured_known:
             diagnostics.append(f"MISSING_REQUIRED:{CONFIGURED}:{obs.status_of(CONFIGURED)}/{obs.freshness_of(CONFIGURED)}")
             return unknown_result(VITAL_ID, VITAL_VERSION, RULE_ID, obs, IDS, diagnostics, SHARED, GROUPS)
-        status = EVAL_DEGRADED if series.status == PARTIAL else EVAL_AVAILABLE
         return _result(
             obs,
             "NO_RECENT_RUNS",
-            status,
-            SEM_EXACT if status == EVAL_AVAILABLE else SEM_SUPERSET,
-            None if status == EVAL_AVAILABLE else _superset("NO_RECENT_RUNS"),
+            EVAL_AVAILABLE,
+            SEM_EXACT,
+            None,
             {"decisive_count_14d": 0, "failed_count_14d": 0, "revisions_in_window": len(revisions), "revisions_with_verification": 0},
             diagnostics,
             f"Verification is configured but none of the {len(revisions)} recent default-branch revisions has a verification execution.",
@@ -141,14 +255,14 @@ def evaluate(obs: ObservationSet) -> VitalResult:
     if not configured_known:
         diagnostics.append("CONFIGURED_INFERRED_FROM_RUNS")
 
-    decisive = [r for r in active if r.get("historical_contribution") in DECISIVE]
-    failed = [r for r in decisive if r.get("history_state") == "FAILURE_OBSERVED"]
-    latest = max(active, key=lambda r: (r.get("committed_at") or "", r.get("revision") or ""))
+    latest = _newest(active)
     current = latest.get("current_verdict") or VERDICT_UNKNOWN
-    n = len(decisive)
-    f = len(failed)
-    established = INTEGRITY["established_sample"]
-    fail_num, fail_den = INTEGRITY["failing_ratio"]
+    if not isinstance(current, str) or current not in VERDICTS:
+        # integrity-ci.md: an unknown future value fails closed. It is read as
+        # UNKNOWN, never as a non-decisive terminal state an older pass could
+        # speak for.
+        diagnostics.append(f"CURRENT_VERDICT_UNRECOGNIZED:{current}")
+        current = VERDICT_UNKNOWN
 
     provenance: dict[str, int] = {}
     for r in active:
@@ -156,6 +270,10 @@ def evaluate(obs: ObservationSet) -> VitalResult:
         provenance[key] = provenance.get(key, 0) + 1
     if provenance.get("PARENT_LEVEL_ONLY"):
         diagnostics.append(f"HISTORY_PROVENANCE_PARENT_LEVEL_ONLY:{provenance['PARENT_LEVEL_ONLY']}")
+
+    strength = sample_strength(n)
+    if strength == SAMPLE_SPARSE:
+        diagnostics.append(SPARSE_DIAGNOSTIC)
 
     derived: dict[str, Any] = {
         "revisions_in_window": len(revisions),
@@ -171,50 +289,77 @@ def evaluate(obs: ObservationSet) -> VitalResult:
         },
         "history_provenance": dict(sorted(provenance.items())),
     }
+    if strength is not None:
+        derived["sample_strength"] = strength
+
+    if current == VERDICT_UNKNOWN:
+        # PV-REV-INTEGRITY-UNKNOWN-001: nobody observed what verification said
+        # about the newest revision, so nothing exact can be said about the
+        # current state. The decisive history above is preserved as it is.
+        diagnostics.append(f"CURRENT_VERDICT_UNKNOWN:{latest.get('revision')}")
+        derived["unknown_verdict_rule"] = UNKNOWN_RULE
+        return _result(
+            obs,
+            None,
+            EVAL_UNKNOWN,
+            None,
+            None,
+            derived,
+            diagnostics,
+            f"The verification outcome of the newest revision is unknown; {f} of {n} decisive revisions failed in 14 days, and no current band is claimed over an unobserved verdict.",
+        )
+
+    if current == VERIFY_UNRESOLVED:
+        # PV-INTEGRITY-TOTALITY-001, section 4 (INT-TOTAL-01..06): the revision
+        # still being verified is spoken for by no older verdict. The history
+        # names a band only when it already satisfies FAILING on its own, and
+        # then the band is exact for this snapshot while the evaluation says
+        # the current verification is unresolved.
+        diagnostics.append(UNRESOLVED_DIAGNOSTIC)
+        derived["unresolved_verdict_rule"] = TOTALITY_RULE
+        if established_failing(n, f):
+            return _result(
+                obs, "FAILING", EVAL_DEGRADED, SEM_EXACT, None, derived, diagnostics,
+                f"{f} of {n} decisive revisions failed verification in 14 days, which is FAILING on its own; the newest revision is still being verified.",
+            )
+        return _result(
+            obs, None, EVAL_UNKNOWN, None, None, derived, diagnostics,
+            f"The newest revision is still being verified; {f} of {n} decisive revisions failed in 14 days, and no older verdict speaks for the unresolved one.",
+        )
+
+    if configured_known and configured is False and n == 0 and all(r.get("current_verdict") in NON_DECISIVE_TERMINAL for r in active):
+        # PV-INTEGRITY-TOTALITY-001, section 5 (INT-TOTAL-08/09): a positively
+        # unconfigured repository whose recent records are only non-decisive
+        # is UNINSTRUMENTED, and those records stay visible, never zero-filled.
+        diagnostics.append(UNINSTRUMENTED_WITH_HISTORY)
+        derived["uninstrumented_rule"] = TOTALITY_RULE
+        return _result(
+            obs, "UNINSTRUMENTED", EVAL_AVAILABLE, SEM_EXACT, None, derived, diagnostics,
+            f"No automated verification is configured; {len(active)} recent revisions carry only non-decisive verification records, kept visible.",
+        )
 
     current_reference = current
-    if current not in DECISIVE and current != VERIFY_UNRESOLVED:
-        decisive_current = [r for r in active if r.get("current_verdict") in DECISIVE]
-        if decisive_current:
-            fallback = max(decisive_current, key=lambda r: (r.get("committed_at") or "", r.get("revision") or ""))
-            current_reference = fallback.get("current_verdict")
-            derived["latest_decisive_revision"] = {
-                "revision": fallback.get("revision"),
-                "committed_at": fallback.get("committed_at"),
-                "current_verdict": current_reference,
-            }
-            diagnostics.append(f"LATEST_REVISION_NON_DECISIVE:{current}")
+    decisive_current = [r for r in active if r.get("current_verdict") in DECISIVE]
+    if current in NON_DECISIVE_TERMINAL and decisive_current:
+        fallback = _newest(decisive_current)
+        current_reference = fallback.get("current_verdict")
+        derived["latest_decisive_revision"] = {
+            "revision": fallback.get("revision"),
+            "committed_at": fallback.get("committed_at"),
+            "current_verdict": current_reference,
+        }
+        diagnostics.append(f"LATEST_REVISION_NON_DECISIVE:{current}")
 
-    if n == 0:
-        band = "NO_DECISIVE_RUNS"
+    band = classify(n, f, current_reference)
+    if band == "NO_DECISIVE_RUNS":
         explanation = f"{len(active)} recent revisions carry verification executions but none produced a decisive pass/fail verdict."
-    elif current_reference == VERIFY_FAIL or (n >= established and f * fail_den >= n * fail_num):
-        band = "FAILING"
+    elif band in ("FAILING", "FLAKY"):
         explanation = f"{f} of {n} decisive revisions failed verification in 14 days; latest decisive verdict is {current_reference}."
-    elif n >= established and f > 0:
-        band = "FLAKY"
-        explanation = f"{f} of {n} decisive revisions failed verification in 14 days; latest decisive verdict is {current_reference}."
-    elif n >= established:
-        band = "CLEAN"
+    elif band == "CLEAN":
         explanation = f"All {n} decisive revisions passed verification in 14 days; latest decisive verdict is {current_reference}."
-    elif f >= 1:
-        band = "SPARSE_MIXED"
+    elif band == "SPARSE_MIXED":
         explanation = f"Only {n} decisive revisions in 14 days, {f} of them failed; the sample is too small for a rate."
     else:
-        band = "SPARSE"
         explanation = f"Only {n} decisive revisions in 14 days, all passed; the sample is too small for a rate."
 
-    status = EVAL_AVAILABLE
-    semantics = SEM_EXACT
-    possible: list[str] | None = None
-    if series.status == PARTIAL:
-        status = EVAL_DEGRADED
-        semantics = SEM_SUPERSET
-        possible = _superset(band)
-    if current_reference == VERIFY_UNRESOLVED and band != "FAILING":
-        status = EVAL_DEGRADED
-        semantics = SEM_SUPERSET
-        possible = _superset(band)
-        diagnostics.append("CURRENT_VERIFICATION_UNRESOLVED")
-        explanation += " The latest revision is still being verified, so the current state is unresolved."
-    return _result(obs, band, status, semantics, possible, derived, diagnostics, explanation)
+    return _result(obs, band, EVAL_AVAILABLE, SEM_EXACT, None, derived, diagnostics, explanation)

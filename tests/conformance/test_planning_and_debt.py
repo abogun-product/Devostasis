@@ -95,3 +95,16 @@ def test_partial_register_with_observed_items_is_degraded_present():
     add(obs, "debt.items.open_count", 3, status=PARTIAL, reason_code="PAGINATION_CAPPED")
     result = debt.evaluate(obs)
     assert result.band == "PRESENT" and result.evaluation_status == "DEGRADED"
+
+
+def test_a_stale_partial_register_proves_nothing_about_now():
+    """vitals.md: configured debt evidence that is stale yields UNKNOWN; a fresh partial one is a lower bound."""
+    from devostasis.observations import PARTIAL
+
+    for freshness, expected in (("FRESH", "PRESENT"), ("STALE", None), ("UNKNOWN", None)):
+        obs = obs_set()
+        add(obs, "debt.registry.capability", "CONFIGURED", "enum")
+        add(obs, "debt.mapping", {"source": "labels", "labels": ["debt"], "mapping_version": "1"}, "record")
+        add(obs, "debt.items.open_count", 2, status=PARTIAL, freshness=freshness, reason_code="PAGINATION_CAPPED")
+        result = debt.evaluate(obs)
+        assert result.band == expected, freshness

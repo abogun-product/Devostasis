@@ -106,7 +106,12 @@ must not be more permissive than its sources.
 
 The previous bundle of a comparison is the immutable bundle the project index
 names (its tail), verified from its own contents; without an index the newest
-immutable bundle is found by scanning `history/` (issue #28). The tail is
+immutable bundle is found by scanning `history/` (issue #28), and every bundle
+directory there is a candidate: one whose manifest is missing, unreadable or
+names another bundle makes the order unprovable, so the state is unverified
+and the next comparison a `HISTORY_GAP` (`INDEXLESS_CANDIDATE_UNREADABLE`),
+never a comparison against an older readable bundle and never a `BASELINE`;
+only an interrupted write (`*.staging`) is not a candidate. The tail is
 followed only along the canonical `history/YYYY/MM/DD/<bundle_id>` path,
 resolved inside this project's `history/` tree, with a basename equal to the
 id it claims; the bundle found there must carry the identity the index
@@ -136,8 +141,16 @@ lives nowhere else in the store, and while generating the fleet surfaces, an
 unreadable or malformed project index, a tail that cannot be followed, or a
 demand member that is present but unreadable is an explicit store failure,
 not an absent project: the fleet surfaces are then not rewritten, and the
-`run` and `index` commands report a store error. A bundle that predates the
-demand interface has no demand member and keeps its null levels.
+`run` and `index` commands report a store error, after every project's own
+result (the bundles are committed; only the surfaces are missing). The two
+fleet surfaces are written beside themselves and moved into place, never
+truncated first. A project index is exactly
+`projects/<forge>/<owner>/<repo>/index.json`, so a repository named
+`index.json` is a project like any other. Problem texts name store paths
+relative to the store root and exceptions by their type, because they reach
+the delta of a `HISTORY_GAP` bundle: the same evidence and the same damage
+are one bundle id wherever the store is checked out. A bundle that predates
+the demand interface has no demand member and keeps its null levels.
 
 ### Identity and rename continuity (RPT-7)
 

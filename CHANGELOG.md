@@ -175,6 +175,24 @@ accepted judgements, and their `rule_id` moved with them.
   content, no `size`, invalid base64 or more bytes than the bound, and run or
   suite fields (`name`, `event`, `html_url`, `workflow_id`, `url`) of the
   wrong type, which failed the canonical encoder.
+- **The store and the command line tell the truth about what they did**
+  (review of 2026-09-30). Without an index, the scan for the newest bundle
+  skipped a directory whose manifest it could not read, so the next run
+  compared against an older bundle, or called a store with history
+  `BASELINE`; such a directory now makes the state unverified and the
+  comparison a `HISTORY_GAP` (`INDEXLESS_CANDIDATE_UNREADABLE`). A
+  repository named `index.json` was read as a project index and broke every
+  identity lookup; index files are now found at their exact depth. Problem
+  texts carried absolute store paths and exception messages into the delta
+  of a `HISTORY_GAP` bundle, so the same damage gave a different bundle id
+  per checkout (and a local path inside a committed store); they are now
+  store-relative and name exceptions by type. The fleet surfaces are moved
+  into place instead of being truncated first. `run` prints every project's
+  result before a fleet-surface failure, and `build` its committed bundle; a
+  conditional cache that cannot be saved is a warning, written after the
+  fleet surfaces, not a traceback that skips them; and `evaluate`, `build`,
+  `render`, `gauges`, `demand` and `actions-summary` answer a missing or
+  unreadable input with `input error` and exit 2.
 - **A build over evidence derived under another configuration is refused**
   (issue #27, `CONFIG_MISMATCH`). `observe` records the digest of the
   configuration its aggregates were derived under; `build` with different

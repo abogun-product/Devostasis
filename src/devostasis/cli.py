@@ -18,7 +18,7 @@ from .contracts import RENDERER_VERSION
 from .config import ConfigError, load_config, single_project
 from .history import FilesystemHistoryStore, HistoryStoreError
 from .observations import ObservationSet
-from .runner import build_from_observations, evaluate, observe, run_all, write_fleet_index
+from .runner import FleetSurfaceError, build_from_observations, evaluate, observe, run_all, write_fleet_index
 
 TOKEN_ENVS = ("DEVOSTASIS_GITHUB_TOKEN", "GITHUB_TOKEN", "GH_TOKEN")
 
@@ -124,12 +124,26 @@ def cmd_observe(args: argparse.Namespace) -> int:
     obs.save(args.out)
     print(f"observations: {args.out} ({len(obs)} keys, {_requests_line(client)})")
     if client.cache is not None:
-        client.cache.save()
+        try:
+            client.cache.save()
+        except OSError as exc:
+            print(f"warning: conditional cache not saved: {type(exc).__name__}: {exc}", file=sys.stderr)
     return 0
 
 
+class InputError(Exception):
+    """A file or directory named on the command line cannot be read as what the command needs."""
+
+
+def _load_observations(path: str) -> ObservationSet:
+    try:
+        return ObservationSet.load(path)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise InputError(f"{path} is not a readable observation set: {type(exc).__name__}: {exc}") from exc
+
+
 def cmd_evaluate(args: argparse.Namespace) -> int:
-    obs = ObservationSet.load(args.observations)
+    obs = _load_observations(args.observations)
     project = single_project(f"{obs.subject.get('owner', 'unknown')}/{obs.subject.get('repo', 'unknown')}") if args.derive else None
     snapshot = evaluate(obs, project)
     canonical.write_pretty(args.out, snapshot)
@@ -156,6 +170,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     token, source = resolve_token(args.token, config.token_env)
     print(f"token: {source}", file=sys.stderr)
     store = FilesystemHistoryStore(args.store or config.store_path)
+    surface_error: str | None = None
     try:
         outcomes = run_all(
             config,
@@ -167,9 +182,13 @@ def cmd_run(args: argparse.Namespace) -> int:
             request_budget=args.request_budget,
             cache_dir=args.cache,
         )
+        cache_warning = getattr(outcomes, "cache_warning", None)
+    except FleetSurfaceError as exc:
+        # The bundles of this run are committed and are reported below; what
+        # could not be produced is the fleet surface, and a stale one must not
+        # pass for a fresh one, so the run still fails.
+        outcomes, surface_error, cache_warning = exc.outcomes, str(exc), exc.cache_warning
     except HistoryStoreError as exc:
-        # The bundles of this run are committed; what could not be produced is
-        # the fleet surface, and a stale one must not pass for a fresh one.
         print(f"store error: {exc}", file=sys.stderr)
         return 1
     failed = 0
@@ -182,6 +201,11 @@ def cmd_run(args: argparse.Namespace) -> int:
             failed += 1
             print(f"[failed] {outcome.locator}: {outcome.error}")
     print(f"store: {store.root}")
+    if cache_warning:
+        print(f"warning: {cache_warning}", file=sys.stderr)
+    if surface_error is not None:
+        print(f"store error: fleet surfaces not written: {surface_error}", file=sys.stderr)
+        return 1
     return 1 if failed else 0
 
 
@@ -189,19 +213,24 @@ def cmd_build(args: argparse.Namespace) -> int:
     """Build and persist a bundle from a saved observation set (offline)."""
     from .normalize import derive
 
-    obs = ObservationSet.load(args.observations)
+    obs = _load_observations(args.observations)
     project = single_project(f"{obs.subject.get('owner', 'unknown')}/{obs.subject.get('repo', 'unknown')}", **_project_overrides(args))
     derive(obs, project)
     store = FilesystemHistoryStore(args.store)
     try:
         bundle = build_from_observations(project, obs, store)
         path = store.commit(bundle)
-        write_fleet_index(store)
     except (BundleError, HistoryStoreError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     print(f"bundle {bundle.bundle_id[:12]} ({bundle.manifest['comparison_status']}) written to {path}")
     print(_bands_line(bundle.bands()))
+    try:
+        write_fleet_index(store)
+    except HistoryStoreError as exc:
+        # The bundle above is committed; only the fleet surfaces are not.
+        print(f"store error: the bundle is committed, the fleet surfaces are not: {exc}", file=sys.stderr)
+        return 1
     return 0
 
 
@@ -226,10 +255,16 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 def _load_members(directory: str) -> dict[str, Any]:
     members = load_bundle_dir(directory)
+    missing = [name for name in ("manifest.json", "snapshot.json") if name not in members]
+    if missing:
+        raise InputError(f"{directory} is not a bundle directory: {', '.join(missing)} missing")
     parsed: dict[str, Any] = {}
     for name, data in members.items():
         if name.endswith(".json"):
-            parsed[name] = canonical.loads(data.decode("utf-8"))
+            try:
+                parsed[name] = canonical.loads(data.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError) as exc:
+                raise InputError(f"{directory}/{name} is not readable: {type(exc).__name__}") from exc
     return parsed
 
 
@@ -264,7 +299,10 @@ def _snapshot_from_args(args: argparse.Namespace) -> tuple[dict[str, Any], dict[
     if args.bundle:
         parsed = _load_members(args.bundle)
         return parsed["snapshot.json"], parsed
-    snapshot = canonical.load_file(args.snapshot)
+    try:
+        snapshot = canonical.load_file(args.snapshot)
+    except (OSError, ValueError, UnicodeDecodeError) as exc:
+        raise InputError(f"{args.snapshot} is not a readable snapshot: {type(exc).__name__}") from exc
     return snapshot, {}
 
 
@@ -483,6 +521,9 @@ def main(argv: list[str] | None = None) -> int:
         return args.func(args)
     except ConfigError as exc:
         print(f"config error: {exc}", file=sys.stderr)
+        return 2
+    except InputError as exc:
+        print(f"input error: {exc}", file=sys.stderr)
         return 2
     except KeyboardInterrupt:
         return 130

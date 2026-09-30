@@ -259,6 +259,18 @@ permanent research case identifiers, and none of these rows claims one.
 | GH-CACHE-INTEGRITY | a cache entry is replayed only when complete and still hashing to its digest; anything else is a miss and one refetch (PV-AUDIT-GITHUB-CACHE-INTEGRITY-001) | `test_gh_cache_integrity_01_02_05_unreadable_metadata_is_a_miss_never_an_exception`, `test_gh_cache_integrity_03_07_a_body_that_no_longer_hashes_to_its_digest_is_not_replayed`, `test_gh_cache_integrity_04_06_a_304_over_an_invalid_entry_refetches_once_and_a_valid_one_replays` |
 | CANON-NONFINITE / DECIMAL / JSON-PARSER / UNICODE | the canonical decoder rejects non-finite constants, decimal and exponent numbers, duplicate members and unpaired surrogates; integers of any size and valid Unicode survive (PV-AUDIT-CANONICAL-*-001) | `test_canon_nonfinite_and_decimal_tokens_reject_at_the_decoder`, `test_canon_decimal_07_integers_of_any_size_stay_integers`, `test_canon_json_parser_a_member_named_twice_is_rejected_not_collapsed`, `test_canon_unicode_01_04_an_unpaired_surrogate_is_rejected`, `test_canon_unicode_05_08_a_valid_pair_and_ordinary_unicode_survive`, `test_canon_unicode_06_07_a_direct_surrogate_value_or_key_is_a_canonicalization_error_not_a_unicode_error` |
 
+## Store and command line (review of 2026-09-30)
+
+Implementation-local labels, as above.
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| index-less scan | without an index, an unreadable or mislabelled bundle directory is a gap, never a comparison against an older bundle and never a baseline; an interrupted write is not a candidate | `test_without_an_index_an_unreadable_newest_bundle_is_a_gap_not_a_comparison_with_an_older_one`, `test_without_an_index_a_single_unreadable_bundle_is_a_gap_not_a_baseline`, `test_an_interrupted_write_is_not_a_candidate` |
+| project index location | a repository named `index.json` is a project, not an index | `test_a_repository_named_index_json_does_not_break_the_store` |
+| reproducible gap reasons | the reasons of a HISTORY_GAP carry no absolute path or exception message; the same damage is one bundle id wherever the store lives | `test_history_gap_reasons_do_not_depend_on_where_the_store_is_checked_out` |
+| fleet surfaces | both fleet surfaces are replaced, never truncated | `test_the_fleet_surfaces_are_replaced_never_truncated` |
+| reporting | a fleet-surface failure comes after every project's result in `run` and after the committed bundle in `build`; a cache that cannot be saved is a warning; a missing or unreadable input is an input error (exit 2), not a traceback | `test_run_reports_every_project_before_a_fleet_surface_error`, `test_a_cache_that_cannot_be_saved_is_a_warning_not_the_end_of_the_run`, `test_build_reports_the_committed_bundle_before_a_fleet_surface_error`, `test_a_missing_or_unreadable_input_is_an_input_error_not_a_traceback` |
+
 ## Collection completeness (review of 2026-09-30)
 
 Implementation-local labels, as above.

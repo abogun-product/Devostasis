@@ -244,8 +244,12 @@ enter `snapshot.json` ([gauges.md](gauges.md)); no colours or icons that
 imply an ordering the contract does not declare; no evaluative aliases for
 neutral bands; `UNKNOWN` and `DEGRADED` are always visible; no language model
 anywhere. `devostasis render` regenerates the report from a bundle and
-`verify` checks that the stored report is byte-identical for the renderer
-version that produced it, replaying only from the validated stored config.
+`verify` checks that the stored report is byte-identical to what the current
+renderer produces from the immutable members and the validated stored
+config, when the bundle was written by the current renderer. The renderers
+of earlier releases are not carried, so the report of a bundle they wrote
+is bound by its digest but not replayed, and `verify` says so instead of
+claiming reproducibility (see [bundle.md](bundle.md), step 6).
 
 ## Conformance cases implemented
 

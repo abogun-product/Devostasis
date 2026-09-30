@@ -144,6 +144,19 @@ accepted judgements, and their `rule_id` moved with them.
   (`OBSERVATIONS_DIGEST_MISMATCH`). A manifest of the wrong shape is a
   problem, not an `AttributeError`. All 308 bundles of the fleet's store
   (both lineages, all four renderers) still verify.
+- **Verification holds the whole identity, not only what a forger left in
+  place** (review of 2026-09-30). The preimage must have exactly its
+  lineage's field set (`IDENTITY_PREIMAGE_SHAPE_MISMATCH`): without
+  `source_receipts_digest` the receipt binding was simply skipped. Every
+  member the preimage hashes must be declared (`IDENTITY_MEMBER_NOT_DECLARED`):
+  a bundle that dropped `delta.json` or `snapshot.json` together with its
+  entry kept its id, stopped the replay and verified with any report. The
+  `adapters` line the report prints must be the provider and collector the
+  identity binds (`ADAPTERS_MISMATCH`). And `verify` no longer says "report
+  reproducibility all match" for a report it did not replay: the 74 stored
+  bundles written by renderers v1 to v3 are bound by their report digest and
+  are now reported as such; replaying them needs the historical renderers,
+  which this version does not carry.
 - **A build over evidence derived under another configuration is refused**
   (issue #27, `CONFIG_MISMATCH`). `observe` records the digest of the
   configuration its aggregates were derived under; `build` with different

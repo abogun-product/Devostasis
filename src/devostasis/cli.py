@@ -13,7 +13,8 @@ from typing import Any
 from . import __version__, canonical, render, timeutil
 from .adapters.cache import ConditionalCache
 from .adapters.github import CollectionError, GitHubClient, UrllibTransport
-from .bundle import BundleError, load_bundle_dir, verify_dir
+from .bundle import BundleError, load_bundle_dir, report_renderer, verify_dir
+from .contracts import RENDERER_VERSION
 from .config import ConfigError, load_config, single_project
 from .history import FilesystemHistoryStore, HistoryStoreError
 from .observations import ObservationSet
@@ -210,7 +211,16 @@ def cmd_verify(args: argparse.Namespace) -> int:
         for problem in problems:
             print(f"FAIL {problem}")
         return 1
-    print("verified: digests, identity preimage, persisted effective config and report reproducibility all match")
+    renderer = report_renderer(args.bundle)
+    if renderer == RENDERER_VERSION:
+        print("verified: digests, identity preimage, persisted effective config and report reproducibility all match")
+    else:
+        # A historical renderer is not carried: the report is bound by its
+        # digest, but nobody replayed it, and the message must not say so.
+        print(
+            f"verified: digests, identity preimage and persisted effective config match; report.md was written by {renderer} "
+            f"and is bound by its digest but not replayed (this version replays {RENDERER_VERSION})"
+        )
     return 0
 
 

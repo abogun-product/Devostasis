@@ -517,10 +517,76 @@ def test_an_unknown_lineage_or_a_renderer_outside_its_lineage_fails_verification
         assert any(p.startswith(code) for p in problems), (key, value, problems)
 
 
-def test_the_lineage_table_carries_the_lineage_and_renderer_this_version_writes():
+def test_the_lineage_table_carries_the_lineage_and_renderer_this_version_writes(tmp_path):
     assert ARTIFACT_CONTRACT_VERSION in LINEAGES
     assert RENDERER_VERSION in LINEAGES[ARTIFACT_CONTRACT_VERSION]["renderers"]
-    assert LINEAGES[ARTIFACT_CONTRACT_VERSION]["identity_fields"] == DUPLICATED_IDENTITY_FIELDS
+    bundle = build_from_observations(_project(), _obs(), FilesystemHistoryStore(tmp_path))
+    written = set(bundle.manifest["identity_preimage"])
+    assert written == LINEAGES[ARTIFACT_CONTRACT_VERSION]["preimage_fields"], "a new preimage field needs a new lineage row"
+
+
+def test_a_preimage_field_added_or_removed_is_an_unsupported_shape(tmp_path):
+    bundle = build_from_observations(_project(), _obs(), FilesystemHistoryStore(tmp_path))
+    for mutate, expected in (
+        (lambda preimage: preimage.update({"forged_field": "x"}), "IDENTITY_PREIMAGE_SHAPE_MISMATCH: forged_field is not a field"),
+        # Without it the receipt binding was simply not checked: an unbound receipt verified.
+        (lambda preimage: preimage.pop("source_receipts_digest"), "IDENTITY_PREIMAGE_SHAPE_MISMATCH: source_receipts_digest is a field"),
+    ):
+        forged = dict(bundle.members)
+        manifest = json.loads(forged["manifest.json"])
+        mutate(manifest["identity_preimage"])
+        forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+        problems = verify_members(_rehash(forged))
+        assert any(p.startswith(expected) for p in problems), problems
+
+
+def _rerender(members):
+    """Re-render report.md from the (possibly forged) manifest and members, and re-digest it, as a careful forger would."""
+    from devostasis import render
+
+    members = dict(members)
+    manifest = json.loads(members["manifest.json"])
+    parsed = {name: json.loads(members[name]) for name in ("snapshot.json", "delta.json", "activity.json", "gauges.json", "demand.json") if name in members}
+    report = render.render_report(
+        manifest, parsed.get("snapshot.json"), parsed.get("delta.json"), parsed.get("activity.json"),
+        parsed.get("gauges.json"), parsed.get("demand.json"), json.loads(members["effective-config.json"]).get("display"),
+    ).encode("utf-8")
+    members["report.md"] = report
+    manifest["members"]["report.md"] = canonical.digest_bytes(report)
+    members["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+    return members
+
+
+@pytest.mark.parametrize("dropped", ["delta.json", "snapshot.json"])
+def test_a_hashed_member_deleted_with_its_entry_no_longer_verifies(tmp_path, dropped):
+    """The deletion kept the bundle id, stopped the replay (which needs both) and let any report verify."""
+    bundle = build_from_observations(_project(), _obs(), FilesystemHistoryStore(tmp_path))
+    forged = dict(bundle.members)
+    del forged[dropped]
+    forged["report.md"] = b"# Anything at all\n"
+    manifest = json.loads(forged["manifest.json"])
+    del manifest["members"][dropped]
+    manifest["members"]["report.md"] = canonical.digest_bytes(forged["report.md"])
+    forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+    problems = verify_members(forged)
+    assert any(p.startswith(f"IDENTITY_MEMBER_NOT_DECLARED: {dropped}") for p in problems), problems
+
+
+def test_the_adapters_the_report_names_are_bound_to_the_identity(tmp_path):
+    bundle = build_from_observations(_project(), _obs(), FilesystemHistoryStore(tmp_path))
+    for adapters in ([{"provider": "gitlab", "adapter_version": "devostasis.gitlab.v9"}], None):
+        forged = dict(bundle.members)
+        manifest = json.loads(forged["manifest.json"])
+        if adapters is None:
+            del manifest["adapters"]
+        else:
+            manifest["adapters"] = adapters
+        forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
+        if adapters is not None:
+            forged = _rerender(forged)
+        problems = verify_members(forged)
+        assert any(p.startswith("ADAPTERS_MISMATCH") for p in problems), (adapters, problems)
+    assert verify_members(bundle.members) == []
 
 
 def test_the_receipt_and_the_evidence_are_bound_to_the_identity(tmp_path):

@@ -559,3 +559,17 @@ about, so that family can be materialized against it (issue #20); `variants`
 and the dependency-group assertions close the T8 and part of the T6 gap of
 issue #23, while T3 and the bundle and store cases still need a surface this
 version does not publish.
+
+## Companion regression evidence (implementation-owned)
+
+These DEV-WORK families exercise `devostasis.work.v1`; they do not replace
+the outstanding research cases above or claim acceptance of a Vital rule.
+
+| Family | Proof |
+| --- | --- |
+| queues and identity | `test_work_five_queues_and_bounded_acceptance`, `test_work_determinism_ids_and_explicit_priority` |
+| exact-head admission | `test_work_merge_admission_matrix`, `test_work_missing_cannot_admit_merge`, `test_work_stale_verdict_dismissal_and_self_review` |
+| source and producer gaps | `test_work_report_profiles`, `test_work_malformed_and_unavailable_reports_are_not_zero`, `test_work_report_wrong_repo_and_revision`, `test_work_gitlab_missing_capabilities_are_explicit` |
+| bounded handoff | `test_work_cursor_exhaustive_binding_and_expiry`, `test_work_selected_refresh_does_not_discover_whole_repository`, `test_work_cli_offline_end_to_end_and_recheck` |
+| durable replay | `test_work_bundle_replay_and_forged_rehashed_projection_rejected`, `test_work_store_backfill_candidate_rename_and_latest_binding`, `test_work_store_lock_and_failed_pointer_write_preserve_history` |
+| transport | `test_work_redirect_cannot_forward_credentials`, `test_work_transport_refuses_mutation`, `test_work_conditional_304_replays_body_without_credential_crossing` |

@@ -3,6 +3,14 @@
   "notes": "Registered maintenance obligations of this repository, read by Devostasis when debt.source = file. An item belongs here when the current code carries a cost, not when a feature is missing: planned work lives in targets.json and ROADMAP.md. 'opened' is the date the obligation started being carried, 'updated' the last time it changed; an open item untouched for 30 days is stale.",
   "items": [
     {
+      "id": "D-6",
+      "title": "GitLab work scopes cannot certify exact-head approvals from the aggregate approvals API",
+      "state": "open",
+      "opened": "2026-10-02",
+      "updated": "2026-10-02",
+      "cost": "The 0.3.0 companion reads approval capability but the standard GitLab response supplies users/times, not the reviewed commit. It therefore keeps exact-head approval UNKNOWN and cannot admit automatic merges. A revision-bound read-only profile and adopter integration validation are tracked in https://github.com/drevendev/Devostasis/issues/58; this debt does not block independent review, issue, research or analysis work."
+    },
+    {
       "id": "D-1",
       "title": "Conformance cases named in the specification have no executable fixture",
       "state": "open",

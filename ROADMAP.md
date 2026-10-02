@@ -6,6 +6,26 @@ started and work that cannot start.
 
 ## Release state and next steps — 2026-10-02
 
+**0.3.0 Evidence to Action is implemented on this release branch**, with its
+own consumer contract and target E1. The companion supplies five queues,
+GitHub/GitLab work context, revision-bound producer findings, durable scope
+history, replay, bounded handoff and read-only pre-execution checks. See
+[docs/work-scopes.md](docs/work-scopes.md) for the complete adopter path.
+The public GitHub pilot read all five then-open PRs in 38 successful requests.
+GitLab exact-head approvals remain explicit UNKNOWN, tracked in
+[#58](https://github.com/drevendev/Devostasis/issues/58); its deployment pilot
+belongs to the independently integrating GitLab project. This implements a
+companion consumer contour, not the core accepted Phase C Instrument carrier
+or the unaccepted Evidence Observatory composition.
+
+This is an unreleased increment. E1 being implemented does not close B1, B7,
+the earlier target `v0.3` (the deferred Phase B/adoption completion bar), or
+v1.0. Their permanent ids and original acceptance are preserved. Review and
+release the carried 0.2.0 fixes and this increment; then prioritize sustained
+observation (#32), remaining conformance (#23), compatibility adoption (#34)
+and an external calibration consumer. Do not substitute the public integration
+check for that sustained outside-consumer evidence.
+
 The latest tagged release on `master` is **v0.1.9**. **0.2.0 is prepared,
 not released**: [#53](https://github.com/drevendev/Devostasis/pull/53) is still
 open and there is no `v0.2.0` tag. The adoption statements below describe the
@@ -35,7 +55,7 @@ The next work is ordered by the evidence each step makes possible:
    [#47](https://github.com/drevendev/Devostasis/issues/47) still needs its
    independent G1 judgement; acceptance of its component contracts does not
    accept the whole candidate.
-4. **Make the evidence usable as bounded work.** The proposed consumer
+4. **Adopt the implemented bounded work companion.** The consumer
    work-scope surface in [#54](https://github.com/drevendev/Devostasis/issues/54)
    projects five typed queues (`review`, `finish_merge`, `implement_issue`,
    `research`, `analyze_code`) with stable ids, exact revisions, explicit
@@ -43,11 +63,13 @@ The next work is ordered by the evidence each step makes possible:
    [#55](https://github.com/drevendev/Devostasis/issues/55) supplies
    revision-bound findings and source slices;
    [#56](https://github.com/drevendev/Devostasis/issues/56) supplies the GitLab
-   CI and durable handoff recipe. These are proposals requiring a contract,
-   not implemented or accepted core semantics. A companion consumer library
-   may keep task selection outside the observational engine.
+   CI and durable handoff recipe. This branch implements the separate
+   `devostasis.work.v1` consumer contract and workflows. These are not
+   accepted core Vital/Instrument semantics; task selection remains outside
+   the observational engine. Adopter policy, sustained external deployment
+   and the revision-bound GitLab approval capability are the remaining steps.
 
-The recommended next major product increment is **Evidence to Action**:
+The major product increment in this branch is **Evidence to Action**:
 trusted observations plus reproducible, bounded work scopes for an outside
 consumer. Its success criterion is a developer or agent selecting one task
 from verified evidence, recovering explicitly missing input, and verifying

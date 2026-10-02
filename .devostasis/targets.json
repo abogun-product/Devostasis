@@ -48,6 +48,11 @@
       "state": "open"
     },
     {
+      "id": "E1",
+      "title": "Evidence to Action: verified deterministic consumer work scopes, five queues, findings and bounded handoff",
+      "state": "closed"
+    },
+    {
       "id": "v0.3",
       "title": "Release 0.3: phases A and B closed, one outside consumer, no unadopted research unit (the bar deferred from the 0.2.0 adoption release)",
       "state": "open"

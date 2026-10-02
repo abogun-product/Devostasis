@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     # Feature and maintenance PRs target the active release, per CONTRIBUTING.md.
-    target-branch: "release/0.2.0"
+    target-branch: "release/0.3.0"
     schedule:
       interval: "weekly"
       day: "tuesday"
@@ -15,7 +15,7 @@ updates:
       default-days: 7
   - package-ecosystem: "pip"
     directory: "/"
-    target-branch: "release/0.2.0"
+    target-branch: "release/0.3.0"
     schedule:
       interval: "weekly"
       day: "tuesday"

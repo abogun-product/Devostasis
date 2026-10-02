@@ -3,6 +3,38 @@
 All notable changes to this project are documented here. Semantic changes to a
 contract or a policy always come with a version bump of that contract.
 
+## 0.3.0 (unreleased)
+
+Evidence to Action, target E1: a separate deterministic consumer companion
+(`devostasis.work.v1`, replay engine `devostasis.work-engine.v1`).
+
+- Five typed queues: review, finish_merge, implement_issue, research and
+  analyze_code. Explicit consumer priorities, exact revisions, independent
+  reviewer/owner roles, dependencies, acceptance and bounded read sets.
+- Read-only GitHub and GitLab work collectors with request/time/page/byte
+  budgets, capability receipts, conditional cache partitioning and explicit
+  completeness. GitHub collects exact-head review verdicts, checks/statuses,
+  threads and merge-queue state. GitLab approval SHA uncertainty stays UNKNOWN
+  and is tracked in #58; no aggregate approval is fabricated as an exact-head
+  verdict. This companion does not claim the core Phase C adapter/carrier work.
+- Optional revision-bound SARIF, JUnit, Cobertura and measured-performance
+  profiles, with raw source digests, path admission, scoped dispositions,
+  malformed/missing/stale evidence recovery and offline replay.
+- Immutable work bundles, verified latest pointers, process-locked atomic
+  publication, candidate isolation and backfill protection. Bounded role
+  slices have scope-bound cursors, overflow and explicit exclusion reasons.
+- `devostasis work policy/import/collect/build/run/verify/replay/slice/explain/recheck`.
+  Recheck binds consumer policy and refreshes only selected sources before
+  returning eligibility; no command claims or executes work.
+- GitHub reusable read-only workflow with optional protected durable history
+  runner, GitLab canonical/candidate CI recipes, adopter guide, public frozen
+  example and implementation-owned regression cases. The public GitHub live
+  pilot is distinct from the outstanding external calibration target B7.
+
+Seven Vitals, their thresholds, bands, gauges and demand ordering retain their
+contracts. This branch includes the still-pending 0.2.0 adoption/readiness
+work below; neither version is represented as already tagged or released.
+
 ## 0.2.0 (unreleased)
 
 Release-readiness review, 2026-10-02:

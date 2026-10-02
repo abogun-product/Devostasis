@@ -500,6 +500,8 @@ def build_parser() -> argparse.ArgumentParser:
     summary_p = sub.add_parser("actions-summary", help="write a GitHub Actions job summary and step outputs (attention, levels, bands, gauges) for a bundle")
     summary_p.add_argument("--bundle", required=True, help="bundle directory")
     summary_p.set_defaults(func=cmd_actions_summary)
+    from .workscope.cli import add_parser
+    add_parser(sub)
     return parser
 
 

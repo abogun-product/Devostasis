@@ -7,7 +7,7 @@ preserved in [LICENSES/pypa-build-MIT.txt](LICENSES/pypa-build-MIT.txt).
 
 ## pypa/build @ 58c921a — MIT
 
-Source: <https://github.com/pypa/build/tree/58c921aada7f4e03edda65545d42db0c8b000bdc>  
+Source: <https://github.com/pypa/build/tree/58c921aada7f4e03edda65545d42db0c8b000bdc>
 Obligation (copyright-notice): keep the source's copyright and permission notice with the material
 
 | Nutrient | Into | From | Mode |

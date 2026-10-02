@@ -11,4 +11,5 @@ Obligation (copyright-notice): keep the source's copyright and permission notice
 
 | Nutrient | Into | From | Mode |
 |---|---|---|---|
+| `crab:ci:ci.concurrency` | `.github/workflows/ci.yml` | `.github/workflows/test.yml` (adapted) | COPY |
 | `crab:tooling:tooling.dependabot` | `.github/dependabot.yml` | `.github/dependabot.yml` (adapted) | COPY |

@@ -1,8 +1,9 @@
 # Third-party notices
 
-Written by `crab attribution` from `.crab/attributions.json`, the receipts of material
-Hungry Crab carried into this repository. Edit the receipts, not this file; rerunning
-the command reproduces it byte for byte.
+Attribution receipts are recorded in `.crab/attributions.json` for material
+Hungry Crab carried into this repository. Both pending maintenance branches'
+receipts are retained here. The upstream copyright and permission notice is
+preserved in [LICENSES/pypa-build-MIT.txt](LICENSES/pypa-build-MIT.txt).
 
 ## pypa/build @ 58c921a — MIT
 

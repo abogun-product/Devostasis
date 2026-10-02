@@ -25,7 +25,8 @@ Evidence to Action, target E1: a separate deterministic consumer companion
   slices have scope-bound cursors, overflow and explicit exclusion reasons.
 - `devostasis work policy/import/collect/build/run/verify/replay/slice/explain/recheck`.
   Recheck binds consumer policy and refreshes only selected sources before
-  returning eligibility; no command claims or executes work.
+  returning eligibility; candidate content tasks without a mutable ref require
+  a fresh attested inventory (follow-up #60). No command claims or executes work.
 - GitHub reusable read-only workflow with optional protected durable history
   runner, GitLab canonical/candidate CI recipes, adopter guide, public frozen
   example and implementation-owned regression cases. The public GitHub live

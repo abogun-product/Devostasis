@@ -18,6 +18,10 @@ belongs to the independently integrating GitLab project. This implements a
 companion consumer contour, not the core accepted Phase C Instrument carrier
 or the unaccepted Evidence Observatory composition.
 
+Automatic candidate content recheck also needs a named mutable source binding
+([#60](https://github.com/drevendev/Devostasis/issues/60)); v1 refuses to infer
+freshness from a historical SHA and requires a fresh attested inventory there.
+
 This is an unreleased increment. E1 being implemented does not close B1, B7,
 the earlier target `v0.3` (the deferred Phase B/adoption completion bar), or
 v1.0. Their permanent ids and original acceptance are preserved. Review and

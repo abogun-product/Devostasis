@@ -3,6 +3,14 @@
   "notes": "Registered maintenance obligations of this repository, read by Devostasis when debt.source = file. An item belongs here when the current code carries a cost, not when a feature is missing: planned work lives in targets.json and ROADMAP.md. 'opened' is the date the obligation started being carried, 'updated' the last time it changed; an open item untouched for 30 days is stale.",
   "items": [
     {
+      "id": "D-7",
+      "title": "Live candidate content recheck needs an explicit mutable source-ref binding",
+      "state": "open",
+      "opened": "2026-10-02",
+      "updated": "2026-10-02",
+      "cost": "Candidate subject identity binds an immutable commit but not a mutable branch/MR content-source ref. The CLI therefore requires a freshly attested inventory for candidate issue/research/analysis recheck; it cannot reuse a historical SHA as proof that a branch stayed current. Named source-ref support is tracked in https://github.com/drevendev/Devostasis/issues/60. Canonical default-branch tasks and candidate PR head recheck are unaffected."
+    },
+    {
       "id": "D-6",
       "title": "GitLab work scopes cannot certify exact-head approvals from the aggregate approvals API",
       "state": "open",

@@ -66,6 +66,13 @@ exact-head mutations in the execution client. New checks, claims, dependencies
 or actions may require a rebuilt scope. For offline negative cases supply
 `--inventory` and an explicit `--at`.
 
+For CANDIDATE issue/research/analysis proposals, supply a freshly attested
+`--inventory` from the execution client's current source/checkout. A fixed
+candidate commit does not identify a mutable source branch, so the CLI refuses
+to infer that it is still current. Automatic named-ref refresh is tracked in
+[#60](https://github.com/drevendev/Devostasis/issues/60). Canonical default-branch
+content and selected candidate PR head recheck already have live source bindings.
+
 [examples/work/github-observe.yml](../examples/work/github-observe.yml) calls
 the reusable workflow after release. It runs after pushes, periodically and
 for candidate PRs. It is non-gating, uses read credentials and uploads failure

@@ -243,3 +243,16 @@ def test_work_unknown_dependency_and_unbounded_criterion_offer_recovery():
     assert item(s, "implement_issue")["eligibility"] == "UNKNOWN"
     assert any(i["source"] == "recovery:issue:3" for i in s["items"])
     assert any(i["source"] == "recovery:issue:2/C1" for i in s["items"])
+
+
+def test_work_candidate_content_cannot_recheck_an_unrecorded_mutable_ref(tmp_path, capsys, monkeypatch):
+    i = inv(); i["subject"]["context"] = "CANDIDATE"
+    bundle = publish(tmp_path / "store", build(i, config(), empty_evidence())[1])
+    p = tmp_path / "policy.json"; p.write_bytes(canonical_bytes(config()))
+    selected = item(verify(bundle)["scope.json"], "implement_issue")
+    def forbidden(*args, **kwargs):
+        raise AssertionError("must reject before making a network request")
+    monkeypatch.setattr("devostasis.workscope.cli.collect", forbidden)
+    assert main(["work", "recheck", "--bundle", str(bundle), "--policy", str(p), "--item", selected["id"],
+                 "--expected-project-id", "123", "--actor", "owner", "--policy-version", "example-1", "--at", AT]) == 2
+    assert "freshly attested" in capsys.readouterr().err

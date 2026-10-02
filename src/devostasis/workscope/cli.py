@@ -104,6 +104,8 @@ def cmd(args):
                     ("https://api.github.com" if args.provider == "github" else "https://gitlab.com/api/v4"),
                     "project_id": args.expected_project_id}
         require(identity(scope["subject"]) == expected, "consumer expected project mismatch")
+        require(scope["subject"]["context"] != "CANDIDATE" or item["source"].startswith("change:") or args.inventory,
+                "candidate content recheck requires a freshly attested --inventory; no mutable source ref was recorded")
         current = read_json(args.inventory) if args.inventory else collect(
             client(args, scope["subject"]["provider"], scope["subject"]["endpoint"]), scope["subject"]["locator"],
             decoded["policy.json"], args.at, context=scope["subject"]["context"],

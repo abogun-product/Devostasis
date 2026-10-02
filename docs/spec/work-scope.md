@@ -146,6 +146,13 @@ dispatches, labels, comments, closes, merges or deploys. Source state can change
 after recheck; the execution client must condition its mutation on the exact
 revision and enforce authority immediately before acting.
 
+CANDIDATE content-only proposals have an immutable content id but no recorded
+mutable branch ref in v1. Live CLI recheck for issue/research/analysis/recovery
+therefore requires a freshly attested input inventory from the execution
+client; it refuses automatic historical-SHA reuse. Selected PR head recheck
+and CANONICAL default-branch content have live bindings. Named candidate ref
+support is tracked in #60.
+
 ## Executable evidence
 
 Implementation-owned regression cases are in `tests/test_workscope.py` and

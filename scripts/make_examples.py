@@ -155,11 +155,13 @@ def main() -> int:
     normalize.derive(observation_set, project)
     store_dir = examples / ".store"
     if store_dir.exists():
+        assert store_dir.resolve().parent == examples.resolve() and not store_dir.is_symlink()
         shutil.rmtree(store_dir)
     store = FilesystemHistoryStore(store_dir)
     bundle = build_from_observations(project, observation_set, store, run_meta={"example": True})
     target = examples / "sample-bundle"
     if target.exists():
+        assert target.resolve().parent == examples.resolve() and not target.is_symlink()
         shutil.rmtree(target)
     target.mkdir(parents=True)
     for name, data in bundle.members.items():

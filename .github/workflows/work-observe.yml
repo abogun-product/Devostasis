@@ -5,7 +5,7 @@ on:
     inputs:
       devostasis-ref:
         type: string
-        default: v0.3.0
+        default: v0.4.0
       policy-path:
         type: string
         default: .devostasis/work-policy.json
@@ -61,12 +61,22 @@ jobs:
           MAX_REQUESTS: ${{ inputs.max-requests }}
           MAX_PAGES: ${{ inputs.max-pages }}
           SECONDS_BUDGET: ${{ inputs.seconds }}
+          SOURCE_CHANGE: ${{ github.event.pull_request.number }}
+          SOURCE_BRANCH: ${{ github.ref_name }}
         run: |
           mkdir -p work-output
           context=CANDIDATE
           if [ "$IS_CANONICAL" = "true" ]; then context=CANONICAL; fi
+          set --
+          if [ "$context" = CANDIDATE ]; then
+            if [ -n "$SOURCE_CHANGE" ]; then
+              set -- --source-change "$SOURCE_CHANGE"
+            else
+              set -- --source-ref "$SOURCE_BRANCH"
+            fi
+          fi
           python -m devostasis work run --repo "$REPOSITORY" --policy "$POLICY" \
-            --context "$context" --revision "$CURRENT_REVISION" --store work-output/history \
+            --context "$context" "$@" --revision "$CURRENT_REVISION" --store work-output/history \
             --max-requests "$MAX_REQUESTS" --max-pages "$MAX_PAGES" --seconds "$SECONDS_BUDGET" \
             > work-output/result.json 2> work-output/failure.txt
           python - <<'PY'

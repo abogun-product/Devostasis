@@ -206,6 +206,24 @@ def _gl_issue(i):
             "owners": _owners(i), "updated_at": timestamp(i["updated_at"])}
 
 
+def _change_binding(client, raw):
+    if client.provider == "github":
+        target = (raw.get("base") or {}).get("repo") or {}
+        source = (raw.get("head") or {}).get("repo") or {}
+        target_id, source_id, locator = target.get("id"), source.get("id"), source.get("full_name")
+        head, ref = raw["head"]["sha"], str(raw["number"])
+    else:
+        target_id, source_id = raw.get("target_project_id"), raw.get("source_project_id")
+        locator = str(source_id) if source_id is not None else None
+        head, ref = raw["sha"], str(raw["iid"])
+    if target_id is None or source_id is None or not locator:
+        return {}
+    project = {"provider": client.provider, "endpoint": client.endpoint, "project_id": str(target_id)}
+    return {"source_binding": {"contract": "devostasis.work-source.v1", "kind": "CHANGE", "project": project,
+            "source_project": {**project, "project_id": str(source_id)}, "source_locator": locator,
+            "ref": ref, "revision": head}}
+
+
 def _gh_change(client, repo, num):
     route = f"/repos/{repo}/pulls/{num}"
     p, err = client.obj(route)
@@ -261,7 +279,7 @@ def _gh_change(client, repo, num):
         reviews = unavailable(failure or "CHANGE_MOVED_DURING_COLLECTION")
         checks = unavailable(failure or "CHANGE_MOVED_DURING_COLLECTION")
         threads = unavailable(failure or "CHANGE_MOVED_DURING_COLLECTION")
-    return {"id": str(p["number"]), "title": p["title"], "state": "MERGED" if p.get("merged") else "OPEN" if p["state"] == "open" else "CLOSED",
+    return {**_change_binding(client, p), "id": str(p["number"]), "title": p["title"], "state": "MERGED" if p.get("merged") else "OPEN" if p["state"] == "open" else "CLOSED",
             "author": p["user"]["login"], "owners": _owners(p),
             "reviewers": sorted({r["login"] for r in p.get("requested_reviewers", [])}), "head": head, "base": p["base"]["sha"],
             "updated_at": timestamp(p["updated_at"]), "draft": p.get("draft"),
@@ -311,7 +329,7 @@ def _gl_change(client, project, num):
     if final is None or final.get("sha") != head or final.get("updated_at") != p["updated_at"]:
         checks = unavailable(failure or "CHANGE_MOVED_DURING_COLLECTION")
         threads = unavailable(failure or "CHANGE_MOVED_DURING_COLLECTION")
-    return {"id": str(p["iid"]), "title": p["title"], "state": {"opened": "OPEN", "merged": "MERGED", "closed": "CLOSED", "locked": "OPEN"}[p["state"]],
+    return {**_change_binding(client, p), "id": str(p["iid"]), "title": p["title"], "state": {"opened": "OPEN", "merged": "MERGED", "closed": "CLOSED", "locked": "OPEN"}[p["state"]],
             "author": p["author"]["username"], "owners": _owners(p),
             "reviewers": sorted({r["username"] for r in p.get("reviewers", [])}), "head": head,
             "base": p["diff_refs"]["base_sha"], "updated_at": timestamp(p["updated_at"]), "draft": p.get("draft"),
@@ -319,14 +337,19 @@ def _gl_change(client, project, num):
             "reviews": reviews, "checks": checks, "threads": threads, "files": files}
 
 
-def collect(client, locator, config, at=None, revision=None, context="CANONICAL", selected=None):
+def collect(client, locator, config, at=None, revision=None, context="CANONICAL", selected=None,
+            source_ref=None, source_change=None, source_project=None, change_refs=None):
     policy(config)
-    require(isinstance(locator, str) and (locator.isdigit() if client.provider == "gitlab" else
+    require(isinstance(locator, str) and ((locator.isdigit() or re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+", locator)
+            and all(v not in (".", "..") for v in locator.split("/"))) if client.provider == "gitlab" else
             re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", locator) and
             all(v not in (".", "..") for v in locator.split("/"))), "invalid project locator")
-    project_route = f"/repos/{locator}" if client.provider == "github" else f"/projects/{locator}"
+    project_route = f"/repos/{locator}" if client.provider == "github" else f"/projects/{quote(locator, safe='')}"
     meta, failure = client.obj(project_route)
     require(meta is not None, failure or "PROJECT_IDENTITY_UNAVAILABLE")
+    if client.provider == "gitlab":
+        locator = str(meta["id"])
+        project_route = f"/projects/{locator}"
     branch = meta["default_branch"]
     ref_route = project_route + ("/commits/" if client.provider == "github" else "/repository/commits/") + quote(branch, safe="")
     commit, failure = client.obj(ref_route)
@@ -336,6 +359,19 @@ def collect(client, locator, config, at=None, revision=None, context="CANONICAL"
     project = {"provider": client.provider, "endpoint": client.endpoint, "project_id": str(meta["id"]),
                "locator": meta["full_name"] if client.provider == "github" else str(meta["id"]),
                "revision": revision or default_sha, "context": context}
+    if context == "CANONICAL":
+        require(source_ref is None and source_change is None and source_project is None, "canonical source must be default branch")
+        project["source_binding"] = {"contract": "devostasis.work-source.v1", "kind": "DEFAULT_BRANCH",
+            "project": identity(project), "source_project": identity(project), "source_locator": project["locator"],
+            "ref": branch, "revision": default_sha}
+    else:
+        from .binding import resolve
+        require((source_ref is None) != (source_change is None), "candidate requires exactly one named source ref or change")
+        bound = resolve(client, project, "CHANGE" if source_change is not None else "BRANCH",
+                        source_change or source_ref, source_project)
+        require(revision is None or revision == bound["revision"], "candidate revision moved or does not exist in source project")
+        project["revision"] = bound["revision"]
+        project["source_binding"] = bound
     subject(project)
     change_fn, issue_fn = (_gh_change, _gh_issue) if client.provider == "github" else (_gl_change, _gl_issue)
     change_route = project_route + ("/pulls" if client.provider == "github" else "/merge_requests")
@@ -344,6 +380,11 @@ def collect(client, locator, config, at=None, revision=None, context="CANONICAL"
         for criterion in config["criteria"]:
             if selected.get("criterion") == criterion["id"]:
                 refs += criterion["implementations"]
+        changes = complete()
+    elif change_refs is not None:
+        require(isinstance(change_refs, list) and len(change_refs) <= 100 and
+                all(isinstance(r, str) and r.isdigit() for r in change_refs), "invalid bounded change selection")
+        refs = change_refs + [r for c in config["criteria"] for r in c["implementations"]]
         changes = complete()
     else:
         changes = client.pages(change_route, {"state": "open" if client.provider == "github" else "opened", "scope": "all"} if client.provider == "gitlab" else {"state": "open"})
@@ -375,5 +416,5 @@ def collect(client, locator, config, at=None, revision=None, context="CANONICAL"
     now = timestamp(at or datetime.now(timezone.utc).isoformat())
     result = {"contract": CONTRACT, "kind": "inventory", "subject": project, "observed_at": now,
               "changes": changes, "issues": issues, "receipts": client.receipts,
-              "selection": {"changes": "SELECTED" if selected is not None else "OPEN_AND_REGISTERED", "issues": sorted(issue_refs)}}
+              "selection": {"changes": "SELECTED" if selected is not None or change_refs is not None else "OPEN_AND_REGISTERED", "issues": sorted(issue_refs)}}
     return inventory(result)

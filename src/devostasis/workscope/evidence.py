@@ -10,7 +10,7 @@ from decimal import Decimal
 from xml.etree import ElementTree
 
 from ..canonical import digest, digest_bytes
-from . import CONTRACT
+from . import CONTRACT, CONTRACTS
 from .model import ScopeError, fields, identity, instant, number, path, require, revision, subject, text
 
 MAX_REPORT_BYTES = 2 * 1024 * 1024
@@ -132,7 +132,7 @@ def _performance(data, producer):
 
 def validate(value):
     fields(value, ("contract", "kind", "sources"))
-    require(value["contract"] == CONTRACT and value["kind"] == "evidence", "unsupported evidence contract")
+    require(value["contract"] in CONTRACTS and value["kind"] == "evidence", "unsupported evidence contract")
     require(isinstance(value["sources"], list) and len(value["sources"]) <= 100, "invalid evidence sources")
     seen = set()
     for item in value["sources"]:

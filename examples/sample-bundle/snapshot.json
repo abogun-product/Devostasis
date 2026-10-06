@@ -1,6 +1,6 @@
 {
   "observation_contract_version": "RAW-OBS-V0",
-  "observations_digest": "sha256:78603834c2e4cb90798cc144488c5b9e8d99407908269572a622ed13f1e58b33",
+  "observations_digest": "sha256:89cec71d9b93d5ec2b691af8c7fe9aef590b566fce9edb9d284757bbcb6e10a4",
   "observed_at": "2026-09-05T12:00:00Z",
   "policy_version": "devostasis.policy.v1",
   "schema": "devostasis.snapshot.v1",

@@ -562,7 +562,7 @@ version does not publish.
 
 ## Companion regression evidence (implementation-owned)
 
-These DEV-WORK families exercise `devostasis.work.v1`; they do not replace
+These DEV-WORK families exercise work v1/v2; they do not replace
 the outstanding research cases above or claim acceptance of a Vital rule.
 
 | Family | Proof |
@@ -573,3 +573,23 @@ the outstanding research cases above or claim acceptance of a Vital rule.
 | bounded handoff | `test_work_cursor_exhaustive_binding_and_expiry`, `test_work_selected_refresh_does_not_discover_whole_repository`, `test_work_cli_offline_end_to_end_and_recheck` |
 | durable replay | `test_work_bundle_replay_and_forged_rehashed_projection_rejected`, `test_work_store_backfill_candidate_rename_and_latest_binding`, `test_work_store_lock_and_failed_pointer_write_preserve_history` |
 | transport | `test_work_redirect_cannot_forward_credentials`, `test_work_transport_refuses_mutation`, `test_work_conditional_304_replays_body_without_credential_crossing` |
+
+## 0.4 receipt, compatibility and consumer proof
+
+| Obligation | Proof |
+| --- | --- |
+| RECEIPT-ID-01..03 run fields | `test_execution_fields_have_no_canonical_path` |
+| RECEIPT-ID-04/14/17/19 external execution and complete byte invariance | `test_receipt_id_04_14_17_19_run_mechanics_are_external` |
+| RECEIPT-ID-05 observation time | `test_receipt_id_05_observation_time_stays_material` |
+| RECEIPT-ID-06..13 material acquisition distinctions | `test_material_acquisition_distinctions_change_identity` |
+| RECEIPT-ID-15/18 historical and mixed lineage | `test_receipt_id_15_18_historical_version_is_not_projected` |
+| RECEIPT-ID-20 exact duplicate put | `test_receipt_id_20_exact_duplicate_put_preserves_collision_rule` |
+| RECEIPT-ID-21 observations-disabled durability | `test_receipt_id_21_receipt_is_durable_when_observations_disabled` |
+| exact source and operation dispatch | `test_exact_identity_precedes_edges_but_not_source_validation`, `test_unknown_versions_and_mixed_tuples_never_use_shape_fallback`, `test_compatibility_is_asymmetric_nontransitive_and_operation_scoped` |
+| COMPAT-21/22 | `test_compat_21_recorded_policy_pins_registry_growth_and_replay`, `test_compat_22_ambiguous_edges_do_not_admit_byte_equal_outputs` |
+| bounded provider → packet path | `test_real_provider_path_to_bounded_offline_verified_packet`, `test_file_budget_is_checked_before_source_bytes_are_read` |
+| moved/deleted/link/wrong bytes | `test_source_races_links_and_wrong_evidence_never_produce_a_packet` |
+| historical work replay | `test_legacy_work_example_still_replays` |
+
+RECEIPT-ID-16 is rejected historical evidence, not reassigned. These additions
+do not close the outstanding T3/T6 or core bundle/store vector carrier gaps.

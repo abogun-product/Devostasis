@@ -28,8 +28,11 @@ POLICY_VERSION = "devostasis.policy.v1"
 # Bundle layout: PV-ARTIFACT-V1-005 (accepted by PV-REV-ARTIFACT-005) with the
 # gauges.json and demand.json members in the identity preimage (v2) and the
 # stored effective config as the semantic authority of verification (ART-23..25).
-ARTIFACT_CONTRACT_VERSION = "devostasis.bundle.v2"
-BUNDLE_IDENTITY_CONTRACT = "PV-BUNDLE-ID-002"
+ARTIFACT_CONTRACT_VERSION = "devostasis.bundle.v3"
+BUNDLE_IDENTITY_CONTRACT = "PV-BUNDLE-ID-003"
+RECEIPT_IDENTITY_CONTRACT = "PV-RECEIPT-IDENTITY-003"
+RECEIPT_IDENTITY_SCHEMA = "devostasis.receipt-identity.v1"
+EXECUTION_RECEIPT_SCHEMA = "devostasis.execution-receipt.v1"
 EFFECTIVE_CONFIG_CONTRACT = "PV-EFFECTIVE-CONFIG-001"
 EFFECTIVE_CONFIG_AUTHORITY_CONTRACT = "PV-EFFECTIVE-CONFIG-AUTHORITY-001"
 EFFECTIVE_CONFIG_SCHEMA = "devostasis.effective-config.v2"
@@ -47,7 +50,7 @@ VECTOR_SCHEMA = "devostasis.vectors.v1"
 
 # Deterministic Markdown renderer (v4 states the demand ordering of demand.v2 and
 # renders exact rational durations).
-RENDERER_VERSION = "devostasis.render.v4"
+RENDERER_VERSION = "devostasis.render.v5"
 
 # 0-100 gauges: accepted by PV-REV-GAUGE-001 as the versioned normalization for
 # presentation and same-Vital ordering; never compared across Vitals.
@@ -69,8 +72,8 @@ CANONICAL_SERIALIZATION_VERSION = "devostasis.canon.v1"
 SNAPSHOT_SCHEMA = "devostasis.snapshot.v1"
 DELTA_SCHEMA = "devostasis.delta.v2"
 ACTIVITY_SCHEMA = "devostasis.activity.v1"
-MANIFEST_SCHEMA = "devostasis.manifest.v1"
-OBSERVATIONS_SCHEMA = "devostasis.observations.v1"
+MANIFEST_SCHEMA = "devostasis.manifest.v2"
+OBSERVATIONS_SCHEMA = "devostasis.observations.v2"
 RECEIPT_SCHEMA = "devostasis.receipt.v2"
 
 # Canonical order of the seven core Vitals inside every snapshot.

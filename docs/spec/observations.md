@@ -41,6 +41,11 @@ predicate.
 
 ## Collection receipt
 
+0.4.0 observation files use `devostasis.observations.v2` and canonical
+`receipt_identity`; invocation audit moves to a separate execution receipt.
+See [receipt-identity.md](receipt-identity.md). The full receipt field list
+below describes the preserved historical observations v1 carrier.
+
 Every observation set carries a receipt so a consumer can tell "not
 requested" from "requested but unknown" from "observed zero":
 

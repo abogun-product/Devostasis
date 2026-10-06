@@ -834,14 +834,54 @@
     }
   ],
   "observed_at": "2026-09-05T12:00:00Z",
-  "receipt": {
+  "receipt_identity": {
     "capability_notes": [
       "CHECKS_SURFACE_NOT_COLLECTED",
       "CI_SURFACE:GITHUB_ACTIONS_ONLY"
     ],
     "collector_version": "devostasis.github.v1",
     "config_hash": "example",
-    "ended_at": "2026-09-05T12:00:00Z",
+    "contract": "PV-RECEIPT-IDENTITY-003",
+    "coverage": {
+      "ci.revision_verdicts_14d": {
+        "attempts_complete": true,
+        "outcome_map_version": "devostasis.ci-outcomes.github.v1",
+        "runs_complete": true,
+        "surface": "github_actions",
+        "window_end": "2026-09-05T12:00:00Z",
+        "window_start": "2026-08-22T12:00:00Z"
+      },
+      "forge.change_requests.inventory": {
+        "open_complete": true,
+        "window_complete": true,
+        "window_start": "2026-08-08T12:00:00Z"
+      },
+      "forge.issues.inventory": {
+        "open_complete": true,
+        "window_complete": true,
+        "window_start": "2026-08-08T12:00:00Z"
+      },
+      "forge.releases.inventory": {
+        "complete": true,
+        "limit": 30,
+        "recent_only": true
+      },
+      "git.default_branch.commits_28d": {
+        "branch": "master",
+        "complete": true,
+        "window_end": "2026-09-05T12:00:00Z",
+        "window_start": "2026-08-08T12:00:00Z"
+      },
+      "git.nondefault_branches.inventory": {
+        "complete": true,
+        "head_lookups": 2,
+        "heads_resolved": true
+      },
+      "planning.explicit_targets.inventory": {
+        "complete": true,
+        "source": "milestones"
+      }
+    },
     "per_key": {
       "ci.configured": {
         "freshness": "FRESH",
@@ -902,9 +942,7 @@
       "git.nondefault_branches.inventory",
       "planning.explicit_targets.inventory"
     ],
-    "run_id": "run-20260905T120000Z-acme-widget",
-    "schema": "devostasis.receipt.v2",
-    "started_at": "2026-09-05T12:00:00Z",
+    "schema": "devostasis.receipt-identity.v1",
     "target": {
       "default_branch": "master",
       "display_locator": "acme/widget",
@@ -916,7 +954,7 @@
       "visibility": "public"
     }
   },
-  "schema": "devostasis.observations.v1",
+  "schema": "devostasis.observations.v2",
   "subject": {
     "default_branch": "master",
     "display_locator": "acme/widget",

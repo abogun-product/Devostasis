@@ -14,8 +14,8 @@ The name is *development* plus *homeostasis*: the goal is a stable, honest
 reading of where a project actually stands, so that people and autonomous
 development systems can react to it.
 
-The latest published tag is **v0.1.9**. This checkout prepares **0.3.0**,
-including the pending 0.2.0 adoption fixes; neither increment is released yet.
+The latest published tag is **v0.1.9**. This checkout prepares **0.4.0**,
+including the pending 0.2.0/0.3.0 increments; these are not released yet.
 Use the checkout installation below to try the new companion before its tag
 is published. See [ROADMAP.md](ROADMAP.md) for release gates and next steps.
 
@@ -29,6 +29,12 @@ read GitHub and GitLab; unknown capabilities remain explicit. See the
 [adopter walkthrough](docs/work-scopes.md),
 [consumer contract](docs/spec/work-scope.md) and
 [frozen example](examples/work/bundle/report.md).
+
+**0.4.0 Reproducible consumer handoff** adds byte-invariant canonical bundles,
+exact contract compatibility, mutable source bindings and verified source
+packets that enforce the task's file/byte budget. Existing glab authentication
+works for self-hosted GitLab without a new token. Historical bundles still
+verify. Start with the [external adoption guide](docs/external-adoption.md).
 
 ```sh
 devostasis work policy --actor YOUR_LOGIN --output policy.json
@@ -187,10 +193,10 @@ For this unreleased checkout:
 pip install -e .
 ```
 
-After the 0.3.0 release tag is published:
+After the 0.4.0 release tag is published:
 
 ```bash
-pip install git+https://github.com/drevendev/devostasis@v0.3.0
+pip install git+https://github.com/drevendev/devostasis@v0.4.0
 ```
 
 Observe one repository (a GitHub token is read from `DEVOSTASIS_GITHUB_TOKEN`,
@@ -249,7 +255,7 @@ permissions:
 
 jobs:
   vitals:
-    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.3.0
+    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.4.0
   decide:
     needs: vitals
     runs-on: ubuntu-latest
@@ -306,7 +312,8 @@ The published 0.1.9 engine supplies seven Vitals, GitHub observation,
 immutable bundles, filesystem history, fleet data, Markdown reports, demand,
 gauges, accepted band ordering and executable conformance vectors. The
 pending 0.2.0 adoption adds the accepted Vital repairs and durable Integrity
-history; this 0.3.0 branch adds the separate Evidence to Action companion.
+history; 0.3.0 adds the separate Evidence to Action companion and 0.4.0 adds
+reproducible consumer handoff and accepted receipt/compatibility contracts.
 Its GitLab work collector does not yet implement the core GitLab Vital
 adapter or the accepted Instruments carrier.
 

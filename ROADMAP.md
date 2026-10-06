@@ -6,6 +6,27 @@ started and work that cannot start.
 
 ## Release state and next steps — 2026-10-06
 
+**0.4.0 Reproducible consumer handoff (E2) is now implemented on
+`zendreven/release-0.4.0`.** It carries the pending 0.2/0.3 ancestry and adds
+accepted receipt identity and compatibility, complete recorded bundle tuple
+admission, work v2 named mutable sources and enforced pinned source packets.
+Historical core/work examples remain replayable. See
+[external-adoption.md](docs/external-adoption.md) for the consumer path.
+
+The owner's selected external GitLab pilot completed one read-only shadow
+qualification: verified scope/slice/packet, two files / 33,030 bytes / 18 reads,
+and a real deleted-ref negative control. Existing glab credentials were reused.
+Issue #61 records credential/locator adoption; #62 records full-inventory
+throughput debt. This completes the initial external consumer path. It does
+not establish sustained history, an installed production caller or exact-head
+GitLab approval qualification (#58). E2 does not close B1, B7, private fleet
+recovery (#32) or the deferred core GitLab/Instrument carrier. Production
+activation and sustained calibration remain the next deployment milestone.
+
+The earlier 0.3 readiness snapshot below is retained as release context.
+Compatibility adoption and candidate binding (#60) now have implementation;
+their remaining deployment/qualification boundaries are described above.
+
 The repository is at the **release-readiness and external-adoption stage**:
 the observation engine is released, the work companion is implemented, and
 Phase B is still open. The audit started with a clean working tree. Every

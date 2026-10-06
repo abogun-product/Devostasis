@@ -1,15 +1,19 @@
-# Evidence to Action in 0.3.0
+# Evidence to Action in 0.4.0
 
-0.3.0 is prepared on the release branch and is not tagged yet. Install the
+0.4.0 is prepared on the release branch and is not tagged yet. Install the
 checkout for the offline walkthrough; the pinned workflow examples become
 available after release. The published engine remains v0.1.9.
 
 The companion turns recorded work and findings into five bounded queues. It
 can collect GitHub or GitLab work context; it does not replace the core Vital
 adapter or implement the accepted Instruments carrier. The schemas are
-implementation-owned `devostasis.work.v1`, described in
+implementation-owned `devostasis.work.v2`, with historical v1 replay preserved, described in
 [spec/work-scope.md](spec/work-scope.md) and
 [spec/work-evidence.md](spec/work-evidence.md). No command executes work.
+
+The [external adoption guide](external-adoption.md) and
+[source-packet contract](spec/work-handoff.md) cover named candidates, glab
+reuse, selected collection and enforced pinned source reads introduced in 0.4.
 
 ## Offline walkthrough
 

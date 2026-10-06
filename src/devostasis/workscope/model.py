@@ -8,7 +8,7 @@ from pathlib import PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 from ..canonical import canonical_bytes, digest
-from . import CONTRACT
+from . import CONTRACT, CONTRACTS
 
 QUEUES = ("review", "finish_merge", "implement_issue", "research", "analyze_code")
 STATUSES = ("COMPLETE", "PARTIAL", "UNAVAILABLE")
@@ -81,7 +81,7 @@ def revision(value):
 
 
 def subject(value):
-    fields(value, ("provider", "endpoint", "project_id", "locator", "revision", "context"))
+    fields(value, ("provider", "endpoint", "project_id", "locator", "revision", "context"), ("source_binding",))
     require(value["provider"] in ("github", "gitlab"), "provider: unsupported")
     parsed = urlsplit(value["endpoint"])
     require(parsed.scheme == "https" and parsed.hostname and not parsed.username and
@@ -90,7 +90,27 @@ def subject(value):
     text(value["project_id"]); require(value["project_id"].isdigit(), "numeric immutable project id required")
     text(value["locator"]); revision(value["revision"])
     require(value["context"] in ("CANONICAL", "CANDIDATE"), "context: unsupported")
+    if "source_binding" in value:
+        binding(value["source_binding"], value)
     return value
+
+
+def binding(value, target):
+    fields(value, ("contract", "kind", "project", "source_project", "source_locator", "ref", "revision"))
+    require(value["contract"] == "devostasis.work-source.v1" and value["kind"] in
+            ("DEFAULT_BRANCH", "BRANCH", "CHANGE"), "source binding: unsupported lineage")
+    require(value["project"] == identity(target), "source binding: target project mismatch")
+    fields(value["source_project"], ("provider", "endpoint", "project_id"))
+    require(value["source_project"]["provider"] == target["provider"] and
+            value["source_project"]["endpoint"] == target["endpoint"] and
+            isinstance(value["source_project"]["project_id"], str) and
+            value["source_project"]["project_id"].isdigit(), "source binding: wrong source project")
+    text(value["source_locator"]); text(value["ref"]); revision(value["revision"])
+    require(value["revision"] == target["revision"], "source binding: revision mismatch")
+    require((value["kind"] == "DEFAULT_BRANCH") == (target["context"] == "CANONICAL"),
+            "source binding: context mismatch")
+    if value["kind"] == "CHANGE":
+        require(value["ref"].isdigit(), "source binding: numeric change ref required")
 
 
 def identity(value):
@@ -141,7 +161,7 @@ def thread(value):
 
 def change(value):
     fields(value, ("id", "title", "state", "author", "owners", "reviewers", "head", "base", "updated_at",
-                   "draft", "conflict", "merge_train", "reviews", "checks", "threads", "files"))
+                   "draft", "conflict", "merge_train", "reviews", "checks", "threads", "files"), ("source_binding",))
     text(value["id"]); text(value["title"]); text(value["author"])
     strings(value["owners"], "owners"); revision(value["head"]); revision(value["base"])
     strings(value["reviewers"], "requested reviewers")
@@ -155,7 +175,8 @@ def change(value):
 
 def inventory(value):
     fields(value, ("contract", "kind", "subject", "observed_at", "changes", "issues", "receipts", "selection"))
-    require(value["contract"] == CONTRACT and value["kind"] == "inventory", "inventory: unsupported contract")
+    require(value["contract"] in CONTRACTS and value["kind"] == "inventory", "inventory: unsupported contract")
+    require(value["contract"] != "devostasis.work.v1" or "source_binding" not in value["subject"], "legacy inventory cannot carry source binding")
     subject(value["subject"]); observed = instant(value["observed_at"])
     collection(value["changes"], change); collection(value["issues"], issue)
     fields(value["selection"], ("changes", "issues"))
@@ -165,6 +186,9 @@ def inventory(value):
     for obj in value["changes"]["items"] + value["issues"]["items"]:
         require(instant(obj["updated_at"]) <= observed, "object changed after observation")
         if "reviews" in obj:
+            if "source_binding" in obj:
+                require(value["contract"] != "devostasis.work.v1", "legacy change cannot carry source binding")
+                binding(obj["source_binding"], {**value["subject"], "context": "CANDIDATE", "revision": obj["head"]})
             for entry in obj["reviews"]["items"] + obj["checks"]["items"]:
                 require(instant(entry["at"]) <= observed, "evidence arrived after observation")
     canonical_bytes(value)
@@ -175,7 +199,7 @@ def policy(value):
     fields(value, ("contract", "kind", "version", "actor", "roles", "ttl_seconds", "queue_order",
                    "required_checks", "minimum_approvals", "allow_merge_train", "read_budget",
                    "priorities", "criteria", "requests", "dispositions"))
-    require(value["contract"] == CONTRACT and value["kind"] == "policy", "policy: unsupported contract")
+    require(value["contract"] in CONTRACTS and value["kind"] == "policy", "policy: unsupported contract")
     text(value["version"]); text(value["actor"])
     strings(value["roles"], "roles"); require(set(value["roles"]) <= ROLES.keys(), "unknown role")
     number(value["ttl_seconds"], 1, 86400); number(value["minimum_approvals"], 1, 100)

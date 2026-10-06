@@ -8,6 +8,9 @@ normative here. The process is domain-neutral and documented in the
 
 | Identifier used by the code | Source unit(s) | Status when implemented |
 | --- | --- | --- |
+| `devostasis.bundle.v3`, `PV-BUNDLE-ID-003`, `PV-RECEIPT-IDENTITY-003`, `devostasis.receipt-identity.v1`, `devostasis.observations.v2`, `devostasis.manifest.v2`, `devostasis.execution-receipt.v1`, `devostasis.render.v5` | cumulative PV-RECEIPT-IDENTITY-001/002/003 | independently accepted by PV-REV-RECEIPT-IDENTITY-003; adopted in 0.4.0 with RECEIPT-ID-01..15,17..21. Literal devostasis schema tokens are local choices; rejected ID-16 is preserved, not reassigned |
+| `devostasis.contract-compatibility.v1`, `devostasis.compatibility-dispatch-policy.v1` | PV-COMPAT-001/002 | independently accepted by PV-REV-COMPAT-002; adopted in 0.4.0; no accepted production nonidentity edge or migration is declared |
+| `devostasis.work.v2`, `devostasis.work-engine.v2`, `devostasis.work-source.v1`, `devostasis.work-handoff.v1` | implementation-owned E2 consumer continuation of issues #54..56/#60/#61 | local, introduced in 0.4.0; v1 replay preserved; no core Instrument semantics or execution authority |
 | `RAW-OBS-V0` | PV-OBS-001 | accepted |
 | `PV-VITALS-V1-002` | PV-VIT-001 (V0), PV-VIT-002..009 repairs, PV-VIT-010 (V1.0), PV-VIT-012 (V1.1) | accepted by PV-REV-012 |
 | `PV-CI-UNIT-004` | PV-VIT-004..011 (PV-CI-NORM-001, PV-CI-UNIT-001..004, PV-CI-PARENT-001..002) | accepted by PV-REV-011 |

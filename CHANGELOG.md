@@ -3,6 +3,40 @@
 All notable changes to this project are documented here. Semantic changes to a
 contract or a policy always come with a version bump of that contract.
 
+## 0.4.0 (unreleased)
+
+Reproducible consumer handoff, target E2.
+
+- Adopt accepted cumulative receipt identity repair PV-RECEIPT-IDENTITY-003:
+  PV-BUNDLE-ID-003, bundle v3, manifest v2, observations v2 and receipt-identity v1.
+  Same evidence/identity metadata produces byte-identical complete canonical
+  bundles despite different invocation times, counters, retries or tool builds.
+  Genuine observation time remains identity-bearing. Execution receipts are
+  returned separately and CLI audit files live outside immutable bundles.
+- Persist the complete receipt projection in every successor manifest, including
+  observations-disabled profiles. Preserve historical verification, mixed-lineage
+  failure and the unchanged exact-byte HistoryStore collision rule.
+- Adopt exact-token compatibility and complete bundle lineage admission;
+  operation-scoped local edges, immutable finite dispatch policies, pinned replay
+  and ambiguity failure. Declare no production nonidentity edge or migration.
+- Work scope v2 records named canonical/candidate branch and PR/MR sources,
+  including fork project identity. Candidate collection validates commit
+  existence; moved, deleted or inaccessible sources invalidate handoff. V1
+  generations retain their original offline replay engine.
+- `work handoff` refreshes selected work, reads only declared regular blobs at
+  pinned revisions, enforces file/byte/request/page/time budgets, validates blob
+  digests and rechecks the source. `work verify-handoff` verifies packets offline
+  against the original scope. Consumer execution procedures retain authority.
+- Reuse an existing host-specific glab login without extracting credentials;
+  resolve namespaced GitLab projects; support explicitly selected/registered
+  change inventories. Credential-partitioned caching requires token-env mode.
+- First external GitLab shadow qualification: one declared research task,
+  two source files / 33,030 bytes / 18 requests, immutable scope and offline
+  packet verification. Deleted merged branch was a negative control. This is
+  initial adoption evidence; sustained private CI and production activation
+  remain separate deployment qualifications. Large-project throughput is #62;
+  exact-head GitLab approvals remain UNKNOWN under #58.
+
 ## 0.3.0 (unreleased)
 
 Release-readiness review, 2026-10-06:

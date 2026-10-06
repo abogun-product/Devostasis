@@ -2,7 +2,7 @@
 # The runner has a mounted private durable volume at WORK_HISTORY_ROOT. Only
 # protected canonical jobs can write it. It must not be inside the observed repo.
 variables:
-  DEVOSTASIS_REF: "v0.3.0"
+  DEVOSTASIS_REF: "v0.4.0"
   WORK_POLICY: ".devostasis/work-policy.json"
 
 .work-observer:
@@ -23,9 +23,20 @@ variables:
         test -n "$WORK_HISTORY_ROOT"
         store="$WORK_HISTORY_ROOT"
       fi
+      # Pass the mutable MR ref only to candidate collection. Its native source
+      # project (including forks) is resolved and bound by the collector.
+      set --
+      revision="$CI_COMMIT_SHA"
+      if [ "$context" = CANDIDATE ]; then
+        test -n "$CI_MERGE_REQUEST_IID"
+        set -- --source-change "$CI_MERGE_REQUEST_IID"
+        # Merged-results pipelines build a synthetic commit. Bind source content
+        # to the actual MR head, whose evidence the collector resolves.
+        revision="${CI_MERGE_REQUEST_SOURCE_BRANCH_SHA:-$CI_COMMIT_SHA}"
+      fi
       python -m devostasis work run --provider gitlab --endpoint "$CI_API_V4_URL" \
-        --repo "$CI_PROJECT_ID" --policy "$WORK_POLICY" --revision "$CI_COMMIT_SHA" \
-        --context "$context" --store "$store" --max-requests 100 --max-pages 5 --seconds 120 \
+        --repo "$CI_PROJECT_ID" --policy "$WORK_POLICY" --revision "$revision" \
+        --context "$context" "$@" --store "$store" --max-requests 100 --max-pages 5 --seconds 120 \
         > work-output/result.json 2> work-output/failure.txt
       python - <<'PY'
       import json, pathlib, shutil, subprocess, sys

@@ -1,4 +1,15 @@
-# Bundle (devostasis.bundle.v2, PV-BUNDLE-ID-002, PV-EFFECTIVE-CONFIG-001, PV-EFFECTIVE-CONFIG-AUTHORITY-001)
+# Bundle
+
+0.4.0 writes `devostasis.bundle.v3` / `PV-BUNDLE-ID-003` with manifest v2,
+observations v2 and the canonical receipt-identity projection. The complete
+successor definition and execution boundary are in
+[receipt-identity.md](receipt-identity.md); exact source-version admission is
+in [compatibility.md](compatibility.md). Required canonical bytes are invariant
+under changes to invocation mechanics. Historical members are never rewritten.
+
+The v2 / PV-BUNDLE-ID-002 definition below remains the historical verifier
+contract. Common member, config, digest and acyclicity rules also apply to v3,
+with the explicitly versioned receipt/manifest changes above.
 
 One successful canonical run of one project produces one immutable bundle.
 

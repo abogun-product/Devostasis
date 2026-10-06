@@ -2,7 +2,7 @@
 
 - Observed at: 2026-09-05T12:00:00Z
 - Comparison: BASELINE
-- Bundle: `422f6c269728988da2808817b5e72db3f3df97a330fb91c52f3f53e6ee76554c`
+- Bundle: `868e4cb6c321a66e14bf6b1dc917cc51ba66ee9535edfb4d5e36ea9045631cd3`
 - Contracts: vitals PV-VITALS-V1-002, observations RAW-OBS-V0, policy devostasis.policy.v1
 
 ```text
@@ -217,8 +217,8 @@ Releases:
 
 ## Provenance
 
-- Artifact contract: devostasis.bundle.v2; bundle identity: PV-BUNDLE-ID-002; renderer: devostasis.render.v4; gauges: devostasis.gauge.v1; demand: devostasis.demand.v2
+- Artifact contract: devostasis.bundle.v3; bundle identity: PV-BUNDLE-ID-003; renderer: devostasis.render.v5; gauges: devostasis.gauge.v1; demand: devostasis.demand.v2
 - Effective config digest: `sha256:cc472c9ad93f6721ecc9a3fc14f3067ccc85af33c2acceb4489982a44eb370ac` (config version `example-1`)
 - Adapters: github devostasis.github.v1
-- Observations digest: `sha256:78603834c2e4cb90798cc144488c5b9e8d99407908269572a622ed13f1e58b33`
+- Observations digest: `sha256:89cec71d9b93d5ec2b691af8c7fe9aef590b566fce9edb9d284757bbcb6e10a4`
 - Generated deterministically from the machine bundle without any language model.

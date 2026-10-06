@@ -596,7 +596,7 @@ def test_the_receipt_and_the_evidence_are_bound_to_the_identity(tmp_path):
     bundle = build_from_observations(_project(), _obs(), FilesystemHistoryStore(tmp_path))
     forged = dict(bundle.members)
     manifest = json.loads(forged["manifest.json"])
-    manifest["receipt"]["capability_notes"] = ["FORGED"]
+    manifest["receipt_identity"]["capability_notes"] = ["FORGED"]
     forged["manifest.json"] = canonical.pretty_json(manifest).encode("utf-8")
     problems = verify_members(_rehash(forged))
     assert any(p.startswith("RECEIPT_DIGEST_MISMATCH") for p in problems)

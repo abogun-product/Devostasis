@@ -11,7 +11,7 @@ import shutil
 import tempfile
 
 from ..canonical import canonical_bytes, digest, digest_bytes, loads
-from . import CONTRACT
+from . import CONTRACT, CONTRACTS, ENGINES
 from .model import ROLES, ScopeError, fields, identity, instant, number, require
 from .planner import project
 
@@ -42,7 +42,7 @@ def build(inv, config, evidence, at=None, anchor=None):
                 isinstance(anchor["manifest_digest"], str) and re.fullmatch(r"sha256:[0-9a-f]{64}", anchor["manifest_digest"]), "invalid Vitals anchor")
     content = {name: canonical_bytes(value) for name, value in zip(MEMBERS, (inv, config, evidence, scope))}
     content["report.md"] = render(scope)
-    preimage = {"contract": CONTRACT, "kind": "bundle", "engine": "devostasis.work-engine.v1",
+    preimage = {"contract": inv["contract"], "kind": "bundle", "engine": ENGINES[inv["contract"]],
                 "members": {k: digest_bytes(v) for k, v in content.items()}, "vitals_anchor": anchor}
     manifest = {**preimage, "bundle_id": digest(preimage)}
     content["manifest.json"] = canonical_bytes(manifest)
@@ -69,7 +69,7 @@ def verify_content(content):
         require(content[name] == canonical_bytes(value), "bundle member is not canonical")
     m = decoded["manifest.json"]
     fields(m, ("contract", "kind", "engine", "members", "vitals_anchor", "bundle_id"))
-    require(m["contract"] == CONTRACT and m["kind"] == "bundle" and m["engine"] == "devostasis.work-engine.v1",
+    require(m["contract"] in CONTRACTS and m["kind"] == "bundle" and m["engine"] == ENGINES[m["contract"]],
             "unsupported bundle contract or replay engine")
     require(set(m["members"]) == set(MEMBERS), "manifest member set mismatch")
     require(all(digest_bytes(content[k]) == m["members"][k] for k in MEMBERS), "bundle member digest mismatch")
@@ -158,7 +158,7 @@ def publish(store, content):
             else:
                 promote = True
             if promote:
-                atomic(pointer, canonical_bytes({"contract": CONTRACT, "bundle_id": bundle_id,
+                atomic(pointer, canonical_bytes({"contract": decoded["manifest.json"]["contract"], "bundle_id": bundle_id,
                     "manifest_digest": digest_bytes(content["manifest.json"]), "project": identity(scope["subject"])}))
     return dest
 
@@ -168,7 +168,7 @@ def latest(root):
     require(pointer.is_file() and not pointer.is_symlink() and pointer.stat().st_size < 8192, "latest pointer unavailable")
     data = loads(pointer.read_text(encoding="utf-8"))
     fields(data, ("contract", "bundle_id", "manifest_digest", "project"))
-    require(data["contract"] == CONTRACT and isinstance(data["bundle_id"], str) and
+    require(data["contract"] in CONTRACTS and isinstance(data["bundle_id"], str) and
             len(data["bundle_id"]) == 71 and all(c in "0123456789abcdef" for c in data["bundle_id"][7:])
             and data["bundle_id"].startswith("sha256:"), "invalid latest pointer")
     dest = Path(root) / "bundles" / data["bundle_id"][7:]

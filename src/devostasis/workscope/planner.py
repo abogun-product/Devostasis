@@ -103,6 +103,9 @@ def project(inv, config, evidence, at=None):
                              "total_paths": len(set(paths))},
                 "acceptance": list(acceptance), "evidence": sorted(set(refs) | set(inputs.values()))}
         item["merge_gate"] = merge_gate
+        if inv["contract"] == CONTRACT:
+            item["source_binding"] = (changes[source.split(":", 1)[1]].get("source_binding")
+                                      if source.startswith("change:") else inv["subject"].get("source_binding"))
         item["fingerprint"] = digest(item)
         items.append(item)
 
@@ -201,7 +204,7 @@ def project(inv, config, evidence, at=None):
     rank = {"READY": 0, "BLOCKED": 1, "UNKNOWN": 2}
     items.sort(key=lambda i: (rank[i["eligibility"]], i["priority"]["rank"], not i["continuation"],
                               config["queue_order"].index(i["queue"]), i["id"]))
-    return {"contract": CONTRACT, "kind": "scope", "subject": inv["subject"], "observed_at": inv["observed_at"],
+    return {"contract": inv["contract"], "kind": "scope", "subject": inv["subject"], "observed_at": inv["observed_at"],
             "planned_at": at, "expires_at": timestamp((instant(inv["observed_at"]) + timedelta(seconds=config["ttl_seconds"])).isoformat()),
             "policy_version": config["version"], "inputs": inputs, "items": items,
             "queues": {q: [i["id"] for i in items if i["queue"] == q] for q in QUEUES},

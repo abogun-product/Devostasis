@@ -17,7 +17,7 @@ from .bundle import Bundle, BundleError, build_bundle
 from .config import Config, ResolvedProject
 from .contracts import OBSERVATION_CONTRACT_VERSION, VITALS_CONTRACT_VERSION
 from .history import FilesystemHistoryStore, HistoryStoreError, _write_atomic
-from .observations import ObservationSet
+from .observations import ObservationSet, failed_execution
 from .policy import POLICY_VERSION
 from .vitals import build_snapshot, evaluate_all
 
@@ -38,6 +38,7 @@ class RunOutcome:
     error: str | None = None
     requests: int = 0
     conditional_hits: int = 0
+    execution_receipt: dict[str, Any] | None = None
 
 
 def observe(project: ResolvedProject, client: GitHubClient, now: datetime) -> ObservationSet:
@@ -212,7 +213,10 @@ def run_project(
     try:
         obs = observe(project, client, now)
     except CollectionError as exc:
-        return RunOutcome(project.locator, False, error=str(exc), requests=client.request_count, conditional_hits=client.conditional_hits)
+        execution = failed_execution(project.locator, timeutil.format_ts(started), timeutil.format_ts(timeutil.now_utc()), str(exc),
+                                     {"requests": client.request_count, "conditional_hits": client.conditional_hits})
+        return RunOutcome(project.locator, False, error=str(exc), requests=client.request_count,
+                          conditional_hits=client.conditional_hits, execution_receipt=execution)
     identity = obs.subject.get("immutable_project_id")
     if admitted is not None and identity not in (None, ""):
         key = f"{obs.subject.get('forge_instance') or 'github.com'}:{identity}"
@@ -224,6 +228,7 @@ def run_project(
                 error=f"{DUPLICATE_PROJECT_IDENTITY}: {project.locator} is repository {identity}, already observed in this run as {earlier}; one repository is observed once",
                 requests=client.request_count,
                 conditional_hits=client.conditional_hits,
+                execution_receipt=obs.receipt.execution(receipt_identity=obs.receipt_identity()),
             )
         admitted[key] = project.locator
     try:
@@ -240,7 +245,10 @@ def run_project(
         bundle = build_from_observations(project, obs, store, run_meta)
         path = store.commit(bundle)
     except (BundleError, HistoryStoreError) as exc:
-        return RunOutcome(project.locator, False, error=str(exc), requests=client.request_count, conditional_hits=client.conditional_hits)
+        execution = obs.receipt.execution(run_meta=run_meta, receipt_identity=obs.receipt_identity())
+        execution["diagnostics"].append(str(exc))
+        return RunOutcome(project.locator, False, error=str(exc), requests=client.request_count,
+                          conditional_hits=client.conditional_hits, execution_receipt=execution)
     return RunOutcome(
         project.locator,
         True,
@@ -250,6 +258,7 @@ def run_project(
         path=str(path),
         requests=client.request_count,
         conditional_hits=client.conditional_hits,
+        execution_receipt=bundle.execution_receipt,
     )
 
 
@@ -318,6 +327,7 @@ def run_all(
             continue
         transport = UrllibTransport(token, user_agent=user_agent or "devostasis/0.1 (+https://github.com/drevendev/devostasis)")
         client = GitHubClient(transport, budget=request_budget, cache=cache)
+        invocation_started = timeutil.format_ts(timeutil.now_utc())
         try:
             outcomes.append(run_project(project, store, client, now, admitted=admitted))
         except Exception as exc:  # noqa: BLE001 - one project's data must not end the fleet run
@@ -334,6 +344,9 @@ def run_all(
                     error=f"{type(exc).__name__}: {exc}",
                     requests=client.request_count,
                     conditional_hits=client.conditional_hits,
+                    execution_receipt=failed_execution(project.locator, invocation_started,
+                        timeutil.format_ts(timeutil.now_utc()), f"{type(exc).__name__}: {exc}",
+                        {"requests": client.request_count, "conditional_hits": client.conditional_hits}),
                 )
             )
     # The fleet surfaces first: they are part of the result. The cache is an

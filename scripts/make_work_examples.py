@@ -16,12 +16,18 @@ at = "2026-10-02T12:00:00Z"
 sha, head, base = "a" * 40, "b" * 40, "c" * 40
 subject = {"provider": "github", "endpoint": "https://api.github.com", "project_id": "123456",
            "locator": "acme/widget", "revision": sha, "context": "CANONICAL"}
+identity = {k: subject[k] for k in ("provider", "endpoint", "project_id")}
+subject["source_binding"] = {"contract": "devostasis.work-source.v1", "kind": "DEFAULT_BRANCH",
+    "project": identity, "source_project": identity, "source_locator": "acme/widget", "ref": "main", "revision": sha}
 change = {"id": "10", "title": "Add the feature", "state": "OPEN", "author": "worker", "owners": [], "reviewers": [],
           "head": head, "base": base, "updated_at": at, "draft": False, "conflict": False, "merge_train": False,
           "reviews": complete([{"id": "r10", "actor": "reviewer", "revision": head, "state": "APPROVED", "at": at}]),
           "checks": complete([{"id": "c10", "name": "tests", "revision": head, "state": "PASS", "at": at}]),
           "threads": complete(), "files": complete(["src/app.py"])}
 other = {**change, "id": "11", "author": "other", "title": "Review the parser", "reviews": complete()}
+for record in (change, other):
+    record["source_binding"] = {"contract": "devostasis.work-source.v1", "kind": "CHANGE", "project": identity,
+        "source_project": identity, "source_locator": "acme/widget", "ref": record["id"], "revision": head}
 inv = {"contract": CONTRACT, "kind": "inventory", "subject": subject, "observed_at": at,
        "changes": complete([change, other]), "issues": complete([{"id": "20", "title": "Add validation",
            "state": "OPEN", "owners": ["worker"], "updated_at": at}]), "receipts": [],

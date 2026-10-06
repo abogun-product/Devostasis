@@ -5,6 +5,17 @@ contract or a policy always come with a version bump of that contract.
 
 ## 0.3.0 (unreleased)
 
+Release-readiness review, 2026-10-06:
+
+- GitHub/GitLab work issue collectors reject unknown lifecycle states instead
+  of treating them as CLOSED and silently completing a consumer criterion.
+- A mix of available and missing selected issues remains PARTIAL regardless
+  of read order. Previously a missing issue read first left an UNAVAILABLE
+  collection containing later readable records and failed the entire scope.
+  Readable work and bounded evidence recovery now survive together.
+- README and roadmap distinguish the published 0.1.9 engine, the pending
+  0.2.0/0.3.0 releases and the proposed external-adoption increment.
+
 Evidence to Action, target E1: a separate deterministic consumer companion
 (`devostasis.work.v1`, replay engine `devostasis.work-engine.v1`).
 

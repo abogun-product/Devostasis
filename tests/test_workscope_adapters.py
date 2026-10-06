@@ -45,6 +45,53 @@ def gitlab_routes():
             root + "/issues/2": (200, {}, {"iid": 2, "title": "Feature", "state": "opened", "assignees": [], "updated_at": AT})}
 
 
+def issue_routes(provider):
+    if provider == "gitlab":
+        return gitlab_routes(), "https://gitlab.example/api/v4", "123", "/api/v4/projects/123"
+    root = "/repos/acme/widget"
+    return {root: (200, {}, {"id": 123, "full_name": "acme/widget", "default_branch": "main"}),
+            root + "/commits/main": (200, {}, {"sha": SHA}),
+            root + "/issues/2": (200, {}, {"number": 2, "title": "Feature", "state": "open",
+                                           "assignees": [], "updated_at": AT})}, "https://api.github.com", "acme/widget", root
+
+
+@pytest.mark.parametrize("provider", ["github", "gitlab"])
+@pytest.mark.parametrize("state", [None, "", "unexpected", False, 0, [], {}])
+def test_work_unknown_issue_state_cannot_complete_a_criterion(provider, state):
+    routes, endpoint, locator, root = issue_routes(provider)
+    routes[root + "/issues/2"][2]["state"] = state
+    p = config()
+    selected = item(project(inv(), p, empty_evidence()), "implement_issue")
+    i = collect(Client(provider, endpoint, transport=Routes(routes)), locator, p, AT, selected=selected)
+    assert i["issues"]["status"] == "UNAVAILABLE" and not i["issues"]["items"]
+    scope = project(i, p, empty_evidence())
+    assert item(scope, "implement_issue")["eligibility"] == "UNKNOWN"
+    assert any(task["source"] == "recovery:issue:2" for task in scope["items"])
+    assert not any(exclusion["reason"] == "CRITERION_DONE" for exclusion in scope["excluded"])
+
+
+@pytest.mark.parametrize("provider", ["github", "gitlab"])
+@pytest.mark.parametrize("missing", ["2", "3"])
+def test_work_mixed_issue_availability_preserves_partial_scope_in_either_order(provider, missing):
+    routes, endpoint, locator, root = issue_routes(provider)
+    valid = deepcopy(routes[root + "/issues/2"][2])
+    valid["number" if provider == "github" else "iid"] = 3
+    routes[root + "/issues/3"] = (200, {}, valid)
+    routes[root + "/issues/" + missing] = (403, {}, {})
+    p = config(); p["criteria"][0]["dependencies"] = ["3"]
+    selected = item(project(inv(), p, empty_evidence()), "implement_issue")
+    i = collect(Client(provider, endpoint, transport=Routes(routes)), locator, p, AT, selected=selected)
+    available = "3" if missing == "2" else "2"
+    assert i["issues"]["status"] == "PARTIAL"
+    assert [record["id"] for record in i["issues"]["items"]] == [available]
+    scope = project(i, p, empty_evidence())
+    assert item(scope, "implement_issue")["eligibility"] == "UNKNOWN"
+    assert any(task["source"] == "recovery:issue:" + missing for task in scope["items"])
+    assert any(task["source"] == "request:Q1" and task["eligibility"] == "READY" for task in scope["items"])
+    from devostasis.workscope.bundle import verify_content
+    assert verify_content(build(i, p, empty_evidence())[1])["inventory.json"] == i
+
+
 def test_work_gitlab_manual_jobs_diffs_threads_and_exact_head_unknown():
     f = Routes(gitlab_routes())
     i = collect(Client("gitlab", "https://gitlab.example/api/v4", "read-only", transport=f), "123", config(), AT)

@@ -4,7 +4,25 @@ Ordered by what unblocks what, not by what is interesting. Every item names
 who or what blocks it, so a reader can tell the difference between work not
 started and work that cannot start.
 
-## Release state and next steps — 2026-10-02
+## Release state and next steps — 2026-10-06
+
+The repository is at the **release-readiness and external-adoption stage**:
+the observation engine is released, the work companion is implemented, and
+Phase B is still open. The audit started with a clean working tree. Every
+outstanding development branch already has a pull request:
+
+| Work | Pull request | Integration state |
+| --- | --- | --- |
+| 0.2.0 accepted Vital/history adoption | [#53](https://github.com/drevendev/Devostasis/pull/53) | Open; targets `master` |
+| 0.2.0 history admission/readiness repair | [#57](https://github.com/drevendev/Devostasis/pull/57) | Open; targets `release/0.2.0`, before #53 |
+| 0.3.0 Evidence to Action | [#59](https://github.com/drevendev/Devostasis/pull/59) | Open; includes the original commits of #53 and #57 |
+| Dependabot, CI concurrency, Hungry Crab state | [#36](https://github.com/drevendev/Devostasis/pull/36), [#37](https://github.com/drevendev/Devostasis/pull/37), [#50](https://github.com/drevendev/Devostasis/pull/50) | Original commits included in #57 and #59; both attribution receipts/notices retained |
+
+The release heads are mergeable. Fork CI passed for the prepared heads on
+Python 3.12/3.13/3.14; upstream runs for #57/#59 require maintainer approval,
+and neither PR has an independent review yet. A later push needs fresh CI
+for its own head. Inclusion in a release branch is not an upstream merge:
+all six PRs remain open and neither `v0.2.0` nor `v0.3.0` exists.
 
 **0.3.0 Evidence to Action is implemented on this release branch**, with its
 own consumer contract and target E1. The companion supplies five queues,
@@ -40,10 +58,15 @@ specification still names 62 cases without executable proof in this branch.
 
 The next work is ordered by the evidence each step makes possible:
 
-1. **Finish and release 0.2.0.** Admit only the carried history reconstructed
-   from the verified predecessor, reject duplicate carried revision ids, and
-   reconcile the pending maintenance branches. Merge the release only after
-   review and CI, then tag it; an unreleased branch is not a completed release.
+1. **Review and release the prepared increments.** #57 already binds carried
+   history to the verified predecessor, rejects duplicate carried revision
+   ids and integrates the pending maintenance. The review of 2026-10-06 also
+   repairs unknown issue-state coercion and mixed-availability collection in
+   the 0.3.0 work collector. The release sequence is #57 into `release/0.2.0`,
+   #53 into `master` and tag `v0.2.0`, then #59 into `master` and tag `v0.3.0`.
+   Approve upstream CI and review each final head first. Retire the superseded
+   maintenance PRs when their commits land through the release; do not apply
+   them again independently.
 2. **Restore sustained observation and complete Phase B.** The latest public
    evidence in [#32](https://github.com/drevendev/Devostasis/issues/32) records
    an Actions billing refusal and a fleet history ending on 2026-09-10; check
@@ -53,13 +76,7 @@ The next work is ordered by the evidence each step makes possible:
    check-app history uncertainty explicit
    ([#52](https://github.com/drevendev/Devostasis/issues/52)), adopt the
    compatibility policy, finish B1, and run a B7 pilot selected by the owner.
-3. **Deliver the accepted reach contracts in small packages.** GitLab,
-   Coverage, TestState, Deployment and Work follow the existing Phase C gates.
-   The additional CLI and Explorer composition in
-   [#47](https://github.com/drevendev/Devostasis/issues/47) still needs its
-   independent G1 judgement; acceptance of its component contracts does not
-   accept the whole candidate.
-4. **Adopt the implemented bounded work companion.** The consumer
+3. **Adopt the implemented bounded work companion.** The consumer
    work-scope surface in [#54](https://github.com/drevendev/Devostasis/issues/54)
    projects five typed queues (`review`, `finish_merge`, `implement_issue`,
    `research`, `analyze_code`) with stable ids, exact revisions, explicit
@@ -72,8 +89,14 @@ The next work is ordered by the evidence each step makes possible:
    accepted core Vital/Instrument semantics; task selection remains outside
    the observational engine. Adopter policy, sustained external deployment
    and the revision-bound GitLab approval capability are the remaining steps.
+4. **Deliver the accepted reach contracts in small packages.** GitLab,
+   Coverage, TestState, Deployment and Work follow the existing Phase C gates.
+   The additional CLI and Explorer composition in
+   [#47](https://github.com/drevendev/Devostasis/issues/47) still needs its
+   independent G1 judgement; acceptance of its component contracts does not
+   accept the whole candidate.
 
-The major product increment in this branch is **Evidence to Action**:
+The product increment already implemented in this branch is **Evidence to Action**:
 trusted observations plus reproducible, bounded work scopes for an outside
 consumer. Its success criterion is a developer or agent selecting one task
 from verified evidence, recovering explicitly missing input, and verifying
@@ -81,6 +104,44 @@ the stated acceptance without rediscovering the whole repository. GitLab
 and the Instruments expand that evidence; a presentation-only release does
 not satisfy this consumer criterion. No queue grants permission to merge,
 claim or deploy, and business priority remains explicit consumer policy.
+
+## Recommended next major increment: external adoption of Evidence to Action
+
+Treat this as a proposed next increment, not a newly accepted research unit
+or a promise of a release date. The largest product gain now comes from an
+outside consumer relying on the implemented scopes over time. More surface
+before that feedback cannot establish whether the current handoff is useful.
+
+Deliver it in this order:
+
+1. Publish the prepared releases, restore the private fleet observer (#32)
+   and choose one outside repository for B7. Public self-observation succeeded
+   on 2026-10-05, but it is a different workflow; the latest public statement
+   about the private fleet is still its 2026-09-30 billing failure. Fresh
+   private history must be checked directly before it is called restored.
+2. Adopt the accepted compatibility policy (#34) and work the outstanding
+   timestamp, lineage and store audit families (#35), including the explicit
+   core receipt-identity adoption decision (#19). Give stored versions
+   exact verification/replay dispatch and keep old bundles verifiable.
+   Complete the remaining executable conformance through B1/#23; keep the
+   public gap count explicit until accepted fixtures actually run.
+3. Run an outside developer/agent against verified scopes with a declared
+   policy, bounded reads, acceptance and live recheck. Add the named candidate
+   source binding (#60) and validate GitLab revision-bound approvals (#58)
+   where the consumer needs them. Record whether tasks were completed, what
+   evidence was missing and whether recheck correctly invalidated moved work.
+4. After the Phase B and compatibility gates, expand the same consumer path
+   with the core GitLab adapter and accepted Instruments carrier. Prioritize
+   TestState/Coverage/Deployment/Work from observed adopter needs; the existing
+   companion report profiles do not close those core contracts.
+
+Acceptance: an outside repository produces sustained verifiable history;
+its consumer selects and completes a task from the declared scope without
+rediscovering the whole repository; missing evidence yields bounded recovery;
+changed revisions invalidate stale work; historical bundles still replay.
+Keep the observer read-only and execution/merge/deploy authority in that
+outside client. An HTML Explorer, renderer themes and PyPI distribution
+remain later reach/presentation work, subject to their existing gates.
 
 ## How this roadmap is worked
 

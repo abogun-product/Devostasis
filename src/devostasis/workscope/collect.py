@@ -195,11 +195,13 @@ def _owners(value):
 
 
 def _gh_issue(i):
+    require(i["state"] in ("open", "closed"), "ISSUE_STATE_UNKNOWN")
     return {"id": str(i["number"]), "title": i["title"], "state": "OPEN" if i["state"] == "open" else "CLOSED",
             "owners": _owners(i), "updated_at": timestamp(i["updated_at"])}
 
 
 def _gl_issue(i):
+    require(i["state"] in ("opened", "closed"), "ISSUE_STATE_UNKNOWN")
     return {"id": str(i["iid"]), "title": i["title"], "state": "OPEN" if i["state"] == "opened" else "CLOSED",
             "owners": _owners(i), "updated_at": timestamp(i["updated_at"])}
 
@@ -367,8 +369,9 @@ def collect(client, locator, config, at=None, revision=None, context="CANONICAL"
             require(raw is not None and "pull_request" not in raw, failure or "ISSUE_UNAVAILABLE")
             issues["items"].append(issue_fn(raw))
         except (ScopeError, KeyError, TypeError, ValueError):
-            issues["status"] = "PARTIAL" if issues["items"] else "UNAVAILABLE"
             issues["reasons"] = ["ISSUE_OR_DEPENDENCY_UNAVAILABLE"]
+    if issues["reasons"]:
+        issues["status"] = "PARTIAL" if issues["items"] else "UNAVAILABLE"
     now = timestamp(at or datetime.now(timezone.utc).isoformat())
     result = {"contract": CONTRACT, "kind": "inventory", "subject": project, "observed_at": now,
               "changes": changes, "issues": issues, "receipts": client.receipts,

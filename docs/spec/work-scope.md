@@ -28,6 +28,10 @@ COMPLETE means empty **within the declared selection**. Issues are read from
 the explicit criteria/dependency register, not the whole issue tracker.
 `selection.issues` names those ids; `selection.changes` distinguishes
 `OPEN_AND_REGISTERED` from the narrow `SELECTED` refresh used by recheck.
+Unavailable or malformed issue records stay missing evidence, including an
+unknown provider lifecycle state; they never become CLOSED. A selection
+containing both readable and missing issues is PARTIAL regardless of read
+order, retaining readable records and bounded recovery for missing ids.
 Discovery, collection budgets and source authentication do not make this a
 cryptographically signed statement about a forge. Consumers trust their
 collector and transport; hashes bind stored inputs and deterministic replay.

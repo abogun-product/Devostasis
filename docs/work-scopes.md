@@ -1,5 +1,9 @@
 # Evidence to Action in 0.3.0
 
+0.3.0 is prepared on the release branch and is not tagged yet. Install the
+checkout for the offline walkthrough; the pinned workflow examples become
+available after release. The published engine remains v0.1.9.
+
 The companion turns recorded work and findings into five bounded queues. It
 can collect GitHub or GitLab work context; it does not replace the core Vital
 adapter or implement the accepted Instruments carrier. The schemas are

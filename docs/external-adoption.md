@@ -46,22 +46,15 @@ claim, independent review, merge and deployment procedures. Source content
 cannot grant permission. Refresh immediately before an authorized action;
 an offline packet verifier does not prove current source state.
 
-First external qualification, 2026-10-06: a private GitLab consumer's existing
-scope-first adoption design supplied one declared research task. Its immutable
-scope, slice and packet verified; exactly two files / 33,030 bytes were read
-in 18 requests. A previously merged and deleted branch returned HTTP 404
-instead of being reused. Private evidence remains outside this public repository.
-The result established a read-only shadow path, with no production activation.
+The external shadow path supports a declared bounded research task, immutable
+scope/slice/packet and a deleted-ref negative control. Store private source bytes
+and detailed qualification results in the adopter's private issue/history.
 
-Second external qualification, 2026-10-07: the explicitly bound observer
-created a fresh canonical generation, verified a packet for the same two
-paths in 19 requests and retained a packet-bound caller research result.
-Disabled binding performed no network/canonical write. History including the
-actual 2026-10-06 generation and operational records exported and restored
-with equal audits: two actual UTC dates, not a claim of sustained calibration.
-The full parallel inventory probe admitted 25 MRs / 163 requests / 165,300 ms;
-coverage stayed PARTIAL after bridge response failures. No missing MR is
-treated as absent, no exact-head approval is invented, and #62 remains open.
+The 0.5 repeatable caller supports fresh bound generations, packet-bound caller
+results, disabled controls and verified history restore. Keep detailed external
+qualification and all inventory/timing/calendar evidence in the adopter's private
+issue and history. Full bridge collection qualification remains #62; no missing
+MR is treated as absent or exact-head approval invented.
 See [work-operations.md](work-operations.md) for the repeatable caller path.
 
 Remaining deployment acceptance: reviewed pinned release; existing credential

@@ -25,12 +25,10 @@ Consumer Operations, target E3.
 - Protected GitHub/GitLab caller recipes, synthetic disabled binding, public
   schemas and CI end-to-end archive restore checks. Existing core/work canonical
   lineages and historical replay remain unchanged; no runtime dependency added.
-- External shadow qualification reused existing glab authentication: 19 requests,
-  two pinned files / 33,030 bytes, packet-bound reported research result, disabled
-  control and restored history spanning two actual UTC dates. Full parallel probe
-  admitted 25 MRs in 163 requests / 165,300 ms but remained PARTIAL due to bridge
-  response failures; #62 stays open. Production scheduling and B7's sustained
-  calibration remain deployment gates, not inferred from these two dates.
+- Existing glab authentication can be reused by the bound caller. Detailed
+  external qualification evidence belongs in the adopter's private history.
+  Full bridge collection (#62), production scheduling and B7's sustained
+  calibration remain deployment gates.
 - Reject password-only endpoint userinfo before network reads (#66).
 - Reject substituted native PR/MR/issue identities during selected collection
   and final change rechecks (#68); verify returned selected refs during history
@@ -63,12 +61,11 @@ Reproducible consumer handoff, target E2.
 - Reuse an existing host-specific glab login without extracting credentials;
   resolve namespaced GitLab projects; support explicitly selected/registered
   change inventories. Credential-partitioned caching requires token-env mode.
-- First external GitLab shadow qualification: one declared research task,
-  two source files / 33,030 bytes / 18 requests, immutable scope and offline
-  packet verification. Deleted merged branch was a negative control. This is
-  initial adoption evidence; sustained private CI and production activation
-  remain separate deployment qualifications. Large-project throughput is #62;
-  exact-head GitLab approvals remain UNKNOWN under #58.
+- External GitLab shadow path supports declared research tasks, immutable scope,
+  offline packet verification and deleted-ref controls. Keep detailed adopter
+  qualification evidence private. Sustained private CI and production activation
+  remain separate qualifications. Large-project throughput is #62; exact-head
+  GitLab approvals remain UNKNOWN under #58.
 
 ## 0.3.0 (unreleased)
 

@@ -17,7 +17,7 @@
       "state": "open",
       "opened": "2026-10-06",
       "updated": "2026-10-07",
-      "cost": "Bounded shared-budget concurrency and one per-generation train inventory improve throughput, but the external full probe remained PARTIAL (25 detailed MRs, 163 requests, 165300 ms). Bridge/native response qualification and complete repeated generations remain issue #62; selected inventory must not be called the complete backlog."
+      "cost": "Bounded shared-budget concurrency and one per-generation train inventory improve throughput. Bridge/native response qualification and complete repeated generations remain issue #62; selected inventory must not be called the complete backlog. Detailed adopter qualification evidence stays private."
     },
     {
       "id": "D-9",

@@ -14,14 +14,11 @@ packet-bound caller outcomes, full private-history audit/export/restore and
 protected GitHub/GitLab caller recipes. Existing canonical core/work lineages
 and historical replay remain unchanged. See [work-operations.md](docs/work-operations.md).
 
-The selected outside GitLab consumer has two actual dated shadow generations
-(2026-10-06/07), a verified bounded research result, disabled-caller negative
-control and a restored portable history. The second selected path took 19
-requests for two files / 33,030 bytes. The full parallel probe returned 25 MRs
-in 163 requests / 165,300 ms but remained PARTIAL because some bridge responses
-were unavailable; #62 is still open. Missing records are explicit evidence
-gaps, not an empty backlog. The local caller proof does not claim a protected
-production runner, installed schedule or sustained B7 calibration.
+An outside GitLab consumer is selected. Keep deployment qualification evidence,
+source bytes, timing, inventory counts and calendar history in its private issue
+and durable store. Full bridge collection qualification remains #62. Missing
+records remain explicit evidence gaps. Protected production runner/scheduling
+and sustained B7 calibration remain separate gates.
 
 The next gates are review/release of the prepared increments, activation of
 the reviewed pinned caller in the chosen private deployment, sustained calendar
@@ -40,13 +37,12 @@ admission, work v2 named mutable sources and enforced pinned source packets.
 Historical core/work examples remain replayable. See
 [external-adoption.md](docs/external-adoption.md) for the consumer path.
 
-The owner's selected external GitLab pilot completed one read-only shadow
-qualification: verified scope/slice/packet, two files / 33,030 bytes / 18 reads,
-and a real deleted-ref negative control. Existing glab credentials were reused.
+The external GitLab path supports verified scope/slice/packet and deleted-ref
+negative controls with existing glab credentials. Detailed pilot evidence stays
+in the adopter's private issue/history.
 Issue #61 records credential/locator adoption; #62 records full-inventory
-throughput debt. This completes the initial external consumer path. It does
-not establish sustained history, an installed production caller or exact-head
-GitLab approval qualification (#58). E2 does not close B1, B7, private fleet
+throughput debt. Sustained history, an installed production caller and exact-head
+GitLab approval qualification (#58) remain open. E2 does not close B1, B7, private fleet
 recovery (#32) or the deferred core GitLab/Instrument carrier. Production
 activation and sustained calibration remain the next deployment milestone.
 
@@ -231,7 +227,7 @@ statement; the fix belongs in this repository, not in the rule.
 | Item | Owner of the next step | Blocker |
 | --- | --- | --- |
 | B1 vectors | research process, then this repository | `PV-TEST-001` is being produced as `PV-TEST-VECTORS-00n` units; their findings are [#20](https://github.com/drevendev/Devostasis/issues/20), [#21](https://github.com/drevendev/Devostasis/issues/21), [#22](https://github.com/drevendev/Devostasis/issues/22) and [#23](https://github.com/drevendev/Devostasis/issues/23), and two of them need vector kinds this repository has not built |
-| B7 first outside consumer | integrating owner and elapsed observation time | repository selected; two dated shadow generations and consumer result qualified, production caller/schedule and sustained history remain |
+| B7 first outside consumer | integrating owner and elapsed observation time | repository selected; production caller/schedule, sustained private history and independent feedback remain |
 | C1 GitLab adapter | **this repository, after B7 and the compatibility policy** | the requirements are accepted (`PV-GITLAB-003` by `PV-REV-GITLAB-003`, [#34](https://github.com/drevendev/Devostasis/issues/34)) |
 | C2 uncollected GitHub surfaces | this repository | each surface needs a contract decision first |
 | C3 Instruments | **this repository, after B7 and the compatibility policy** | the envelope, the carrier and four instruments are accepted ([#34](https://github.com/drevendev/Devostasis/issues/34)); the carrier moves the configuration and bundle contracts, which is why the policy comes first |
@@ -325,12 +321,12 @@ names.
 
 ### B7. First outside repository integrates self-observation — the owner's move
 
-The owner selected an outside GitLab repository. The 0.4/0.5 shadow pilots
-qualified source handoff, an explicitly bound local caller, two actual dated
-generations, a reported research result, disabled-caller control and portable
-restore. The point remains independent consumer feedback over sustained time.
-Protected production scheduling, private durable deployment and calibration
-history are still open; the templates and two dates do not substitute for them.
+The owner selected an outside GitLab repository. The 0.4/0.5 implementation
+provides source handoff, an explicitly bound caller, operational records and
+portable restore. Keep adopter qualification evidence private. The point remains
+independent consumer feedback over sustained time. Protected production
+scheduling, private durable deployment and calibration history are still open;
+templates and local proofs do not substitute for them.
 
 
 ### Also open from the reporting review

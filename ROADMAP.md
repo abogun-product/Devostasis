@@ -7,7 +7,8 @@ started and work that cannot start.
 ## Release state and next steps — 2026-10-07
 
 **0.5.0 Consumer Operations (E3) is implemented on
-`zendreven/release-0.5.0`, stacked on [0.4 PR #64](https://github.com/drevendev/Devostasis/pull/64).**
+`zendreven/release-0.5.0` in [PR #69](https://github.com/drevendev/Devostasis/pull/69),
+stacked on [0.4 PR #64](https://github.com/drevendev/Devostasis/pull/64).**
 It provides explicit adopter project/policy/engine bindings, repeated canonical
 observation and immutable invocation receipts, bounded parallel collection,
 packet-bound caller outcomes, full private-history audit/export/restore and
@@ -28,7 +29,55 @@ and accepted Phase C carriers after their existing gates. Private fleet billing
 upstream release-branch automation (#63) and incremental archive scale (#67)
 remain explicit. E3 closes the implemented operations path, not those gates.
 
-The 0.4/0.3 readiness snapshots below are retained as historical context.
+The audit of 2026-10-07 confirmed a clean initial working tree, 22 pending
+commits beyond released `master`, and eight open, conflict-free PRs. All local
+and remote development heads are ancestors of the 0.5 head; there is no
+separate unintegrated branch to salvage. Latest published tag remains `v0.1.9`;
+none of `v0.2.0` through `v0.5.0` exists. The 0.5 source head `aa642b3` passed
+the complete 2,307-test suite locally on Python 3.13.13, all 148 CLI vectors,
+current/frozen core and work verification, and work replay. Its
+[fork matrix](https://github.com/abogun-product/Devostasis/actions/runs/37597164266)
+passed on Python 3.12/3.13/3.14; its
+[upstream run](https://github.com/drevendev/Devostasis/actions/runs/37597163077)
+requires maintainer approval, and independent review remains pending.
+Later commits require their own green CI; pushes to `zendreven/release-*` now
+start that matrix automatically in the fork.
+
+### Next delivery sequence
+
+| Step | Deliverable | Completion evidence / blocker |
+| --- | --- | --- |
+| Release the implemented increments | #57 into upstream `release/0.2.0`, then #53, #59, #64 and #69 into `master`, with each release tag | Maintainer workflow approval, independent review and green checks on each final head; carried maintenance PRs #36/#37/#50 are reconciled when their commits land |
+| Activate the selected outside consumer | Install a reviewed exact pin, project/policy binding, protected runner, durable writer and regular observation schedule | Actual private deployment receipts and verified stored generations; a recipe or shadow probe alone does not complete B7 |
+| Qualify useful repeated operation | Complete large-project GitLab collection (#62), recover private fleet observation (#32), and collect independent consumer feedback | Repeated complete inventories, explicit partial/failure recovery, real calendar-day history and one completed bounded task with original acceptance evidence |
+| Close the remaining assurance gaps | B1 exact conformance (#20/#23), timestamp/lineage/store audit families (#35), and GitLab exact-head approvals where needed (#58) | Accepted fixtures at the named boundary and explicit capability qualification; 62 named conformance cases remain without executable proof |
+| Extend reach after the gates | Core GitLab Vital adapter and accepted TestState/Coverage/Deployment/Work Instrument carrier | B7 and compatibility gates, selected adopter needs, preserved historical replay; the existing GitLab work collector is a separate companion |
+
+**The highest-impact next major increment is operational adoption and a
+measured feedback loop for the implemented Evidence to Action path.** Propose
+this as the next product milestone, without assigning a release number or
+changing the permanent B7/v1.0 acceptance. One outside repository should run
+the pinned caller on a real schedule, retain and restore its verifiable private
+history, and have an independent developer/agent complete work from a verified
+scope and packet. Record requests, bytes, elapsed time, recovery causes and
+consumer feedback in that private deployment. Exercise a moved-source negative
+control and archive restore; keep reported completion separate from independent
+acceptance. Regular observations must add calendar history, not just duplicate
+bundle counts. That evidence determines which Phase C instrument is useful next
+and whether the current bounded handoff actually saves repository rediscovery.
+It does not by itself establish predictive calibration or close all Phase B
+and 1.0 gates.
+
+Upstream Dependabot still names an absent `release/0.3.0`; #63 requires the
+maintainer to establish the actual upstream release branch and route updates
+there. The fork push-filter repair does not resolve that upstream deployment
+choice. Long-term incremental history transfer remains #67; current whole-store
+caps fail explicitly and do not prune private evidence.
+
+### Historical 0.4/0.3 readiness snapshots
+
+The snapshots below retain earlier release context; the current sequence and
+qualification boundaries are those above.
 
 **0.4.0 Reproducible consumer handoff (E2) is now implemented on
 `zendreven/release-0.4.0`.** It carries the pending 0.2/0.3 ancestry and adds
@@ -60,13 +109,15 @@ outstanding development branch already has a pull request:
 | 0.2.0 accepted Vital/history adoption | [#53](https://github.com/drevendev/Devostasis/pull/53) | Open; targets `master` |
 | 0.2.0 history admission/readiness repair | [#57](https://github.com/drevendev/Devostasis/pull/57) | Open; targets `release/0.2.0`, before #53 |
 | 0.3.0 Evidence to Action | [#59](https://github.com/drevendev/Devostasis/pull/59) | Open; includes the original commits of #53 and #57 |
+| 0.4.0 reproducible consumer handoff | [#64](https://github.com/drevendev/Devostasis/pull/64) | Open; includes #59 and earlier pending commits |
+| 0.5.0 consumer operations | [#69](https://github.com/drevendev/Devostasis/pull/69) | Open; includes #64 and all earlier development heads |
 | Dependabot, CI concurrency, Hungry Crab state | [#36](https://github.com/drevendev/Devostasis/pull/36), [#37](https://github.com/drevendev/Devostasis/pull/37), [#50](https://github.com/drevendev/Devostasis/pull/50) | Original commits included in #57 and #59; both attribution receipts/notices retained |
 
 The release heads are mergeable. Fork CI passed for the prepared heads on
 Python 3.12/3.13/3.14; upstream runs for #57/#59 require maintainer approval,
 and neither PR has an independent review yet. A later push needs fresh CI
 for its own head. Inclusion in a release branch is not an upstream merge:
-all six PRs remain open and neither `v0.2.0` nor `v0.3.0` exists.
+all eight PRs remain open and no `v0.2.0` through `v0.5.0` tag exists.
 
 **0.3.0 Evidence to Action is implemented on this release branch**, with its
 own consumer contract and target E1. The companion supplies five queues,

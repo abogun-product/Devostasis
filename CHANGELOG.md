@@ -7,6 +7,8 @@ contract or a policy always come with a version bump of that contract.
 
 Consumer Operations, target E3.
 
+- Run the CI matrix on contributor `zendreven/release-*` pushes and reconcile
+  the eight pending PRs, release sequence and next external-adoption milestone.
 - Explicit project/actor/policy digest/engine version/selection/budget binding,
   disabled by default; immutable COMPLETE/PARTIAL/FAILED/DISABLED invocation
   receipts outside canonical bundles. Wrong binding stops before network;

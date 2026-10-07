@@ -23,6 +23,7 @@ conformance tests.
 | [receipt-identity.md](receipt-identity.md) | 0.4 canonical receipt split, byte invariance and historical dispatch |
 | [compatibility.md](compatibility.md) | Exact tuples, operation-scoped edges, immutable policy and replay |
 | [work-handoff.md](work-handoff.md) | Work v2 mutable sources, bounded pinned source packets and offline verification |
+| [work-operations.md](work-operations.md) | Adoption binding, invocation audit, caller reports and private history transfer |
 | [PROVENANCE.md](PROVENANCE.md) | Contract identifiers and the research units they come from |
 
 Vocabulary used throughout:

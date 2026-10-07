@@ -55,3 +55,16 @@ jobs:
           echo "bundle ids: $a $b"
           test -n "$a" && test "$a" = "$b"
           devostasis verify --bundle /tmp/store-a/projects/github.com/acme/widget/latest
+      - name: Consumer operation receipts and portable history
+        run: |
+          devostasis work observe --binding examples/work/adoption.json --policy examples/work/policy.json --store /tmp/work-a --at 2026-10-02T12:00:00Z
+          devostasis work export-history --store /tmp/work-a --expected-project-id 123456 --output /tmp/work-history.zip
+          devostasis work verify-history --archive /tmp/work-history.zip --expected-project-id 123456
+          devostasis work import-history --archive /tmp/work-history.zip --store /tmp/work-restored --expected-project-id 123456
+          devostasis work audit --store /tmp/work-a --expected-project-id 123456 --at 2026-10-02T12:00:00Z > /tmp/audit-a.json
+          devostasis work audit --store /tmp/work-restored --expected-project-id 123456 --at 2026-10-02T12:00:00Z > /tmp/audit-b.json
+          python - <<'PY'
+          import json
+          a, b = (json.load(open(p)) for p in ('/tmp/audit-a.json', '/tmp/audit-b.json'))
+          assert a == b and a['invocations']['DISABLED'] == 1
+          PY

@@ -86,6 +86,9 @@ def verify(path):
 @contextlib.contextmanager
 def locked(path):
     # OS locks release after process death; a leftover lock file is harmless.
+    path = Path(path).absolute()
+    require(all(not p.is_symlink() and not (hasattr(p, "is_junction") and p.is_junction())
+                for p in (path, *path.parents)), "linked store lock path")
     handle = open(path, "a+b")
     if os.name == "nt":
         import msvcrt

@@ -4,7 +4,34 @@ Ordered by what unblocks what, not by what is interesting. Every item names
 who or what blocks it, so a reader can tell the difference between work not
 started and work that cannot start.
 
-## Release state and next steps — 2026-10-06
+## Release state and next steps — 2026-10-07
+
+**0.5.0 Consumer Operations (E3) is implemented on
+`zendreven/release-0.5.0`, stacked on [0.4 PR #64](https://github.com/drevendev/Devostasis/pull/64).**
+It provides explicit adopter project/policy/engine bindings, repeated canonical
+observation and immutable invocation receipts, bounded parallel collection,
+packet-bound caller outcomes, full private-history audit/export/restore and
+protected GitHub/GitLab caller recipes. Existing canonical core/work lineages
+and historical replay remain unchanged. See [work-operations.md](docs/work-operations.md).
+
+The selected outside GitLab consumer has two actual dated shadow generations
+(2026-10-06/07), a verified bounded research result, disabled-caller negative
+control and a restored portable history. The second selected path took 19
+requests for two files / 33,030 bytes. The full parallel probe returned 25 MRs
+in 163 requests / 165,300 ms but remained PARTIAL because some bridge responses
+were unavailable; #62 is still open. Missing records are explicit evidence
+gaps, not an empty backlog. The local caller proof does not claim a protected
+production runner, installed schedule or sustained B7 calibration.
+
+The next gates are review/release of the prepared increments, activation of
+the reviewed pinned caller in the chosen private deployment, sustained calendar
+history/independent consumer feedback, the remaining B1 exact vectors (#23),
+and accepted Phase C carriers after their existing gates. Private fleet billing
+(#32), GitLab exact-head approvals (#58), full collection qualification (#62),
+upstream release-branch automation (#63) and incremental archive scale (#67)
+remain explicit. E3 closes the implemented operations path, not those gates.
+
+The 0.4/0.3 readiness snapshots below are retained as historical context.
 
 **0.4.0 Reproducible consumer handoff (E2) is now implemented on
 `zendreven/release-0.4.0`.** It carries the pending 0.2/0.3 ancestry and adds
@@ -204,17 +231,17 @@ statement; the fix belongs in this repository, not in the rule.
 | Item | Owner of the next step | Blocker |
 | --- | --- | --- |
 | B1 vectors | research process, then this repository | `PV-TEST-001` is being produced as `PV-TEST-VECTORS-00n` units; their findings are [#20](https://github.com/drevendev/Devostasis/issues/20), [#21](https://github.com/drevendev/Devostasis/issues/21), [#22](https://github.com/drevendev/Devostasis/issues/22) and [#23](https://github.com/drevendev/Devostasis/issues/23), and two of them need vector kinds this repository has not built |
-| B7 first outside consumer | **the owner** | picking a repository; B5 has landed, so the consumer surface no longer moves |
+| B7 first outside consumer | integrating owner and elapsed observation time | repository selected; two dated shadow generations and consumer result qualified, production caller/schedule and sustained history remain |
 | C1 GitLab adapter | **this repository, after B7 and the compatibility policy** | the requirements are accepted (`PV-GITLAB-003` by `PV-REV-GITLAB-003`, [#34](https://github.com/drevendev/Devostasis/issues/34)) |
 | C2 uncollected GitHub surfaces | this repository | each surface needs a contract decision first |
 | C3 Instruments | **this repository, after B7 and the compatibility policy** | the envelope, the carrier and four instruments are accepted ([#34](https://github.com/drevendev/Devostasis/issues/34)); the carrier moves the configuration and bundle contracts, which is why the policy comes first |
 | C4 register generators | this repository | none; low value until a second project uses registers |
 | Renderer themes | owner | needs an owner-selected vocabulary per band |
 | PyPI publication | owner | needs an owner decision that the API surface is stable |
-| Compatibility policy | **this repository, then the owner** | `devostasis.contract-compatibility.v1` is accepted (`PV-COMPAT-002` by `PV-REV-COMPAT-002`, [#34](https://github.com/drevendev/Devostasis/issues/34)); adopting it is what makes the Phase C contract moves safe for an adopter |
+| Compatibility policy | maintainer release/review | accepted PV-COMPAT-002 implementation is in pending 0.4/0.5 ancestry; no production nonidentity edge is declared |
 | `PV-CAL-004` predictive validity | elapsed time | needs calendar days of bundles, not more bundles (see the self-review) |
 | Judgements owed to us | delivered | all four, listed below; one of them is a required repair |
-| Accepted judgements not yet adopted | **this repository, and the owner for one** | the Phase C contracts of [#34](https://github.com/drevendev/Devostasis/issues/34) (GitLab, instruments, the compatibility policy), and `PV-REV-RECEIPT-IDENTITY-003` on [#19](https://github.com/drevendev/Devostasis/issues/19), the fifth identity move, which the owner has to want. The Vital repairs of [#33](https://github.com/drevendev/Devostasis/issues/33) and B3 are adopted in 0.2.0 |
+| Accepted judgements not yet adopted | this repository after existing reach gates | core Phase C GitLab/Instrument carriers and blocked executable conformance surface remain; compatibility and receipt identity are implemented in pending 0.4/0.5 ancestry; Vital repairs/B3 are in pending 0.2 ancestry |
 | Audit handoffs | this repository | about forty `REPAIR REQUIRED` static audits since 2026-09-20, catalogued in [#35](https://github.com/drevendev/Devostasis/issues/35); 0.1.9 repairs the store, transport, decoder and payload families, the timestamp and lineage families are open |
 | Review of 2026-09-30 | this repository, research for four | [#48](https://github.com/drevendev/Devostasis/issues/48): its defects are repaired in 0.1.9; what needs work or a decision is #38 to #46, four of them `for:researcher` (#39, #40, #42, #43) |
 | "Evidence Observatory" candidate | research review, then this repository | the owner asked for a large next release on 2026-09-30; the pending 0.2.0 branch implements the part that rests on accepted contracts, and the candidate specification (`PV-RELEASE-020-001`, not yet accepted) keeps the rest; [#47](https://github.com/drevendev/Devostasis/issues/47) maps its sixteen packages onto the issues here |
@@ -244,8 +271,8 @@ an owner decision:
 | `PV-INT-TOTALITY-001` | [#33](https://github.com/drevendev/Devostasis/issues/33) | adopted in 0.1.9 under the same Integrity rule version, in place of the unresolved superset the review of 2026-09-30 found could omit the band it emitted ([#48](https://github.com/drevendev/Devostasis/issues/48)); `INT-TOTAL-01..06` and `08..13` executable |
 | `PV-REV-DIRECTION-CLOSED-TARGET-001`, `PV-DEBT-PARTIAL-001`, `PV-HORIZON-PARTIAL-001`, `PV-DIRECTION-INCOMPLETE-001`, `PV-TEST-004` | [#33](https://github.com/drevendev/Devostasis/issues/33) | adopted in 0.2.0: `direction.bands.v2`, `horizon.bands.v2`, `debt.bands.v2`, one rule version each; `DIR-CLOSED-01..09`, `DIR-INCOMPLETE-01..16`, `HOR-PARTIAL-01..16`, `DEBT-PARTIAL-01..16` executable; T9 held by its generator over the nine former gap families |
 | `PV-REV-HIST-002` | [#34](https://github.com/drevendev/Devostasis/issues/34) | adopted in 0.2.0 as target B3: `integrity.bands.v1+ci-unit-004+hist-002`, HIST-01..20 executable except HIST-14, which has no accepted migration to execute |
-| `PV-REV-GITLAB-003`, the instrument contracts, `PV-COMPAT-002`, `PV-CONFORMANCE-SURFACE-001`, `PV-RENDER-CLINICAL-001` | [#34](https://github.com/drevendev/Devostasis/issues/34) | **not adopted**: the Phase C contracts this roadmap called blocked by research; they are ours now, sequenced after B7 and the compatibility policy |
-| `PV-REV-RECEIPT-IDENTITY-003` | [#19](https://github.com/drevendev/Devostasis/issues/19) | **not adopted**: the fifth identity move, a fresh receipt, observations and manifest lineage with historical verification dispatch; it needs the owner to want it, and the contract document to implement from |
+| `PV-REV-GITLAB-003`, instrument contracts, `PV-CONFORMANCE-SURFACE-001`, `PV-RENDER-CLINICAL-001` | [#34](https://github.com/drevendev/Devostasis/issues/34) | core reach/conformance/theme work remains unadopted under its existing gates; compatibility is implemented since pending 0.4.0; clinical owner selection is not established |
+| `PV-REV-RECEIPT-IDENTITY-003` | [#19](https://github.com/drevendev/Devostasis/issues/19) | implemented in pending 0.4/0.5 ancestry: bundle v3, manifest v2, observations v2 and receipt identity v1 with historical verification dispatch; maintainer review/release remains |
 
 One judgement is ours to ask for rather than to wait on: `ORDER-01..15` are
 this repository's enumeration of the rules the accepted ordering contract
@@ -298,11 +325,12 @@ names.
 
 ### B7. First outside repository integrates self-observation — the owner's move
 
-Last on purpose: B5 was the final change to the consumer surface, so an
-adopter after it builds on something that will not move under them. One job in
-one workflow, its own `GITHUB_TOKEN`, no secret. The point is not the number
-of adopters but the first feedback from a consumer who did not write the
-contract. The only remaining blocker is the owner choosing a repository.
+The owner selected an outside GitLab repository. The 0.4/0.5 shadow pilots
+qualified source handoff, an explicitly bound local caller, two actual dated
+generations, a reported research result, disabled-caller control and portable
+restore. The point remains independent consumer feedback over sustained time.
+Protected production scheduling, private durable deployment and calibration
+history are still open; the templates and two dates do not substitute for them.
 
 
 ### Also open from the reporting review

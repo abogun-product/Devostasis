@@ -14,8 +14,8 @@ The name is *development* plus *homeostasis*: the goal is a stable, honest
 reading of where a project actually stands, so that people and autonomous
 development systems can react to it.
 
-The latest published tag is **v0.1.9**. This checkout prepares **0.4.0**,
-including the pending 0.2.0/0.3.0 increments; these are not released yet.
+The latest published tag is **v0.1.9**. This checkout prepares **0.5.0**,
+including the pending 0.2.0/0.3.0/0.4.0 increments; these are not released yet.
 Use the checkout installation below to try the new companion before its tag
 is published. See [ROADMAP.md](ROADMAP.md) for release gates and next steps.
 
@@ -35,6 +35,12 @@ exact contract compatibility, mutable source bindings and verified source
 packets that enforce the task's file/byte budget. Existing glab authentication
 works for self-hosted GitLab without a new token. Historical bundles still
 verify. Start with the [external adoption guide](docs/external-adoption.md).
+
+**0.5.0 Consumer Operations** adds an explicit project/policy/engine binding,
+repeated canonical observation with immutable invocation receipts, parallel
+collection under one shared budget, private history audit/export/restore and
+packet-bound caller results. Start with the [operations guide](docs/work-operations.md).
+Calendar days and evidence gaps stay visible; caller reports retain their own authority.
 
 ```sh
 devostasis work policy --actor YOUR_LOGIN --output policy.json
@@ -193,10 +199,10 @@ For this unreleased checkout:
 pip install -e .
 ```
 
-After the 0.4.0 release tag is published:
+After the 0.5.0 release tag is published:
 
 ```bash
-pip install git+https://github.com/drevendev/devostasis@v0.4.0
+pip install git+https://github.com/drevendev/devostasis@v0.5.0
 ```
 
 Observe one repository (a GitHub token is read from `DEVOSTASIS_GITHUB_TOKEN`,
@@ -255,7 +261,7 @@ permissions:
 
 jobs:
   vitals:
-    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.4.0
+    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.5.0
   decide:
     needs: vitals
     runs-on: ubuntu-latest

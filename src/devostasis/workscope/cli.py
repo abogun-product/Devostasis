@@ -49,7 +49,7 @@ def client(args, provider=None, endpoint=None):
         require(not args.cache, "glab credential bridge requires cache disabled; use token-env for partitioned caching")
         transport = GlabTransport(endpoint)
     return Client(provider, endpoint, token, transport=transport, max_requests=args.max_requests, max_pages=args.max_pages,
-                  seconds=args.seconds, cache=args.cache)
+                  seconds=args.seconds, cache=args.cache, workers=args.workers)
 
 
 def recheck(decoded, current, at, *, actor, policy_version, expected_project):
@@ -64,6 +64,36 @@ def recheck(decoded, current, at, *, actor, policy_version, expected_project):
 
 def cmd(args):
     try:
+        if args.operation in ("bind", "observe", "audit", "export-history", "import-history", "verify-history"):
+            from .operations import audit, make_binding, observe
+            from .archive import admit_archive, export_history, import_history
+            if args.operation == "observe":
+                def bound_client(value):
+                    options = argparse.Namespace(**vars(args))
+                    options.provider, options.endpoint = value["project"]["provider"], value["project"]["endpoint"]
+                    for key, setting in value["budget"].items():
+                        setattr(options, key, setting)
+                    return client(options)
+                outcome = observe(read_json(args.binding), read_json(args.policy), args.store, bound_client,
+                                  args.at, read_json(args.evidence) if args.evidence else None)
+                emit(outcome, args.output); return 2 if outcome["status"] == "FAILED" else 0
+            expected = {"provider": args.provider, "endpoint": args.endpoint or
+                        ("https://api.github.com" if args.provider == "github" else "https://gitlab.com/api/v4"),
+                        "project_id": args.expected_project_id}
+            if args.operation == "bind":
+                value = make_binding({**expected, "locator": args.repo}, read_json(args.policy), args.integration_id, args.enabled)
+                emit(value, args.output)
+            elif args.operation == "audit":
+                emit(audit(args.store, expected, args.at, args.max_bytes), args.output)
+            elif args.operation == "export-history":
+                emit(export_history(args.store, expected, args.output, args.max_bytes))
+            elif args.operation == "import-history":
+                emit(import_history(args.archive, expected, args.store, args.max_bytes))
+            else:
+                content, records, index = admit_archive(args.archive, expected, args.max_bytes)
+                emit({"status": "VERIFIED", "bundles": len(content), "invocations": len(records["runs"]),
+                      "caller_results": len(records["results"]), "index_digest": digest(index)})
+            return 0
         if args.operation == "policy":
             emit(default_policy(args.actor), args.output); return 0
         if args.operation == "import":
@@ -95,6 +125,19 @@ def cmd(args):
             emit({"bundle_id": manifest["bundle_id"], "path": str(dest.resolve())}); return 0
         decoded = latest(args.latest) if args.latest else verify(args.bundle)
         scope = decoded["scope.json"]
+        if args.operation in ("record-result", "verify-result"):
+            from .operations import record_result, result_record
+            expected = {"provider": args.provider, "endpoint": args.endpoint or
+                        ("https://api.github.com" if args.provider == "github" else "https://gitlab.com/api/v4"),
+                        "project_id": args.expected_project_id}
+            require(identity(scope["subject"]) == expected and args.actor == decoded["policy.json"]["actor"] and
+                    args.policy_version == decoded["policy.json"]["version"], "result consumer binding mismatch")
+            if args.operation == "record-result":
+                emit(record_result(decoded, read_json(args.packet), read_json(args.result), args.store, args.at), args.output)
+            else:
+                record = result_record(read_json(args.record), decoded)
+                emit({"status": "VERIFIED", "outcome": record["claim"]["outcome"], "authority": record["authority"]}, args.output)
+            return 0
         if args.operation in ("handoff", "verify-handoff"):
             from .handoff import prepare, verify_packet
             at = args.at or clock()
@@ -156,6 +199,37 @@ def cmd(args):
 def add_parser(parser):
     work = parser.add_parser("work", help="Evidence to Action: bounded read-only work scopes")
     operations = work.add_subparsers(dest="operation", required=True)
+    from .operations import MAX_BYTES
+    for operation in ("bind", "observe", "audit", "export-history", "import-history", "verify-history", "record-result", "verify-result"):
+        p = operations.add_parser(operation); p.set_defaults(func=cmd)
+        if operation != "observe":
+            p.add_argument("--provider", choices=("github", "gitlab"), default="github")
+            p.add_argument("--endpoint"); p.add_argument("--expected-project-id", required=True)
+        if operation in ("bind", "observe"):
+            p.add_argument("--policy", required=True)
+        if operation == "bind":
+            p.add_argument("--repo", required=True); p.add_argument("--integration-id", required=True)
+            p.add_argument("--enabled", action="store_true", help="explicitly enable canonical observation")
+        if operation == "observe":
+            p.add_argument("--binding", required=True); p.add_argument("--evidence")
+            p.add_argument("--token-env"); p.add_argument("--cache")
+        if operation in ("observe", "audit", "export-history", "import-history", "record-result"):
+            p.add_argument("--store", required=True)
+        if operation in ("observe", "audit", "record-result"):
+            p.add_argument("--at")
+        if operation in ("bind", "observe", "audit", "export-history", "record-result", "verify-result"):
+            p.add_argument("--output", required=operation == "export-history")
+        if operation in ("audit", "export-history", "import-history", "verify-history"):
+            p.add_argument("--max-bytes", type=int, default=MAX_BYTES)
+        if operation in ("import-history", "verify-history"):
+            p.add_argument("--archive", required=True)
+        if operation in ("record-result", "verify-result"):
+            loc = p.add_mutually_exclusive_group(required=True); loc.add_argument("--bundle"); loc.add_argument("--latest")
+            p.add_argument("--actor", required=True); p.add_argument("--policy-version", required=True)
+        if operation == "record-result":
+            p.add_argument("--packet", required=True); p.add_argument("--result", required=True)
+        if operation == "verify-result":
+            p.add_argument("--record", required=True)
     for operation in ("policy", "import", "collect", "build", "run", "verify", "replay", "slice", "explain", "recheck", "handoff", "verify-handoff"):
         p = operations.add_parser(operation)
         p.set_defaults(func=cmd)
@@ -179,6 +253,7 @@ def add_parser(parser):
             p.add_argument("--endpoint"); p.add_argument("--token-env"); p.add_argument("--cache")
             p.add_argument("--max-requests", type=int, default=100); p.add_argument("--max-pages", type=int, default=10)
             p.add_argument("--seconds", type=int, default=120)
+            p.add_argument("--workers", type=int, default=1, help="bounded parallel change reads (1..8); one shared budget")
         if operation in ("collect", "run"):
             p.add_argument("--repo", required=True); p.add_argument("--revision")
             p.add_argument("--context", choices=("CANONICAL", "CANDIDATE"), default="CANONICAL")

@@ -3,6 +3,39 @@
 All notable changes to this project are documented here. Semantic changes to a
 contract or a policy always come with a version bump of that contract.
 
+## 0.5.0 (unreleased)
+
+Consumer Operations, target E3.
+
+- Explicit project/actor/policy digest/engine version/selection/budget binding,
+  disabled by default; immutable COMPLETE/PARTIAL/FAILED/DISABLED invocation
+  receipts outside canonical bundles. Wrong binding stops before network;
+  immutable project identity is checked before dependent collection.
+- Parallel change reads (1..8 workers) share locked request/deadline limits;
+  per-thread HTTP openers, one GitLab train inventory per generation,
+  deterministic material receipt ordering and preserved per-object head checks.
+  Transport failures retain source paths for bounded recovery.
+- Packet-bound caller results with exact original acceptance and append-only
+  evidence references. REPORTED_COMPLETE stays a caller assertion, not an
+  independent review, merge/deploy permission or automatic healing of evidence.
+- Verified private history audit and deterministic bounded ZIP_STORED export,
+  offline admission and idempotent restore. Includes generations and operational
+  receipts/results; never extracts paths, rejects foreign/linked/duplicate/
+  changed members, preserves candidates and monotonic latest.
+- Protected GitHub/GitLab caller recipes, synthetic disabled binding, public
+  schemas and CI end-to-end archive restore checks. Existing core/work canonical
+  lineages and historical replay remain unchanged; no runtime dependency added.
+- External shadow qualification reused existing glab authentication: 19 requests,
+  two pinned files / 33,030 bytes, packet-bound reported research result, disabled
+  control and restored history spanning two actual UTC dates. Full parallel probe
+  admitted 25 MRs in 163 requests / 165,300 ms but remained PARTIAL due to bridge
+  response failures; #62 stays open. Production scheduling and B7's sustained
+  calibration remain deployment gates, not inferred from these two dates.
+- Reject password-only endpoint userinfo before network reads (#66).
+- Reject substituted native PR/MR/issue identities during selected collection
+  and final change rechecks (#68); verify returned selected refs during history
+  admission and refuse nonzero network telemetry for disabled receipts.
+
 ## 0.4.0 (unreleased)
 
 Reproducible consumer handoff, target E2.

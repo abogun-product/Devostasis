@@ -1,7 +1,7 @@
 # External adoption: shadow consumer qualification
 
-0.4.0 is prepared, not tagged. Install this reviewed checkout with
-`python -m pip install -e .`. After release, pin `v0.4.0` or its exact commit.
+0.5.0 is prepared, not tagged. Install this reviewed checkout with
+`python -m pip install -e .`. After release, pin `v0.5.0` or its exact commit.
 The public synthetic examples use work scope v2; frozen v1 bundles remain in
 `examples/legacy/work-v1`. Do not replace production intake just because a
 shadow packet verifies.
@@ -52,6 +52,17 @@ scope, slice and packet verified; exactly two files / 33,030 bytes were read
 in 18 requests. A previously merged and deleted branch returned HTTP 404
 instead of being reused. Private evidence remains outside this public repository.
 The result established a read-only shadow path, with no production activation.
+
+Second external qualification, 2026-10-07: the explicitly bound observer
+created a fresh canonical generation, verified a packet for the same two
+paths in 19 requests and retained a packet-bound caller research result.
+Disabled binding performed no network/canonical write. History including the
+actual 2026-10-06 generation and operational records exported and restored
+with equal audits: two actual UTC dates, not a claim of sustained calibration.
+The full parallel inventory probe admitted 25 MRs / 163 requests / 165,300 ms;
+coverage stayed PARTIAL after bridge response failures. No missing MR is
+treated as absent, no exact-head approval is invented, and #62 remains open.
+See [work-operations.md](work-operations.md) for the repeatable caller path.
 
 Remaining deployment acceptance: reviewed pinned release; existing credential
 capability qualification; private durable history/writer; scheduled repeated

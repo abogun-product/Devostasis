@@ -593,3 +593,18 @@ the outstanding research cases above or claim acceptance of a Vital rule.
 
 RECEIPT-ID-16 is rejected historical evidence, not reassigned. These additions
 do not close the outstanding T3/T6 or core bundle/store vector carrier gaps.
+
+## 0.5 operational regression evidence (implementation-owned)
+
+| Boundary | Proof |
+| --- | --- |
+| explicit binding and disabled caller | `test_bad_binding_refuses_network_and_publication`, `test_disabled_binding_records_negative_control_without_canonical_write`, `test_wrong_immutable_project_stops_before_inventory_and_records_failure` |
+| bounded shared collection | `test_parallel_requests_cannot_overdraw_shared_quota_or_ignore_deadline`, `test_concurrent_change_reads_keep_exact_evidence_and_reuse_train_inventory`, `test_transport_failure_retains_bounded_source_recovery_path` |
+| exact native selection | `test_wrong_native_change_identity_never_satisfies_selected_collection`, `test_wrong_native_issue_identity_never_satisfies_registered_criterion`, `test_rehashed_binding_cannot_claim_another_selected_change`, `test_disabled_receipt_cannot_claim_received_network_bytes` |
+| portable history and actual days | `test_repeated_bound_generations_and_calendar_days_survive_transfer`, `test_backfill_and_candidates_never_move_latest_or_add_canonical_days` |
+| hostile archives and collisions | `test_untrusted_archive_is_fully_refused_before_store_mutation`, `test_caps_existing_collisions_and_changed_history_fail_closed` |
+| reported result authority | `test_packet_bound_result_remains_caller_report_after_expiry_and_restore`, `test_outcome_cannot_override_binding_acceptance_or_packet` |
+| caller CLI | `test_operations_cli_provides_offline_binding_audit_transfer_and_outcome` |
+
+DEV-OPS regression evidence introduces no research case identifiers and does
+not close B1's missing accepted exact fixtures or B7's sustained calibration.

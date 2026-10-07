@@ -10,7 +10,7 @@ from .model import ScopeError, require
 class GlabTransport:
     def __init__(self, endpoint, executable="glab"):
         parsed = urlsplit(endpoint)
-        require(parsed.scheme == "https" and parsed.path == "/api/v4" and not parsed.username
+        require(parsed.scheme == "https" and parsed.path == "/api/v4" and parsed.username is None and parsed.password is None
                 and not parsed.query and not parsed.fragment, "glab requires an HTTPS /api/v4 endpoint")
         self.endpoint, self.host, self.executable = endpoint, parsed.netloc, executable
 

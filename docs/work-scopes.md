@@ -1,6 +1,6 @@
-# Evidence to Action in 0.4.0
+# Evidence to Action in 0.5.0
 
-0.4.0 is prepared on the release branch and is not tagged yet. Install the
+0.5.0 is prepared on the release branch and is not tagged yet. Install the
 checkout for the offline walkthrough; the pinned workflow examples become
 available after release. The published engine remains v0.1.9.
 
@@ -143,9 +143,10 @@ store. Configure runner volumes/tags and read credentials in the adopter;
 the candidate runner has neither the volume nor writer credentials. The store
 is append-only; the current default SHA is checked before canonical collection.
 A project moved during collection is not relabelled as fresh. Infrastructure
-replication remains separate from the read adapter. A private GitLab pilot is
-owned by its integrating project; this release validates fake transport and
-uses GitHub for its live pilot.
+replication remains separate from the read adapter. The external GitLab shadow
+pilot now exercises bound observation, result receipts and portable history;
+see [work-operations.md](work-operations.md). Private production scheduling
+and sustained calibration remain the integrating project's deployment gates.
 
 ## Validation record
 

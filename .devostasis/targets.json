@@ -53,6 +53,16 @@
       "state": "closed"
     },
     {
+      "id": "E2",
+      "title": "Reproducible consumer handoff: accepted receipt identity/compatibility, mutable sources and pinned bounded packets",
+      "state": "closed"
+    },
+    {
+      "id": "E3",
+      "title": "Consumer Operations: bound repeated observation, operational receipts/results and verified private history transfer",
+      "state": "closed"
+    },
+    {
       "id": "v0.3",
       "title": "Release 0.3: phases A and B closed, one outside consumer, no unadopted research unit (the bar deferred from the 0.2.0 adoption release)",
       "state": "open"

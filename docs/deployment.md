@@ -1,9 +1,11 @@
 # Deployment
 
-For the 0.4.0 Evidence to Action companion, five queues, producer reports,
+For the 0.5.0 Evidence to Action companion, five queues, producer reports,
 GitHub/GitLab CI and protected durable history, see
 [work-scopes.md](work-scopes.md). Its store and contract are separate from the
 Vital bundles described here.
+For explicit caller bindings and verified private history transfer, see
+[work-operations.md](work-operations.md).
 
 There are two ways to run Devostasis, and they complement each other:
 
@@ -29,7 +31,7 @@ permissions:
 
 jobs:
   vitals:
-    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.4.0
+    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.5.0
     with:
       debt-labels: "type:debt"          # optional: issue labels that mark debt items
       # planning-source: file             # optional: targets register instead of milestones
@@ -166,7 +168,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install Devostasis
-        run: python -m pip install --quiet "git+https://github.com/drevendev/devostasis@v0.4.0"
+        run: python -m pip install --quiet "git+https://github.com/drevendev/devostasis@v0.5.0"
       - name: Observe every configured project
         id: run
         continue-on-error: true

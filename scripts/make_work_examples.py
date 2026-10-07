@@ -51,4 +51,7 @@ destination = root / "bundle"
 destination.mkdir(exist_ok=True)
 for name, value in content.items():
     (destination / name).write_bytes(value)
+from devostasis.workscope.operations import make_binding
+(root / "adoption.json").write_bytes(canonical_bytes(make_binding(
+    {**identity, "locator": subject["locator"]}, policy, "widget-shadow-observer")))
 print(destination)

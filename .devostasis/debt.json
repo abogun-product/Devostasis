@@ -3,6 +3,14 @@
   "notes": "Registered maintenance obligations of this repository, read by Devostasis when debt.source = file. An item belongs here when the current code carries a cost, not when a feature is missing: planned work lives in targets.json and ROADMAP.md. 'opened' is the date the obligation started being carried, 'updated' the last time it changed; an open item untouched for 30 days is stale.",
   "items": [
     {
+      "id": "D-10",
+      "title": "Native change hotspots and local roots rely on recorded acquisition rather than complete ancestry proofs",
+      "state": "open",
+      "opened": "2026-10-08",
+      "updated": "2026-10-08",
+      "cost": "0.6 source proofs bind pinned commit/tree and admitted blob bytes, but replay of recorded history counts/root traversal is not independent admission of their complete ancestry. A rehashed recorded history can alter hotspots. Counts remain descriptive and separately covered, with no health or acceptance authority. Bounded historic object/parent proof and preserved v1 replay are issue #73."
+    },
+    {
       "id": "D-7",
       "title": "Live candidate content recheck needs an explicit mutable source-ref binding",
       "state": "closed",

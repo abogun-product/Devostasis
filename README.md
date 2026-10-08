@@ -14,8 +14,8 @@ The name is *development* plus *homeostasis*: the goal is a stable, honest
 reading of where a project actually stands, so that people and autonomous
 development systems can react to it.
 
-The latest published tag is **v0.1.9**. This checkout prepares **0.5.0**,
-including the pending 0.2.0/0.3.0/0.4.0 increments; these are not released yet.
+The latest published tag is **v0.1.9**. This checkout prepares **0.6.0**,
+including the pending 0.2.0/0.3.0/0.4.0/0.5.0 increments; these are not released yet.
 Use the checkout installation below to try the new companion before its tag
 is published. See [ROADMAP.md](ROADMAP.md) for release gates and next steps.
 
@@ -41,6 +41,18 @@ repeated canonical observation with immutable invocation receipts, parallel
 collection under one shared budget, private history audit/export/restore and
 packet-bound caller results. Start with the [operations guide](docs/work-operations.md).
 Calendar days and evidence gaps stay visible; caller reports retain their own authority.
+
+**0.6.0 Offline Repository Analysis** reads a pinned local Git revision,
+parses Python structure, records static import cycles and recent change hotspots,
+and publishes an exact offline replay bundle with SARIF. Compare revisions,
+extract bounded original-source packets and feed findings into `analyze_code`
+without an external service. See the [analysis guide](docs/code-analysis.md).
+
+```sh
+devostasis code analyze --repo . --revision HEAD --output /private/code-analysis
+devostasis code verify --bundle /private/code-analysis
+devostasis code verify --bundle examples/code/bundle
+```
 
 ```sh
 devostasis work policy --actor YOUR_LOGIN --output policy.json
@@ -202,7 +214,7 @@ pip install -e .
 After the 0.5.0 release tag is published:
 
 ```bash
-pip install git+https://github.com/drevendev/devostasis@v0.5.0
+pip install git+https://github.com/drevendev/devostasis@v0.6.0
 ```
 
 Observe one repository (a GitHub token is read from `DEVOSTASIS_GITHUB_TOKEN`,
@@ -261,7 +273,7 @@ permissions:
 
 jobs:
   vitals:
-    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.5.0
+    uses: drevendev/devostasis/.github/workflows/observe-self.yml@v0.6.0
   decide:
     needs: vitals
     runs-on: ubuntu-latest

@@ -48,6 +48,14 @@ jobs:
           assert a['bundle_id'] == b['bundle_id']
           subprocess.run(['devostasis', 'work', 'verify', '--bundle', a['path']], check=True)
           PY
+      - name: Native source proof and analysis-to-work example
+        run: |
+          devostasis code verify --bundle examples/code/bundle
+          devostasis code verify-packet --bundle examples/code/bundle --packet examples/code/packet.json
+          devostasis work verify --bundle examples/code/work-bundle
+          devostasis work replay --bundle examples/code/work-bundle
+          python scripts/make_code_examples.py
+          git diff --exit-code -- examples/code
       - name: Determinism check on the example observations
         run: |
           a=$(devostasis build --observations examples/observations.json --store /tmp/store-a --planning milestones --debt-label type:refactor --debt-mapping-version example-1 | head -n 1 | awk '{print $2}')

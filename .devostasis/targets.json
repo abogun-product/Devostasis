@@ -68,6 +68,11 @@
       "state": "open"
     },
     {
+      "id": "E4",
+      "title": "Offline Repository Analysis: pinned source proof, Python evidence, conservative revision deltas and analyze_code handoff",
+      "state": "closed"
+    },
+    {
       "id": "v1.0",
       "title": "Release 1.0: compatibility policy per contract, a second provider, a calibration corpus large enough to argue a threshold",
       "state": "open"

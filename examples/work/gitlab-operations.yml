@@ -2,7 +2,7 @@
 # authentication, or the adopter's existing DEVOSTASIS_GITLAB_TOKEN environment.
 # Mount WORK_HISTORY_ROOT as a private durable volume outside the checkout.
 variables:
-  DEVOSTASIS_REF: "v0.5.0"
+  DEVOSTASIS_REF: "v0.6.0"
   WORK_POLICY: ".devostasis/work-policy.json"
   WORK_BINDING: ".devostasis/work-adoption.json"
 

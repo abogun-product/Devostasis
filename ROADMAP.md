@@ -4,7 +4,37 @@ Ordered by what unblocks what, not by what is interesting. Every item names
 who or what blocks it, so a reader can tell the difference between work not
 started and work that cannot start.
 
-## Release state and next steps — 2026-10-07
+## Release state and next steps — 2026-10-08
+
+**0.6.0 Offline Repository Analysis (E4) is prepared on
+`zendreven/release-0.6.0`, carrying the pending 0.2–0.5 ancestry.**
+The owner deferred external deployment and requested a complete code/analysis
+increment. This release adds native pinned Git source evidence, Python structure
+and static import cycles, bounded change hotspots, offline source-proof replay,
+SARIF, conservative revision comparison and verified source packets. Findings
+feed the existing analyze_code queue through explicit same-revision inventory
+admission. See [code-analysis.md](docs/code-analysis.md) and issue #72.
+
+Next: review the final 0.6 release PR and green contributor matrix, then have the
+maintainer reconcile and release the stacked increments under the repository's
+release process. B1's remaining exact vectors (#23), sustained outside adoption
+B7, core GitLab/accepted Instrument gates and maintainer branch automation (#63)
+remain open. No unpublished tag is asserted available. E4 is implementation
+completion, without external deployment or independent acceptance claims.
+
+Debt found during this increment: contradictory pagination completeness (#70,
+fixed with regressions), and independently verifiable history/root/count proof
+(#73, currently recorded acquisition observations). Protected scheduled consumer
+adoption (#71) is deferred by the owner. Inherited local Git context and excess
+credential environment forwarding were isolated and regression-tested (#74).
+Native language expansion and calibrated
+instrument judgement should follow concrete source/consumer needs and accepted
+contracts; the current version explicitly scopes Python static evidence.
+
+## Historical 0.5 readiness audit — 2026-10-07
+
+The operational-adoption priority below records the previous audit. It is
+superseded for this increment by the owner's code-only scope above.
 
 **0.5.0 Consumer Operations (E3) is implemented on
 `zendreven/release-0.5.0` in [PR #69](https://github.com/drevendev/Devostasis/pull/69),

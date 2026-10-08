@@ -521,6 +521,8 @@ def build_parser() -> argparse.ArgumentParser:
     summary_p.set_defaults(func=cmd_actions_summary)
     from .workscope.cli import add_parser
     add_parser(sub)
+    from .codeanalysis.cli import add_parser as add_code_parser
+    add_code_parser(sub)
     return parser
 
 

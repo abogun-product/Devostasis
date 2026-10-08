@@ -608,3 +608,42 @@ do not close the outstanding T3/T6 or core bundle/store vector carrier gaps.
 
 DEV-OPS regression evidence introduces no research case identifiers and does
 not close B1's missing accepted exact fixtures or B7's sustained calibration.
+
+## Native offline repository analysis (implementation-local DEV-CODE)
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| DEV-CODE-01 | real git to byte identical offline bundle without source execution | `test_code_real_git_to_byte_identical_offline_bundle_without_source_execution` |
+| DEV-CODE-02 | rehashed or changed bundle cannot bypass source proof and replay | `test_code_rehashed_or_changed_bundle_cannot_bypass_source_proof_and_replay` |
+| DEV-CODE-03 | read caps are explicit and never become empty success | `test_code_read_caps_are_explicit_and_never_become_empty_success` |
+| DEV-CODE-04 | syntax encoding unsupported and policy exclusion have distinct states | `test_code_syntax_encoding_unsupported_and_policy_exclusion_have_distinct_states` |
+| DEV-CODE-05 | non utf8 python cookie is analyzed without rewriting blob bytes | `test_code_non_utf8_python_cookie_is_analyzed_without_rewriting_blob_bytes` |
+| DEV-CODE-06 | git link and submodule are not followed | `test_code_git_link_and_submodule_are_not_followed` |
+| DEV-CODE-07 | import ambiguity and missing target never form proven cycles | `test_code_import_ambiguity_and_missing_target_never_form_proven_cycles` |
+| DEV-CODE-08 | nested function decisions are not double counted and finding ids survive line moves | `test_code_nested_function_decisions_are_not_double_counted_and_finding_ids_survive_line_moves` |
+| DEV-CODE-09 | partial history counts are labeled and time window excludes future commits | `test_code_partial_history_counts_are_labeled_and_time_window_excludes_future_commits` |
+| DEV-CODE-10 | missing source cannot resolve a finding and deleted source can | `test_code_missing_source_cannot_resolve_a_finding_and_deleted_source_can` |
+| DEV-CODE-11 | changed policy or unrelated root identity is incomparable | `test_code_changed_policy_or_unrelated_root_identity_is_incomparable` |
+| DEV-CODE-12 | offline source packets reject tampering and enforce declared limits | `test_code_offline_source_packets_reject_tampering_and_enforce_declared_limits` |
+| DEV-CODE-13 | cli offline end to end and admitted work evidence | `test_code_cli_offline_end_to_end_and_admitted_work_evidence` |
+| DEV-CODE-14 | repository strings are escaped in the report and foreign outputs are preserved | `test_code_repository_strings_are_escaped_in_the_report_and_foreign_outputs_are_preserved` |
+| DEV-CODE-15 | policy rejects unknown or unbounded inputs | `test_code_policy_rejects_unknown_or_unbounded_inputs` |
+| DEV-CODE-16 | no python scope is not applicable and syntax only scope is partial | `test_code_no_python_scope_is_not_applicable_and_syntax_only_scope_is_partial` |
+| DEV-CODE-17 | shallow history retains explicit partial coverage | `test_code_shallow_history_retains_explicit_partial_coverage` |
+| DEV-CODE-18 | sha256 repository proofs replay with explicit object format | `test_code_sha256_repository_proofs_replay_with_explicit_object_format` |
+| DEV-CODE-19 | relative import outside declared package is unresolved | `test_code_relative_import_outside_declared_package_is_unresolved` |
+| DEV-CODE-20 | git caps and option like revisions fail explicitly | `test_code_git_caps_and_option_like_revisions_fail_explicitly` |
+| DEV-CODE-21 | work export preserves gaps and age and produces analysis queue | `test_code_work_export_preserves_gaps_and_age_and_produces_analysis_queue` |
+| DEV-CODE-22 | frozen native/work examples and public schemas replay | `test_code_frozen_native_and_work_examples_replay_with_admitted_source_packet` |
+| DEV-CODE-23 | SARIF URI encoding preserves literal historical work paths | `test_code_sarif_uri_encoding_and_legacy_work_paths_are_bound_to_real_filenames` |
+| DEV-CODE-24 | definition-time decisions and undeclared root packages remain scoped | `test_code_function_counts_exclude_definition_time_decisions_and_missing_root_packages` |
+| DEV-CODE-25 | inherited Git context and credentials cannot override source | `test_code_git_inherited_repository_and_secret_environment_cannot_override_selected_source` |
+
+## Pagination continuity repair (implementation-local DEV-PAGES, issue #70)
+
+| Case | Meaning | Test |
+| --- | --- | --- |
+| DEV-PAGES-01 | contradictory headers preserve observed partial items | `test_work_pagination_contradictory_headers_preserve_observed_partial_items` |
+| DEV-PAGES-02 | changed total between pages is partial | `test_work_pagination_changed_total_between_pages_is_partial` |
+| DEV-PAGES-03 | valid exact full empty and header absent responses are complete | `test_work_pagination_valid_exact_full_empty_and_header_absent_responses_are_complete` |
+| DEV-PAGES-04 | github result caps and invalid totals are not complete | `test_work_pagination_github_result_caps_and_invalid_totals_are_not_complete` |

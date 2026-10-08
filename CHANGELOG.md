@@ -3,6 +3,31 @@
 All notable changes to this project are documented here. Semantic changes to a
 contract or a policy always come with a version bump of that contract.
 
+## 0.6.0 (unreleased)
+
+Offline Repository Analysis, target E4, issue #72.
+
+- New stdlib-only `code` companion: immutable local Git snapshot, Python 3.12
+  AST structure, six scoped findings, declared-module import cycles and bounded
+  recent non-merge change hotspots. No source execution or forge dependency.
+- Canonical source-proof bundles bind admitted blobs and the entire tree to a
+  pinned SHA-1/SHA-256 commit, then replay JSON, SARIF and escaped Markdown
+  byte for byte offline. Unsupported/excluded/malformed/capped inputs and shallow
+  history retain explicit states; no absence or health claim is inferred.
+- Conservative revision comparison, stable finding IDs and bounded exact-source
+  packets with offline verification. Native SARIF feeds existing analyze_code
+  queues only through an admitted same-revision forge inventory, preserving
+  partial coverage and original observation age.
+- Public contract, manifest/policy/packet schemas, fully synthetic analysis and
+  work examples, regeneration script and Python 3.12/3.13/3.14 CI checks.
+- Reject contradictory GitLab page/total headers and malformed or changing
+  GitHub totals while preserving observed partial rows (#70).
+- Isolate inherited Git context and unrelated credential environment variables
+  from local analysis subprocesses and synthetic diagnostics (#74).
+- Independent ancestry/count proof remains documented debt (#73); external
+  scheduling/adoption is deferred (#71). Existing Vitals, core/work replay,
+  B1/B7 and upstream release/review gates retain their contracts.
+
 ## 0.5.0 (unreleased)
 
 Consumer Operations, target E3.

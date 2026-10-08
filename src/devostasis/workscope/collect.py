@@ -179,6 +179,13 @@ class Client:
 
     def pages(self, path, params=None, key=None):
         items, seen = [], set()
+        declared_total, declared_pages = None, None
+        def integer_header(headers, name):
+            value = headers.get(name)
+            if value is None:
+                return None
+            require(isinstance(value, str) and 0 < len(value) <= 20 and value.isascii() and value.isdecimal(), "INVALID_PAGINATION_HEADER")
+            return int(value)
         for page in range(1, self.max_pages + 1):
             try:
                 body, headers = self.get(path, {**(params or {}), "per_page": 100, "page": page})
@@ -192,6 +199,35 @@ class Client:
                     require(marker not in seen, "PAGINATION_IDENTITY_SHIFT")
                     seen.add(marker); items.append(entry)
                 next_page = headers.get("x-next-page") if self.provider == "gitlab" else 'rel="next"' in headers.get("link", "")
+                if self.provider == "gitlab":
+                    require("x-next-page" not in headers or isinstance(next_page, str), "INVALID_PAGINATION_HEADER")
+                    current = integer_header(headers, "x-page")
+                    per_page = integer_header(headers, "x-per-page")
+                    total = integer_header(headers, "x-total")
+                    pages = integer_header(headers, "x-total-pages")
+                    require(current is None or current == page, "PAGINATION_PAGE_MISMATCH")
+                    require(per_page is None or per_page == 100, "PAGINATION_PAGE_MISMATCH")
+                    require(total is None or declared_total is None or total == declared_total, "PAGINATION_TOTAL_SHIFT")
+                    require(pages is None or declared_pages is None or pages == declared_pages, "PAGINATION_TOTAL_SHIFT")
+                    if total is not None: declared_total = total
+                    if pages is not None: declared_pages = pages
+                    require(declared_total is None or len(items) <= declared_total, "PAGINATION_TOTAL_MISMATCH")
+                    require(declared_pages is None or page <= max(1, declared_pages), "PAGINATION_PAGE_MISMATCH")
+                    require(declared_total is None or declared_pages is None or declared_pages == (declared_total + 99) // 100, "PAGINATION_TOTAL_MISMATCH")
+                    if next_page:
+                        require(integer_header(headers, "x-next-page") == page + 1 and len(entries) == 100, "PAGINATION_PAGE_MISMATCH")
+                        require(declared_total is None or len(items) < declared_total, "PAGINATION_TOTAL_MISMATCH")
+                        require(declared_pages is None or page < declared_pages, "PAGINATION_PAGE_MISMATCH")
+                    terminal = not next_page and (len(entries) < 100 or "x-next-page" in headers)
+                    if terminal:
+                        require(declared_total is None or len(items) == declared_total, "PAGINATION_TOTAL_MISMATCH")
+                        require(declared_pages is None or page == max(1, declared_pages), "PAGINATION_PAGE_MISMATCH")
+                elif key and "total_count" in body:
+                    total = body["total_count"]
+                    require(type(total) is int and total >= 0, "INVALID_LIST_RESPONSE")
+                    require(declared_total is None or total == declared_total, "PAGINATION_TOTAL_SHIFT")
+                    declared_total = total
+                    require(len(items) <= total, "PAGINATION_TOTAL_MISMATCH")
                 # Never follow server-supplied URLs with credentials. Request our own page.
                 if not next_page and len(entries) < 100:
                     if key and body.get("total_count", len(items)) > len(items):

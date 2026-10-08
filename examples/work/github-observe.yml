@@ -1,4 +1,4 @@
-# Copy into an adopter's .github/workflows directory after v0.5.0 is released.
+# Copy into an adopter's .github/workflows directory after v0.6.0 is released.
 name: Work scope
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
   checks: read
 jobs:
   observe:
-    uses: drevendev/Devostasis/.github/workflows/work-observe.yml@v0.5.0
+    uses: drevendev/Devostasis/.github/workflows/work-observe.yml@v0.6.0
     with:
       policy-path: .devostasis/work-policy.json
 # This observer is deliberately not a required merge check. Artifacts are

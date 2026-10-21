@@ -36,7 +36,7 @@ def test_valid_caps_and_policy_exclusions_still_replay(tmp_path):
 
 
 def test_omitted_size_claim_does_not_become_independent_blob_proof(tmp_path, capsys):
-    config = default_policy()
+    config = default_policy(legacy=True)
     raw = collect(repository(tmp_path, {"safe.py": "pass\n"}), "HEAD", config, AT)
     # The tree authenticates the blob id, not this replacement size metadata.
     changed = deepcopy(raw)

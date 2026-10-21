@@ -115,13 +115,24 @@ class Git:
 
 
 def collect(directory, ref, config, at=None):
-    git = Git(directory, config["budget"]["seconds"])
+    from . import LEGACY_POLICY, POLICY
+    from .engine import policy
+    policy(config)
+    if config["contract"] == POLICY:
+        from .history_proof import collect_proven
+        return collect_proven(directory, ref, config, at)
+    require(config["contract"] == LEGACY_POLICY, "unsupported collection policy")
+    return _collect_v1(directory, ref, config, at)
+
+
+def _collect_v1(directory, ref, config, at=None, *, _git=None, _source_only=False):
+    git = _git or Git(directory, config["budget"]["seconds"])
     commit = git.resolve(ref)
     tree = git.run(["rev-parse", commit + "^{tree}"]).strip().decode("ascii")
     commit_epoch = int(git.run(["show", "-s", "--format=%ct", commit]).strip())
     observed = timestamp(at or datetime.fromtimestamp(commit_epoch, timezone.utc).isoformat())
     # A local identity names the complete root set, never an inferred forge id.
-    roots_raw = git.run(["rev-list", "--max-parents=0", commit], cap=65536)
+    roots_raw = (commit + "\n").encode("ascii") if _source_only else git.run(["rev-list", "--max-parents=0", commit], cap=65536)
     roots = sorted(set(roots_raw.decode("ascii").splitlines()))
     require(0 < len(roots) <= 256 and all(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", r) for r in roots), "local root identity unavailable")
     rows = git.run(["ls-tree", "-r", "-l", "-z", "--full-tree", tree])
@@ -175,7 +186,7 @@ def collect(directory, ref, config, at=None):
     start = instant(observed) - timedelta(days=config["history"]["days"])
     history = {"status": "NOT_REQUESTED", "reasons": [], "start": timestamp(start.isoformat()), "end": observed,
                "commits": []}
-    if config["history"]["enabled"]:
+    if config["history"]["enabled"] and not _source_only:
         limit = config["history"]["max_commits"]
         try:
             if git.run(["rev-parse", "--is-shallow-repository"]).strip() == b"true":

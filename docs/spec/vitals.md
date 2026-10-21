@@ -549,3 +549,14 @@ step towards combining them.
 | Flow congested | 14 days, 10 open, median over 168 h = 604800 s |
 | Flow gridlocked | 3 open for 30 days with 0 merged, or 10 open with median over 336 h = 1209600 s |
 | Clutter heavy / cluttered | 25 / 5 stale items, ratio 1/2 / 1/4 with 4 tracked, 20 / 6 stale branches |
+
+## Optional Integrity independence provenance (0.6)
+
+`ci.sample_semantics` selects the opt-in rule
+`integrity.bands.v1+ci-unit-004+hist-002+independence-001`. It is an enum:
+RAW_RUNS or INDEPENDENT_REVISIONS. Absent input preserves the exact historical
+rule and bytes. Present unknown/stale/unsupported input yields UNKNOWN without
+a band. Positive RAW_RUNS cannot be AVAILABLE: it retains failure-sticky
+one-revision arithmetic, reports DEGRADED when a band is otherwise available,
+and sample_strength PROVISIONAL_NONINDEPENDENT. Existing UNKNOWN precedence,
+thresholds/windows and per-Vital comparison boundaries remain intact.

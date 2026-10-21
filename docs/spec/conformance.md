@@ -547,18 +547,46 @@ requirements without assigning new research case identifiers.
 | rejected | a case expecting refused evidence passes only when the evaluation raises with that code, and the refusal is its whole expectation | `test_a_rejected_case_passes_only_when_the_evidence_is_refused_with_that_code`, `test_rejected_is_the_whole_expectation_and_names_a_code` |
 | activity kind | the interval and the coverage notes of the activity member are checked | `test_the_activity_kind_checks_the_interval_and_the_coverage_it_discloses` |
 
-Cases not yet implemented as tests (T3, T6, T8, R5..R53, ART-05,
-ART-08..ART-11, ART-15, RPT-4..RPT-6, RPT-9) are listed in the ROADMAP under the
-synthetic fixture suite; T9 is implemented by its generator since 0.2.0, and
-its cell-key vectors are still the research process's to deliver. The research process delivers them as executable JSON
-vectors in the format of [vectors.md](vectors.md), one accepted family per
-unit; the ones accepted so far (T2, R1, R2, R3, R4, T4, T5, T7) are in the
-corpus above, and so are the twenty cases of `PV-CLUTTER-INCOMPLETE-001`,
-transcribed from the accepted contract the way `ORDER-01..15` were. The `ci` kind reaches the normalization boundary R5..R10 are
-about, so that family can be materialized against it (issue #20); `variants`
-and the dependency-group assertions close the T8 and part of the T6 gap of
-issue #23, while T3 and the bundle and store cases still need a surface this
-version does not publish.
+The successor operation bridge is documented in
+[conformance-surface.md](conformance-surface.md). It executes implementation
+materializations under the accepted capability contract, with exact-fixture and
+concrete-surface independent review still pending. B1 remains open: R11..R53
+still need exact executable materialization; T9 cell-key delivery remains separate.
+The existing v1 vector corpus and all permanent identifiers retain their meaning.
+
+## Versioned operation bridge (0.6 implementation materialization)
+
+Each citation resolves to one case in the closed bridge carrier. Native R5..R10
+assert normalization and revision contributions; full downstream fixture fidelity
+is an independent review obligation, not inferred from these checks.
+
+| Case | Executed obligation | Proof |
+| --- | --- | --- |
+| R5 | native GitHub skipped is NOT_EXECUTED, no decisive/failed contribution | `bridge:R5` |
+| R6 | native GitLab manual is NOT_EXECUTED, no decisive/failed contribution | `bridge:R6` |
+| R7 | native timed_out is VERIFY_FAIL, one failed decisive contribution | `bridge:R7` |
+| R8 | native cancelled is non-verification terminal | `bridge:R8` |
+| R9 | same-ID GitHub failure/GitLab failed normalization equivalence | `bridge:R9` |
+| R10 | future provider values are UNKNOWN without guessed contribution | `bridge:R10` |
+| T3 | one immutable revision, failed execution then ten successful RAW_RUNS retries stays DEGRADED / PROVISIONAL_NONINDEPENDENT | `bridge:T3` |
+| T6 | shared inventories feed Pulse/Flow/Clutter; shared dependency provenance and no aggregate fields | `bridge:T6` |
+| T8 | independent FORBIDDEN, UNKNOWN, ERROR, PARTIAL and STALE numeric substitutions under one ID | `bridge:T8` |
+| ART-05 | required member access denial cannot verify | `bridge:ART-05` |
+| ART-08 | canonical map/whitespace invariance; material scalar/type differences change digest | `bridge:ART-08` |
+| ART-09 | provider observation references resolve in identity-bound receipts; missing receipt binding fails | `bridge:ART-09` |
+| ART-10 | persisted public members verify/render without network/private dependencies | `bridge:ART-10` |
+| ART-11 | private/SNAP convenience evidence is outside public identity | `bridge:ART-11` |
+| ART-15 | same-ID differing canonical bytes collide without overwrite | `bridge:ART-15` |
+| RPT-4 | actual identical put is idempotent, differing put collides | `bridge:RPT-4` |
+| RPT-5 | incomplete immutable commit preserves prior latest | `bridge:RPT-5` |
+| RPT-6 | missing predecessor yields HISTORY_GAP, retains snapshot, invents no transition | `bridge:RPT-6` |
+| RPT-8 | store FORBIDDEN remains explicit HISTORY_GAP | `bridge:RPT-8` |
+| RPT-9 | deterministic two-reader/write conflict, OS lock, preserved candidates and rebuilt retry | `bridge:RPT-9` |
+
+Harness proof: `test_bridge_unknown_and_duplicate_lineage_never_skips`,
+`test_bridge_consumes_negative_assertions_and_wrong_expectations`,
+`test_unknown_input_and_assertion_paths_cannot_pass`,
+`test_t8_cannot_drop_a_required_substitution`.
 
 ## Companion regression evidence (implementation-owned)
 
@@ -647,3 +675,16 @@ not close B1's missing accepted exact fixtures or B7's sustained calibration.
 | DEV-PAGES-02 | changed total between pages is partial | `test_work_pagination_changed_total_between_pages_is_partial` |
 | DEV-PAGES-03 | valid exact full empty and header absent responses are complete | `test_work_pagination_valid_exact_full_empty_and_header_absent_responses_are_complete` |
 | DEV-PAGES-04 | github result caps and invalid totals are not complete | `test_work_pagination_github_result_caps_and_invalid_totals_are_not_complete` |
+
+## Independent Git history proof (0.6 implementation-local)
+
+| Boundary | Proof |
+| --- | --- |
+| authenticated ancestry/root/count/time/frontier/completeness | `test_rehashed_history_claims_require_authenticated_objects` |
+| offline replay without Git/subprocess | `test_offline_replay_has_no_git_repository_or_subprocess_dependency` |
+| all merge parents and clock-skew traversal | `test_graph_walk_does_not_prune_clock_skew_or_merge_parents` |
+| bounded partial proof never promotes COMPLETE | `test_bounded_proof_never_claims_complete_history` |
+| object kind/reachability | `test_wrongly_typed_historic_objects_fail_closed`, `test_valid_but_unreachable_historic_object_is_rejected` |
+| v1/v2 replay and comparison boundary | `test_v1_and_v2_replay_separately_and_do_not_compare_across_lineage`, `test_v2_frozen_example_replays_and_has_explicit_schemas` |
+| independent edit oracle | `test_byte_line_algorithm_matches_independent_lcs_oracle` |
+| exclusion applies before historical blob reads | `test_historic_proof_does_not_read_policy_excluded_blob_bytes` |

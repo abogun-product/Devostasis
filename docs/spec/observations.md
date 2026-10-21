@@ -156,3 +156,11 @@ receipt is identity-bearing. Enabling a cache therefore never moves a
 C1 observed zero, C2 tier limitation, C3 permission denial, C4 truncated
 history, C5 stale cache, C6 connector ambiguity, C7 transient failure. See
 [conformance.md](conformance.md).
+
+## Optional sample-independence input (0.6)
+
+`ci.sample_semantics` is a RAW-OBS-V0 enum, RAW_RUNS or INDEPENDENT_REVISIONS.
+The governed Integrity extension consumes its status/freshness/value and adds
+it to input metadata. It never creates extra canonical revision records.
+Absent input retains historical evaluation. Unknown/stale/unsupported values
+fail closed under the versioned rule described in [vitals.md](vitals.md).

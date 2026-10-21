@@ -7,8 +7,8 @@ started and work that cannot start.
 ## Release state and next steps — 2026-10-21
 
 The project is at **release stabilization**, with Phase A closed and Phase B
-five of seven items implemented. B1 still has 62 named cases without executable
-proof, and B7 still needs sustained outside-consumer evidence. The latest
+five of seven items implemented. B1 now has 20 operation-bridge implementation fixtures (19 from the former
+62-case gap); R11–R53 and independent whole-case fixture acceptance remain open, and B7 still needs sustained outside-consumer evidence. The latest
 published version is **v0.1.9**; 0.2.0 through 0.6.0 remain unreleased.
 
 The audit began with a clean working tree. All local and fetched remote heads
@@ -52,14 +52,15 @@ on #57/#75 or approve a later repaired head.
    (#20/#23) and independently proved source-history ancestry/counts (#73).
    Keep partial coverage, historical compatibility and evidence limits visible.
 
-### Proposed next major code increment
+### Assurance delivered within the 0.6 release candidate
 
-After releasing 0.6, the highest-impact code-only increment is **independently
-verifiable history and executable assurance**: bounded commit/parent/tree
+The owner brought **independently verifiable history and executable assurance**
+into 0.6 rather than a later release: bounded commit/parent/tree
 proofs for #73, hostile rehashed-history controls, and the missing executable
 conformance boundaries for B1. This strengthens the proof objects on which
-both work routing and native hotspots depend. It is a proposal, not acceptance
-of a new research contract, a new release number, or completion of B1.
+both work routing and native hotspots depend. The v2 proof and versioned operation bridge are implemented; concrete-surface,
+exact-fixture and release review remain pending. The [acceptance ledger](docs/release-acceptance.md)
+tracks every prepared version. This does not complete B1 or publish a release.
 
 The larger product milestone remains a real outside consumer completing work
 from verified scopes with retained results and calendar history. Deployment
@@ -88,7 +89,7 @@ completion, without external deployment or independent acceptance claims.
 
 Debt found during this increment: contradictory pagination completeness (#70,
 fixed with regressions), and independently verifiable history/root/count proof
-(#73, currently recorded acquisition observations). Protected scheduled consumer
+(#73, implemented as v2 in the assurance increment; v1 remains recorded observations). Protected scheduled consumer
 adoption (#71) is deferred by the owner. Inherited local Git context and excess
 credential environment forwarding were isolated and regression-tested (#74).
 Native language expansion and calibrated

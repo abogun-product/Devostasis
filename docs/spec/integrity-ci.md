@@ -217,3 +217,14 @@ verification degrades instead of claiming `CLEAN`; INT-UNKNOWN-01..06; T2, R1
 and R2 as vectors ([conformance.md](conformance.md)). The `ci` vector kind
 ([vectors.md](vectors.md)) executes a case at the normalization boundary this
 page describes.
+
+## Offline GitLab normalization and independence (0.6)
+
+`devostasis.ci-outcomes.gitlab.v1` is a pure native status map: success→VERIFY_PASS,
+failed→VERIFY_FAIL, canceled→NON_VERIFY_TERMINAL, skipped/manual/scheduled→NOT_EXECUTED.
+Created/waiting_for_resource/preparing/waiting_for_callback/pending/running/canceling
+are VERIFY_UNRESOLVED. Every other value is UNKNOWN. This boundary is available
+to offline conformance without claiming a core GitLab collector or complete
+pipeline retry history. The explicit provider/map pair is checked before use.
+The optional governed RAW_RUNS rule and its exact compatibility boundary are in
+[vitals.md](vitals.md) and [conformance-surface.md](conformance-surface.md).

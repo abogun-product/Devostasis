@@ -369,3 +369,8 @@ than patched ad hoc.
 ## License
 
 [MIT](LICENSE).
+
+The 0.6 release candidate adds independently replayable Git history proof and a
+versioned conformance operation bridge. See the [0.2–0.6 acceptance ledger](docs/release-acceptance.md)
+for implementation checks, historical compatibility and pending independent
+review/release gates. Existing published pins remain unchanged until release.

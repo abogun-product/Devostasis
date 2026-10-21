@@ -5,7 +5,20 @@ contract or a policy always come with a version bump of that contract.
 
 ## 0.6.0 (unreleased)
 
-Offline Repository Analysis, target E4, issue #72.
+Offline Repository Analysis and executable assurance, targets E4/B1, issues #72/#73.
+
+- Default native analysis v2 carries bounded authenticated commit/parent/tree/blob
+  history proof; offline replay derives roots, window membership, edit counts and
+  completeness. Merge ancestry, clock skew, shallow/missing objects and resource
+  caps remain explicit. V1 bundle/packet/example bytes retain exact replay.
+- Publish a versioned source-checkout conformance operation bridge with 20 permanent
+  implementation fixtures, consumed RAW_RUNS provenance, shared multi-Vital evidence,
+  all T8 substitutions, canonical bundle and actual HistoryStore checkpoints.
+- Serialize canonical store publication and reject stale advancing predecessors
+  with explicit retry conflict while preserving immutable candidates. Store index
+  permission denial remains FORBIDDEN/HISTORY_GAP.
+- Add per-version 0.2–0.6 acceptance ledger and independent review/release gates;
+  B1 exact research acceptance and sustained external B7 evidence remain open.
 
 - Release-readiness repairs: reject ambiguous/malformed current CI inventory
   before it can remove carried failures; preserve immutable revision time;
@@ -35,9 +48,9 @@ Offline Repository Analysis, target E4, issue #72.
   GitHub totals while preserving observed partial rows (#70).
 - Isolate inherited Git context and unrelated credential environment variables
   from local analysis subprocesses and synthetic diagnostics (#74).
-- Independent ancestry/count proof remains documented debt (#73); external
-  scheduling/adoption is deferred (#71). Existing Vitals, core/work replay,
-  B1/B7 and upstream release/review gates retain their contracts.
+- Independent ancestry/count proof is implemented under the separate v2 lineage
+  (#73); v1 retains its historical limits. External scheduling/adoption remains
+  deferred (#71), and B1/B7 and upstream release/review gates remain explicit.
 
 ## 0.5.0 (unreleased)
 

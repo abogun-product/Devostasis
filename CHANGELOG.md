@@ -7,6 +7,17 @@ contract or a policy always come with a version bump of that contract.
 
 Offline Repository Analysis, target E4, issue #72.
 
+- Release-readiness repairs: reject ambiguous/malformed current CI inventory
+  before it can remove carried failures; preserve immutable revision time;
+  require exact bounded attempt identities and retain UNKNOWN history. Activity
+  shares current-record admission and exposes rejected verification inputs.
+- Replay native source-selection predicates instead of accepting a recognized
+  omission reason alone. Operational verification explicitly distinguishes
+  proved source/tree bytes from unproven omitted sizes and history ancestry;
+  canonical v1 artifact bytes and existing lineages remain unchanged.
+- Reconcile the October 21 release state/sequence and add a tested direct
+  first-report path; the v0.6.0 installation remains conditional on publication.
+
 - New stdlib-only `code` companion: immutable local Git snapshot, Python 3.12
   AST structure, six scoped findings, declared-module import cycles and bounded
   recent non-merge change hotspots. No source execution or forge dependency.

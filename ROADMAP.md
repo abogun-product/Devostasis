@@ -4,7 +4,71 @@ Ordered by what unblocks what, not by what is interesting. Every item names
 who or what blocks it, so a reader can tell the difference between work not
 started and work that cannot start.
 
-## Release state and next steps — 2026-10-08
+## Release state and next steps — 2026-10-21
+
+The project is at **release stabilization**, with Phase A closed and Phase B
+five of seven items implemented. B1 still has 62 named cases without executable
+proof, and B7 still needs sustained outside-consumer evidence. The latest
+published version is **v0.1.9**; 0.2.0 through 0.6.0 remain unreleased.
+
+The audit began with a clean working tree. All local and fetched remote heads
+are ancestors of upstream `release/0.6.0` at `22a2894`, including the original
+maintenance commits and the Dependabot correction merged through #79. Nine
+earlier PRs remain open: #36/#37/#50/#53/#57/#59/#64/#69/#75. There is no
+unrepresented development branch to recover. Inclusion in the release branch
+does not publish its code on `master` or create a release tag.
+
+Upstream CI for the 0.6 source head `09d497f` passed on Python 3.12/3.13/3.14
+in [run 39030444073](https://github.com/drevendev/Devostasis/actions/runs/39030444073).
+The Dependabot merge head `22a2894` also passed
+[CI](https://github.com/drevendev/Devostasis/actions/runs/39169319950).
+The old `action_required` run is historical evidence, not the current CI state.
+These successful checks do not resolve the October 14/16/18 admission reviews
+on #57/#75 or approve a later repaired head.
+
+### Delivery order
+
+1. **Finish the admission repairs before release.** Current malformed or
+   duplicate revision records must not erase carried failures or inflate the
+   sample. Admit timestamps before reconciliation, preserve immutable revision
+   time, check exact attempt identities without allocation by their declared
+   maximum, and retain UNKNOWN attempt evidence. Exercise actual four-bundle
+   evaluator/store chains and current/historical replay. Source omissions must
+   satisfy path/mode/scope and deterministic budget predicates; omitted blob
+   sizes remain acquisition claims, explicitly unproven by a tree proof.
+2. **Propagate and review every final release head.** Preserve the prepared
+   sequence: corrected #57 into `release/0.2.0`, then #53, #59, #64, #69 and #75
+   into `master`, with their respective tags under CONTRIBUTING.md. Carry the
+   history repair into descendants, include #79's Dependabot correction in
+   0.6, and verify each changed head independently. Reconcile #36/#37/#50 after
+   their delivered commits land. A green matrix is evidence, not acceptance.
+3. **Make the existing product straightforward to try.** The README now starts
+   with a direct single-repository report and its actual path (#78). Retain
+   source-install instructions until publication is confirmed. #63 still needs
+   actual scheduled Dependabot execution; the configuration correction alone
+   does not complete that operational acceptance.
+4. **Complete assurance before increasing reach.** Work the outstanding
+   timestamp/lineage/store audit families (#35), the remaining exact B1 cases
+   (#20/#23) and independently proved source-history ancestry/counts (#73).
+   Keep partial coverage, historical compatibility and evidence limits visible.
+
+### Proposed next major code increment
+
+After releasing 0.6, the highest-impact code-only increment is **independently
+verifiable history and executable assurance**: bounded commit/parent/tree
+proofs for #73, hostile rehashed-history controls, and the missing executable
+conformance boundaries for B1. This strengthens the proof objects on which
+both work routing and native hotspots depend. It is a proposal, not acceptance
+of a new research contract, a new release number, or completion of B1.
+
+The larger product milestone remains a real outside consumer completing work
+from verified scopes with retained results and calendar history. Deployment
+and scheduling remain owner-deferred in #71; they are not silently reinstated
+by this audit. Once B7 and existing compatibility/review gates are met, extend
+reach with the accepted core GitLab adapter and Instrument carrier. The
+existing GitLab work collector does not implement that core adapter.
+
+## Historical 0.6 implementation snapshot — 2026-10-08
 
 **0.6.0 Offline Repository Analysis (E4) is prepared on
 `zendreven/release-0.6.0`, carrying the pending 0.2–0.5 ancestry.**

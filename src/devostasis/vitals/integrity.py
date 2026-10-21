@@ -194,7 +194,7 @@ def _bearing(history: Reconciled, revisions: list[dict[str, Any]]) -> list[dict[
     return [r for r in records if r["parents"] or r.get("unresolved")]
 
 
-def _unknown_current(revisions: list[dict[str, Any]], diagnostics: list[str]) -> dict[str, Any]:
+def _unknown_current(revisions: list[dict[str, Any]], diagnostics: list[str], history: Reconciled) -> dict[str, Any]:
     """Retain the accepted current-verdict diagnostic beside an independent admission/history gap."""
     active = [r for r in revisions if _record_consistent(r) and r.get("parents")
               and isinstance(r.get("committed_at"), str)]
@@ -210,7 +210,7 @@ def _unknown_current(revisions: list[dict[str, Any]], diagnostics: list[str]) ->
     diagnostics.append(f"CURRENT_VERDICT_UNKNOWN:{latest['revision']}")
     return {"unknown_verdict_rule": UNKNOWN_RULE, "current_revision": {
         "revision": latest["revision"], "committed_at": latest["committed_at"],
-        "current_verdict": current, "history_state": latest["history_state"]}}
+        "current_verdict": current, "history_state": history.records.get(latest["revision"], {}).get("history_state", latest["history_state"])}}
 
 
 def evaluate(obs: ObservationSet) -> VitalResult:
@@ -249,7 +249,7 @@ def evaluate(obs: ObservationSet) -> VitalResult:
         # shape its lineage declares, is a coverage defect, not a pass.
         diagnostics.extend(f"REVISION_RECORD_INCONSISTENT:{_record_label(r)}" for r in inconsistent)
         diagnostics.extend(reconciled.problems)
-        return _unknown(obs, {**history, **_unknown_current(revisions, diagnostics)}, diagnostics)
+        return _unknown(obs, {**history, **_unknown_current(revisions, diagnostics, reconciled)}, diagnostics)
     active = [r for r in revisions if r.get("parents")]
     provenance: dict[str, int] = {}
     for r in active:
@@ -295,7 +295,7 @@ def evaluate(obs: ObservationSet) -> VitalResult:
         # R52 and PV-HIST-002: history nobody can prove is neither a pass nor a
         # zero, and T9 puts it above every conservative branch.
         diagnostics.extend(f"REVISION_HISTORY_UNKNOWN:{r['revision']}" for r in unknown_history)
-        current_gap = _unknown_current(revisions, diagnostics)
+        current_gap = _unknown_current(revisions, diagnostics, reconciled)
         if current_gap:
             current_gap["failure_ratio_14d"] = ratio(f, n) if n else None
             strength = sample_strength(n)

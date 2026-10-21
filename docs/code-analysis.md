@@ -48,6 +48,12 @@ The local identity derives from the recorded root commit IDs, not a forge URL;
 shallow or unrelated roots and changed policy make comparisons INCOMPARABLE.
 History counts and root traversal are acquisition observations; their complete
 ancestry is not independently proved by the source tree proof (issue #73).
+Likewise, a tree binds an omitted blob's identity, not its separately recorded
+size. Verification checks the deterministic selection predicates and marks
+omitted blob sizes `UNPROVEN` in its operational `proof_scope` receipt. Byte-cap
+reasons that depend on those sizes remain acquisition claims; `VERIFIED` means
+the admitted proofs and recorded bundle replay, not proof of those omissions.
+The receipt is outside the immutable artifact and does not rewrite v1 bundles.
 
 Compare two verified bundles under the same policy:
 

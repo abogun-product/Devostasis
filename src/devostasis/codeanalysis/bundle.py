@@ -17,7 +17,7 @@ from ..workscope.model import fields, instant, number, path, require, revision, 
 from ..workscope.operations import no_links
 from . import CONTRACT, ENGINE
 from .engine import RULES, evaluate, policy
-from .git import object_digest
+from .git import object_digest, source_selection
 
 MEMBERS = ("inputs.json", "policy.json", "analysis.json", "findings.sarif", "report.md")
 MAX_BUNDLE_BYTES = 128 * 1024 * 1024
@@ -92,6 +92,8 @@ def admit(raw, config):
         require(entry["status"] in ("ADMITTED", "UNAVAILABLE", "UNSUPPORTED", "OUT_OF_SCOPE"), "inventory availability unknown")
         if entry["kind"] == "blob": number(entry["size"], 0, 2**63 - 1)
         else: require(entry["size"] is None, "submodule must not claim blob size")
+        selection = source_selection(safe, entry["mode"], entry["kind"], entry["size"], config, len(admitted), source_total)
+        require((entry["status"], entry["reason"]) == selection, "unjustified source selection")
         included = safe is not None and (not config["include"] or any(safe == p or safe.startswith(p + "/") for p in config["include"]))
         excluded = safe is not None and any(safe == p or safe.startswith(p + "/") for p in config["exclude"])
         if entry["status"] == "ADMITTED":
@@ -208,6 +210,14 @@ def read(root):
 
 def verify(root):
     return verify_content(read(root))
+
+
+def proof_scope(decoded):
+    """Operational verification limits, outside the immutable v1 artifact bytes."""
+    omitted = any(e["kind"] == "blob" and e["status"] != "ADMITTED" for e in decoded["inputs.json"]["entries"])
+    return {"source_tree": "VERIFIED", "admitted_blobs": "VERIFIED",
+            "omitted_blob_sizes": "UNPROVEN" if omitted else "NOT_APPLICABLE",
+            "history_ancestry": "UNPROVEN"}
 
 
 def publish(root, content):

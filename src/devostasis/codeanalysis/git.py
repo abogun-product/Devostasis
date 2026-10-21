@@ -32,6 +32,27 @@ def blob_digest(data, object_format):
     return object_digest(data, object_format)
 
 
+def source_selection(name, mode, kind, size, config, count, total):
+    """Deterministic acquisition priority; omitted blob sizes remain caller observations."""
+    if name is None:
+        return "UNAVAILABLE", "UNSAFE_PATH"
+    included = not config["include"] or any(name == p or name.startswith(p + "/") for p in config["include"])
+    excluded = any(name == p or name.startswith(p + "/") for p in config["exclude"])
+    if not included or excluded:
+        return "OUT_OF_SCOPE", "POLICY_EXCLUSION"
+    if mode not in ("100644", "100755") or kind != "blob":
+        return "UNAVAILABLE", "SOURCE_LINK_OR_SUBMODULE"
+    if not name.endswith(".py"):
+        return "UNSUPPORTED", "LANGUAGE_UNSUPPORTED"
+    if size > config["budget"]["max_file_bytes"]:
+        return "UNAVAILABLE", "FILE_BYTE_CAP"
+    if count >= config["budget"]["max_files"]:
+        return "UNAVAILABLE", "FILE_COUNT_CAP"
+    if total + size > config["budget"]["max_total_bytes"]:
+        return "UNAVAILABLE", "TOTAL_BYTE_CAP"
+    return "ADMITTED", None
+
+
 class Git:
     def __init__(self, directory, seconds=120):
         self.directory = Path(directory).resolve()
@@ -133,23 +154,10 @@ def collect(directory, ref, config, at=None):
             entry["path"] = path(filename.decode("utf-8"))
         except (UnicodeError, ValueError):
             entries.append(entry); continue
-        name = entry["path"]
-        included = not config["include"] or any(name == p or name.startswith(p + "/") for p in config["include"])
-        excluded = any(name == p or name.startswith(p + "/") for p in config["exclude"])
-        if not included or excluded:
-            entry.update(status="OUT_OF_SCOPE", reason="POLICY_EXCLUSION")
-        elif mode not in (b"100644", b"100755") or kind != b"blob":
-            entry.update(reason="SOURCE_LINK_OR_SUBMODULE")
-        elif not name.endswith(".py"):
-            entry.update(status="UNSUPPORTED", reason="LANGUAGE_UNSUPPORTED")
-        elif entry["size"] > config["budget"]["max_file_bytes"]:
-            entry.update(reason="FILE_BYTE_CAP")
-        elif len(selected) >= config["budget"]["max_files"]:
-            entry.update(reason="FILE_COUNT_CAP")
-        elif total + entry["size"] > config["budget"]["max_total_bytes"]:
-            entry.update(reason="TOTAL_BYTE_CAP")
-        else:
-            entry.update(status="ADMITTED", reason=None); selected.append(entry); total += entry["size"]
+        status, reason = source_selection(entry["path"], entry["mode"], entry["kind"], entry["size"], config, len(selected), total)
+        entry.update(status=status, reason=reason)
+        if status == "ADMITTED":
+            selected.append(entry); total += entry["size"]
         entries.append(entry)
     sources = {}
     if selected:

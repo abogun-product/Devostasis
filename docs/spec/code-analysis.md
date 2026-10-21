@@ -45,6 +45,18 @@ UNSUPPORTED/LANGUAGE_UNSUPPORTED. UNAVAILABLE reasons are UNSAFE_PATH,
 SOURCE_LINK_OR_SUBMODULE, FILE_BYTE_CAP, FILE_COUNT_CAP and TOTAL_BYTE_CAP.
 `sources` maps exactly admitted paths to canonical base64 of unmodified bytes.
 
+Offline admission applies the collector's same ordered predicates: safe path,
+policy scope, regular blob mode, supported language, per-file bytes, preceding
+admitted-file count and preceding verified bytes plus current declared size.
+A recognized reason alone is insufficient to omit an otherwise eligible file.
+Path/mode and policy/count predicates are independently checked. A tree does
+not authenticate a blob's size when its bytes are omitted; byte-based omission
+predicates can only be replayed against that acquisition claim. They do not
+prove that the omission was necessary. `code verify` reports `proof_scope`
+outside the canonical members: source tree and admitted blobs VERIFIED,
+omitted blob sizes UNPROVEN (or NOT_APPLICABLE), history ancestry UNPROVEN.
+No unbounded blob read or new compatibility/migration rule is implied.
+
 `proof` contains the raw base64 commit object and an object-ID-to-base64 map
 of every reachable tree. Verification computes framed Git object hashes,
 checks the commit/tree link, expands all trees, checks the entire inventory and

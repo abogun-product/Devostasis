@@ -157,6 +157,25 @@ When the current series is partial or unusable, carried records are kept, so
 history crosses a bundle whose verification evidence could not be read. A
 current verdict is never carried (HIST-16).
 
+Current inventory admission validates every row before treating absence as
+branch departure. Duplicate current ids are diagnosed as
+`REVISION_RECORD_DUPLICATE:<revision>`; malformed rows and contradictory
+coverage prevent a completeness claim. Ambiguous current records cannot
+replace carried facts. Current timestamps are parsed before reconciliation;
+a different instant for a known revision yields
+`IMMUTABLE_COMMIT_TIME_MISMATCH` and preserves its prior time and attempts.
+Equivalent timezone representations name the same instant.
+
+Attempt completeness requires exactly the observed identities 1..latest,
+with work bounded by the observed cardinality. A missing or extra identity
+cannot establish completeness. Unknown state vocabulary is malformed input;
+the legitimate `UNKNOWN` outcome is retained as incomplete history and never
+proves absence of failure. Successive states of one attempt, including
+`VERIFY_UNRESOLVED` then `VERIFY_PASS`, remain valid observations. An observed
+failure remains absorbing even when the rest of history is incomplete.
+These are admission repairs within the existing history lineage and accepted
+rules, not new thresholds, external-check semantics or a migration.
+
 **Lineage.** A carried union of `devostasis.ci-history.v2` is read as it is.
 The revision records a 0.1.x bundle keeps in `ci.revision_verdicts_14d`
 (`devostasis.ci-history.v1`) are replayed from the attempts they kept, never

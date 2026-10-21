@@ -214,6 +214,32 @@ def _unknown_current(revisions: list[dict[str, Any]], diagnostics: list[str], hi
 
 
 def evaluate(obs: ObservationSet) -> VitalResult:
+    """Exact legacy evaluation, or the explicit independence-provenance extension.
+
+    An absent discriminator preserves historical bytes. A present discriminator
+    is consumed, versioned and fail closed; retries never create revision samples.
+    """
+    result = _evaluate_revisions(obs)
+    provenance = obs.get("ci.sample_semantics")
+    if provenance is None:
+        return result
+    result.rule_id = RULE_ID + "+independence-001"
+    result.inputs += input_meta(obs, ["ci.sample_semantics"])
+    result.derived["sample_semantics"] = provenance.value if provenance.good else None
+    if not provenance.good or provenance.value_type != "enum" or provenance.value not in ("RAW_RUNS", "INDEPENDENT_REVISIONS"):
+        result.band = result.band_semantics = result.possible_bands = None
+        result.evaluation_status = EVAL_UNKNOWN
+        result.diagnostics.append("CI_SAMPLE_INDEPENDENCE_UNKNOWN")
+    elif provenance.value == "RAW_RUNS":
+        result.derived["sample_strength"] = "PROVISIONAL_NONINDEPENDENT"
+        result.diagnostics.append("CI_NONINDEPENDENT_SAMPLE")
+        if result.evaluation_status == EVAL_AVAILABLE:
+            result.evaluation_status = EVAL_DEGRADED
+        result.explanation += " Raw execution provenance cannot establish independent revision samples."
+    return result
+
+
+def _evaluate_revisions(obs: ObservationSet) -> VitalResult:
     diagnostics: list[str] = []
     reconciled = reconcile(obs)
     history = {"revision_history": reconciled.output()}

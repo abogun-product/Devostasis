@@ -119,3 +119,11 @@ def test_unknown_vocabulary_is_rejected_but_legitimate_transitions_and_failures_
         assert union_state(merged, conflicts) == ("PASS_ONLY_OBSERVED", True)
     failed = parent_from_current(_run(41, [(1, "VERIFY_FAIL"), (3, "UNKNOWN")], latest=3), "test")
     assert union_state([failed], []) == ("FAILURE_OBSERVED", False)
+
+
+def test_current_revision_metadata_matches_its_reconciled_unknown_history():
+    from helpers import parent, revision
+    raw = revision("new", "2026-09-06T10:00:00Z", [parent("p-new", "UNKNOWN")], "UNKNOWN", "NO_DECISIVE_OBSERVED")
+    result = integrity.evaluate(_obs("2026-09-08T12:00:00Z", _passing([1, 2, 3]) + [raw]))
+    assert result.derived["current_revision"]["history_state"] == "UNKNOWN_HISTORY"
+    assert result.derived["unknown_history_count_14d"] == 1

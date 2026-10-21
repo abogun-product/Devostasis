@@ -11,9 +11,15 @@ Offline Repository Analysis and executable assurance, targets E4/B1, issues #72/
   history proof; offline replay derives roots, window membership, edit counts and
   completeness. Merge ancestry, clock skew, shallow/missing objects and resource
   caps remain explicit. V1 bundle/packet/example bytes retain exact replay.
-- Publish a versioned source-checkout conformance operation bridge with 20 permanent
+- Publish a versioned source-checkout conformance operation bridge with 63 permanent
   implementation fixtures, consumed RAW_RUNS provenance, shared multi-Vital evidence,
   all T8 substitutions, canonical bundle and actual HistoryStore checkpoints.
+- Materialize R11–R53 (43 permanent cases, 84 CI variants) with native parent
+  identities, explicit rerun proof, exact Actions/suite overlap, unresolved current
+  composition and failure-sticky store lifecycles. Versioned opt-in normalization
+  replays raw facts before governed Integrity; altered/partial evidence fails
+  closed and old observation/bundle replay remains unchanged. Public schemas
+  expose seven bridge scenarios and the bounded native input contract.
 - Serialize canonical store publication and reject stale advancing predecessors
   with explicit retry conflict while preserving immutable candidates. Store index
   permission denial remains FORBIDDEN/HISTORY_GAP.

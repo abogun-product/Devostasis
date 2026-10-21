@@ -90,9 +90,17 @@ explicit owner/external gates.
   declared byte-line edit algorithm, including repeated/unterminated lines.
 - [x] Legacy `examples/code` regenerates byte for byte. New `examples/code-v2`
   and separate schemas replay independently; cross-lineage comparison is refused.
-- [x] Twenty permanent conformance IDs execute real native normalization,
+- [x] Sixty-three permanent conformance IDs execute real native normalization,
   consumed RAW_RUNS provenance, one shared multi-Vital graph, all T8 substitutions,
   canonical bundle operations and stateful HistoryStore operations.
+- [x] R11–R53 are materialized under their 43 permanent IDs, with 84 CI variants:
+  native parent identities, exact overlap, proved reruns, unresolved precedence,
+  commit-time order/window and failure-sticky real-store lifecycles. Raw child
+  fallback and parent-level history limits remain explicit.
+- [x] Governed Integrity recomputes native evidence/provenance/records and rejects
+  altered bindings; unknown lineage, contradictory identity, broken pagination
+  and incomplete favorable history fail closed. New behavior is opt in under
+  a separate rule; old bundle examples and legacy paths retain exact replay.
 - [x] HistoryStore publication is locked; a stale advancing writer preserves
   candidates, reports conflict and rebuilds from latest. Permission failures
   remain explicit HISTORY_GAP.
@@ -127,7 +135,9 @@ CI additionally verifies both work/core examples, deterministic repeated builds
 and the operations archive restore on Python 3.12/3.13/3.14. Green checks establish
 those executions at the recorded head; they do not complete the unchecked gates.
 
-B1 retains R11–R53 and independent exact-fixture acceptance. B7 retains sustained
+The former 62-case implementation gap is materialized; B1 retains independent
+concrete-surface/whole-case exact-fixture acceptance and separate T9 cell-key
+delivery. B7 retains sustained
 outside-consumer evidence. Legacy v1 history and omitted blob sizes keep their
 documented proof limits. No compatibility migration, core GitLab collector,
 threshold retuning, aggregate health score or publication is implied by this PR.

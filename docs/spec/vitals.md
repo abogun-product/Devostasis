@@ -560,3 +560,17 @@ a band. Positive RAW_RUNS cannot be AVAILABLE: it retains failure-sticky
 one-revision arithmetic, reports DEGRADED when a band is otherwise available,
 and sample_strength PROVISIONAL_NONINDEPENDENT. Existing UNKNOWN precedence,
 thresholds/windows and per-Vital comparison boundaries remain intact.
+
+## Optional Integrity native normalization (0.6)
+
+`ci.native_evidence` / `ci.normalization_provenance` select
+`integrity.bands.v1+ci-unit-004+hist-002+ci-normalization-001`. Both are added to
+input metadata; raw facts must reproduce the exact configured, revision-series
+and provenance envelopes. Derived ci_normalization and
+latest_decisive_default_branch expose the replayed metadata. Incomplete native
+coverage reduces an otherwise AVAILABLE evaluation to DEGRADED; required
+PARTIAL series/unknown history keep existing UNKNOWN precedence. Thresholds,
+14-day window and durable history semantics are unchanged. Absent these inputs,
+the exact historical rule remains. Delta treats the new rule as an explicit
+per-Vital boundary. If sample_semantics is also present, the combined rule is
+`integrity.bands.v1+ci-unit-004+hist-002+ci-normalization-001+independence-001`.

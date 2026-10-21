@@ -47,10 +47,11 @@
     {
       "id": "D-1",
       "title": "Conformance cases named in the specification have no executable fixture",
-      "state": "open",
+      "state": "closed",
       "opened": "2026-09-05",
       "updated": "2026-10-21",
-      "cost": "0.6 publishes a versioned operation bridge with 20 permanent implementation fixtures: R5-R10 native normalization, T3/T6/T8, ART-05/08/09/10/11/15 and RPT-4/5/6/8/9. Nineteen address the former list of 62; R11-R53 (43 cases) remain without exact materialization. Concrete surface and whole-case exact-fixture independent review remain pending, including downstream R5-R10 fidelity. B1 is open; capability acceptance is not fixture acceptance. T9 cell-key delivery remains separate."
+      "cost": "Closed as an implementation-fixture obligation in pending 0.6: the versioned bridge executes 63 permanent cases, materializing the former 62-case gap plus RPT-8. R11-R53 add 43 cases and 84 CI variants with native normalization and real governed/store/bundle lifecycles. B1 remains open for independent concrete-surface/whole-case exact-fixture acceptance and separate T9 cell-key delivery; capability or research expansion acceptance does not accept these local fixtures. No independent review is claimed.",
+      "closed": "2026-10-21"
     },
     {
       "id": "D-2",

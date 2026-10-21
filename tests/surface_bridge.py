@@ -18,6 +18,7 @@ from devostasis.observations import Observation
 from devostasis.runner import build_from_observations
 from devostasis.vitals import build_snapshot, integrity
 from helpers import add, finalize, full_inputs, integrity_inputs, obs_set
+from ci_surface_bridge import consumer as vital_consumers, revisions as ci_revisions
 
 CONTRACT = "devostasis.conformance-bridge.v1"
 BUNDLE_LINEAGE = {"schema": "devostasis.manifest.v2", "artifact_contract_version": "devostasis.bundle.v3",
@@ -236,7 +237,8 @@ def history(given, root):
 
 
 SCENARIOS = {"ci-native.v1": native, "independence.v1": independence,
-             "multi-vital.v1": multivital, "bundle.v1": bundle, "history-store.v1": history}
+             "multi-vital.v1": multivital, "bundle.v1": bundle, "history-store.v1": history,
+             "vital-consumers.v1": vital_consumers, "ci-revisions.v1": ci_revisions}
 
 
 def load(path):
@@ -244,10 +246,12 @@ def load(path):
     shape(document, ("schema", "source", "cases"))
     if document["schema"] != CONTRACT: raise ValueError("unknown bridge lineage")
     if not isinstance(document["source"], str) or not document["source"]: raise ValueError("source required")
+    if not isinstance(document["cases"], list) or not document["cases"]:
+        raise ValueError("nonempty case inventory required")
     seen = set()
     for case in document["cases"]:
         shape(case, ("case", "scenario", "given", "checks"))
-        if not isinstance(case["case"], str) or case["case"] in seen: raise ValueError("duplicate or invalid case")
+        if not isinstance(case["case"], str) or not case["case"] or case["case"] in seen: raise ValueError("duplicate or invalid case")
         seen.add(case["case"])
         if case["scenario"] not in SCENARIOS: raise ValueError("unknown scenario lineage")
         if not isinstance(case["given"], dict) or not isinstance(case["checks"], list) or not case["checks"]:
@@ -275,13 +279,24 @@ def execute(case, root):
             except (KeyError, IndexError, TypeError): exists = False; break
         where = f"{case['case']}:{check['path']}"
         if "absent" in check:
-            assert not exists, f"{where}: forbidden field exists"
+            if exists: raise AssertionError(f"{where}: forbidden field exists")
             continue
-        assert exists, f"{where}: unknown checkpoint/assertion path"
+        if not exists: raise AssertionError(f"{where}: unknown checkpoint/assertion path")
         if "equals" in check:
-            assert canonical.canonical_bytes(node) == canonical.canonical_bytes(check["equals"]), f"{where}: expected {check['equals']!r}, got {node!r}"
+            if canonical.canonical_bytes(node) != canonical.canonical_bytes(check["equals"]):
+                raise AssertionError(f"{where}: expected {check['equals']!r}, got {node!r}")
         if "not_equals" in check:
-            assert canonical.canonical_bytes(node) != canonical.canonical_bytes(check["not_equals"]), f"{where}: forbidden value {node!r}"
+            if canonical.canonical_bytes(node) == canonical.canonical_bytes(check["not_equals"]):
+                raise AssertionError(f"{where}: forbidden value {node!r}")
         if "contains" in check:
-            assert check["contains"] in node, f"{where}: missing {check['contains']!r}"
+            if check["contains"] not in node: raise AssertionError(f"{where}: missing {check['contains']!r}")
     return actual
+
+
+def load_suite(paths=None):
+    paths = paths if paths is not None else [Path(__file__).parent / "fixtures" / name
+        for name in ("conformance-surface.json", "ci-revisions.json")]
+    cases = [case for path in paths for case in load(path)]
+    ids = [case["case"] for case in cases]
+    if len(ids) != len(set(ids)): raise ValueError("duplicate permanent case across bridge carriers")
+    return cases

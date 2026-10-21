@@ -6,12 +6,12 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "src"), str(ROOT / "tests")]
-from surface_bridge import CONTRACT, execute, load
+from surface_bridge import CONTRACT, execute, load_suite
 from devostasis.vectors import load as load_vectors
 
 
 def main():
-    cases = load(ROOT / "tests/fixtures/conformance-surface.json")
+    cases = load_suite()
     old = {v.case for v in load_vectors([ROOT / "tests/vectors"])}
     if old.intersection(c["case"] for c in cases): raise ValueError("duplicate permanent case across carriers")
     for case in cases:

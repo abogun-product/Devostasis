@@ -219,11 +219,22 @@ def evaluate(obs: ObservationSet) -> VitalResult:
     An absent discriminator preserves historical bytes. A present discriminator
     is consumed, versioned and fail closed; retries never create revision samples.
     """
+    from ..adapters.ci import NATIVE, PROVENANCE, admitted_metadata
+    native = obs.get(NATIVE) is not None or obs.get(PROVENANCE) is not None
+    metadata = admitted_metadata(obs) if native else None
     result = _evaluate_revisions(obs)
+    if metadata is not None:
+        result.rule_id += "+ci-normalization-001"
+        result.inputs += input_meta(obs, [NATIVE, PROVENANCE])
+        result.derived["ci_normalization"] = metadata
+        result.derived["latest_decisive_default_branch"] = metadata["latest_decisive_default_branch"]
+        if metadata["coverage"] == "DEGRADED" and result.evaluation_status == EVAL_AVAILABLE:
+            result.evaluation_status = EVAL_DEGRADED
+        result.diagnostics += metadata["diagnostics"]
     provenance = obs.get("ci.sample_semantics")
     if provenance is None:
         return result
-    result.rule_id = RULE_ID + "+independence-001"
+    result.rule_id += "+independence-001"
     result.inputs += input_meta(obs, ["ci.sample_semantics"])
     result.derived["sample_semantics"] = provenance.value if provenance.good else None
     if not provenance.good or provenance.value_type != "enum" or provenance.value not in ("RAW_RUNS", "INDEPENDENT_REVISIONS"):

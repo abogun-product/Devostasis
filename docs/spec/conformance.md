@@ -550,8 +550,9 @@ requirements without assigning new research case identifiers.
 The successor operation bridge is documented in
 [conformance-surface.md](conformance-surface.md). It executes implementation
 materializations under the accepted capability contract, with exact-fixture and
-concrete-surface independent review still pending. B1 remains open: R11..R53
-still need exact executable materialization; T9 cell-key delivery remains separate.
+concrete-surface independent review still pending. R11..R53 now have exact-ID
+implementation fixtures below. B1 remains open for independent whole-case
+acceptance and separate T9 cell-key delivery.
 The existing v1 vector corpus and all permanent identifiers retain their meaning.
 
 ## Versioned operation bridge (0.6 implementation materialization)
@@ -688,3 +689,66 @@ not close B1's missing accepted exact fixtures or B7's sustained calibration.
 | v1/v2 replay and comparison boundary | `test_v1_and_v2_replay_separately_and_do_not_compare_across_lineage`, `test_v2_frozen_example_replays_and_has_explicit_schemas` |
 | independent edit oracle | `test_byte_line_algorithm_matches_independent_lcs_oracle` |
 | exclusion applies before historical blob reads | `test_historic_proof_does_not_read_policy_excluded_blob_bytes` |
+
+## R11–R53 implementation materialization (0.6)
+
+The permanent-ID expansion of PV-TEST-002 is accepted by PV-REV-TEST-002;
+this local materialization still requires independent fidelity review. Later
+PV-CI-UNIT-004/PV-HIST-002 and fail-closed rules govern current/history distinctions.
+R17 raw children cannot prove a canonical parent failure or favorable history;
+R38 does not grant GitLab attempt-history completeness. Every CI checkpoint
+builds, persists and verifies a real bundle. The 43 cases contain 84 CI variants.
+
+| Case | Executed obligation | Proof |
+| --- | --- | --- |
+| R11 | degraded possible_bands is a nonauthoritative conservative superset; gauge/delta consume the bound | `bridge:R11` |
+| R12 | one failed parent plus five children contributes one failed immutable revision | `bridge:R12` |
+| R13 | GitHub suite failure and GitLab failed pipeline compose the same verdict/contribution | `bridge:R13` |
+| R14 | canonical parent aggregate governs; children remain provenance without double counting | `bridge:R14` |
+| R15 | same parent key collapses, proved rerun chain collapses, unproved distinct ids remain | `bridge:R15` |
+| R16 | passing and failing siblings compose one failed revision | `bridge:R16` |
+| R17 | child-only fallback declares REVISION_CHILD_AGGREGATE_RAW and degraded coverage; no canonical parent history is invented | `bridge:R17` |
+| R18 | latest decisive default-branch revision uses immutable commit time and SHA tie-break, never CI completion time | `bridge:R18` |
+| R19 | missing commit time or default-branch association leaves ordering UNKNOWN | `bridge:R19` |
+| R20 | enumeration and page boundaries preserve normalized records and governed results | `bridge:R20` |
+| R21 | distinct GitLab pipeline ids remain separate parents | `bridge:R21` |
+| R22 | same GitLab pipeline id retry has one current parent | `bridge:R22` |
+| R23 | distinct GitHub suite ids from one app remain separate parents | `bridge:R23` |
+| R24 | only scope-bound linear acyclic rerun proof collapses; cycles/forks/fan-in/unavailable proof preserve parents | `bridge:R24` |
+| R25 | parent enumeration and page order are invariant | `bridge:R25` |
+| R26 | Actions attempts share one run id and greatest observed attempt governs current state | `bridge:R26` |
+| R27 | distinct Actions run ids never merge by descriptive equality | `bridge:R27` |
+| R28 | exact workflow check_suite_id deduplicates overlap; unlinked same-app suites remain | `bridge:R28` |
+| R29 | passing Actions attempt followed by queued/running retry is currently unresolved | `bridge:R29` |
+| R30 | failing Actions attempt followed by queued/running retry is currently unresolved with failure retained | `bridge:R30` |
+| R31 | Actions/Checks/linked unresolved surfaces agree; newer disagreement or stale-only evidence fails closed | `bridge:R31` |
+| R32 | GitLab same-id retry in progress is unresolved after either prior polarity | `bridge:R32` |
+| R33 | greatest Actions attempt in progress governs despite earlier pass/fail attempts | `bridge:R33` |
+| R34 | unavailable or contradictory greatest attempt is UNKNOWN, never an older passing attempt | `bridge:R34` |
+| R35 | attempt order and page partitions do not change current or history | `bridge:R35` |
+| R36 | unresolved plus pass is unresolved, with zero current decisive samples | `bridge:R36` |
+| R37 | unresolved plus fail is one current failed revision | `bridge:R37` |
+| R38 | GitHub linked and GitLab sibling current verdicts agree without assuming favorable pipeline history completeness | `bridge:R38` |
+| R39 | sibling order and page partitions are invariant | `bridge:R39` |
+| R40 | unresolved-only evidence is neither PASS nor NO_RECENT_RUNS | `bridge:R40` |
+| R41 | unresolved plus canceled and skipped remains unresolved | `bridge:R41` |
+| R42 | UNKNOWN dominates failure and unresolved current siblings while historical failure remains | `bridge:R42` |
+| R43 | PASS to unresolved to PASS lifecycle keeps one immutable contribution | `bridge:R43` |
+| R44 | prior failure survives current pending verification in real durable history | `bridge:R44` |
+| R45 | prior pass survives in history while current verification remains unresolved | `bridge:R45` |
+| R46 | fail then pass changes current verdict but historical contribution remains failure | `bridge:R46` |
+| R47 | PASS to FAIL to PASS keeps absorbing failure in the same revision | `bridge:R47` |
+| R48 | Actions/Checks/linked/GitLab prior failure survives pending retry in real stores | `bridge:R48` |
+| R49 | historical attempt/sibling order and pagination are invariant | `bridge:R49` |
+| R50 | never-decisive unresolved evidence has no fabricated passing historical contribution | `bridge:R50` |
+| R51 | 14-day expiry is by immutable commit time, never rerun time | `bridge:R51` |
+| R52 | lost retained-failure proof with a broken predecessor becomes UNKNOWN_HISTORY, never favorable history | `bridge:R52` |
+| R53 | same-polarity retries keep one immutable contribution and unchanged counts | `bridge:R53` |
+
+Admission, canonical input, paging and legacy rule boundaries are also checked by
+`test_governed_integrity_refuses_forged_native_projections`,
+`test_native_input_unknown_shapes_and_ambiguous_bindings_fail_closed`,
+`test_page_transport_and_enumeration_do_not_change_canonical_observations`,
+`test_partial_inventory_and_partial_parent_cannot_prove_favorable_history`,
+`test_normalization_is_opt_in_and_delta_names_the_rule_boundary` and
+`test_bridge_wrong_assertion_still_fails_with_optimized_python`.

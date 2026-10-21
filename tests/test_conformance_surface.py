@@ -6,22 +6,22 @@ from pathlib import Path
 import pytest
 
 from devostasis import canonical, vectors
-from surface_bridge import execute, load
+from surface_bridge import execute, load, load_suite
 
 CASES = Path(__file__).parent / "fixtures" / "conformance-surface.json"
 
 
-@pytest.mark.parametrize("case", load(CASES), ids=lambda c: c["case"])
+@pytest.mark.parametrize("case", load_suite(), ids=lambda c: c["case"])
 def test_conformance_surface(case, tmp_path):
     execute(case, tmp_path)
 
 
 def test_bridge_and_v1_do_not_duplicate_permanent_ids():
     old = {v.case for v in vectors.load([Path(__file__).parent / "vectors"])}
-    assert not old.intersection(c["case"] for c in load(CASES))
+    assert not old.intersection(c["case"] for c in load_suite())
 
 
-@pytest.mark.parametrize("mutation", ["schema", "scenario", "check", "case", "extra"])
+@pytest.mark.parametrize("mutation", ["schema", "scenario", "check", "case", "extra", "empty"])
 def test_bridge_unknown_and_duplicate_lineage_never_skips(tmp_path, mutation):
     document = canonical.loads(CASES.read_text(encoding="utf-8"))
     if mutation == "schema": document["schema"] += "+future"
@@ -29,6 +29,7 @@ def test_bridge_unknown_and_duplicate_lineage_never_skips(tmp_path, mutation):
     if mutation == "check": document["cases"][0]["checks"][0]["ignored"] = True
     if mutation == "case": document["cases"].append(document["cases"][0])
     if mutation == "extra": document["ignored"] = True
+    if mutation == "empty": document["cases"] = []
     file = tmp_path / "bad.json"; file.write_bytes(canonical.canonical_bytes(document))
     with pytest.raises(ValueError): load(file)
 

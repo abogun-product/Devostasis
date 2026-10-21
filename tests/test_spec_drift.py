@@ -61,8 +61,8 @@ def test_the_specification_index_lists_every_specification_page():
 
 
 def test_the_conformance_table_and_bridge_name_the_same_cases():
-    from surface_bridge import load
-    corpus = {case["case"] for case in load(ROOT / "tests/fixtures/conformance-surface.json")}
+    from surface_bridge import load_suite
+    corpus = {case["case"] for case in load_suite()}
     cited = set(BRIDGE_CITATION.findall(CONFORMANCE.read_text(encoding="utf-8")))
     assert cited == corpus
 

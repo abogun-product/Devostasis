@@ -32,7 +32,8 @@ is provider-native, never heuristic:
 - generic GitHub Checks: `check_suite.id`; re-requests keep the same id, so
   earlier outcomes are not observable (`PARENT_LEVEL_ONLY` provenance).
 
-When Actions runs exist for a revision, check suites created by Actions are
+In the historical GitHub collector, when Actions runs exist for a revision,
+check suites created by Actions are
 not collected again (overlap de-duplication). External check apps are only
 collected when no Actions runs exist at all (see the adapter document).
 
@@ -189,8 +190,10 @@ historical evidence.
 ## The newest revision
 
 The newest in-scope revision speaks for the current state. Its verdict is
-read as it was composed: decisive verdicts stand; `VERIFY_UNRESOLVED` makes
-the band a conservative superset over the completions the evidence admits;
+read as it was composed: decisive verdicts stand; under accepted
+PV-INTEGRITY-TOTALITY-001, `VERIFY_UNRESOLVED` permits only an already-true
+established historical FAILING predicate to emit DEGRADED/FAILING/EXACT; all
+other unresolved regions are UNKNOWN without a band or reachability claim;
 positively observed `NOT_EXECUTED` and `NON_VERIFY_TERMINAL` fall back to the
 latest decisive revision and are diagnosed. `UNKNOWN` is none of those: it is
 the absence of an observation (a `startup_failure`, a conclusion this version
@@ -228,3 +231,60 @@ to offline conformance without claiming a core GitLab collector or complete
 pipeline retry history. The explicit provider/map pair is checked before use.
 The optional governed RAW_RUNS rule and its exact compatibility boundary are in
 [vitals.md](vitals.md) and [conformance-surface.md](conformance-surface.md).
+
+## Versioned native evidence admission (0.6, opt in)
+
+`devostasis.adapters.ci.observations(evidence, subject)` exposes the offline
+`devostasis.ci-normalization.v1` contract. `schemas/ci-normalization.schema.json`
+publishes its closed input: project/provider/outcome-map lineage, observation
+anchor, configured/inventory coverage, immutable revision metadata, native
+parent/child snapshots and explicit rerun links. It admits at most 10,000 rows
+per inventory, 1,000 parent pages and 16 MiB canonical input. Native SHA fields
+must match revision metadata, parent keys cannot change admitted revisions,
+evidence cannot postdate the observation, and unknown fields/lineages fail.
+Unknown future outcomes stay UNKNOWN. Contiguous page ordinals are required;
+an unfinished last page makes the series PARTIAL. Canonical facts flatten
+transport pages, sort and deduplicate identical observations.
+
+The new path retains distinct provider-native ids: Actions workflow_run.id
+with numeric run_attempt; generic check_suite.id; GitLab pipeline.id. For
+same-id snapshots, the greatest Actions attempt wins, then observation time;
+Checks/GitLab use observation time without inventing numeric attempt history.
+Conflicting latest states are UNKNOWN. Only exact Actions check_suite_id
+deduplicates a linked suite; Actions governs, suite provenance/failure remains.
+A newer disagreeing suite makes current state UNKNOWN. Unlinked same-app
+suites and descriptively identical runs remain independent parents.
+
+`devostasis.ci-rerun-link.v1` requires provider/forge/project/revision scope,
+earlier/later native references and AVAILABLE evidence_ref. Only a unique
+acyclic linear chain collapses; cycle, fork, fan-in, unavailable or cross-scope
+proof preserves all parents and degrades coverage. These links are recorded
+acquisition claims, not cryptographic provider attestations. Cross-id histories
+retain failures without inventing contiguous attempt completeness.
+
+Current composition uses UNKNOWN > FAIL > UNRESOLVED > PASS > nonverification
+terminal > not executed. Children remain provenance when parents exist. With
+only children, latest snapshots per child compose one explicitly degraded
+REVISION_CHILD_AGGREGATE_RAW; child failures cannot prove a canonical parent
+failed (allowed-failure jobs exist), so history stays UNKNOWN_HISTORY. A
+current raw verdict cannot become an AVAILABLE governed result. Partial parent
+evidence cannot prove favorable complete history. Known parent failures stay
+absorbing across current retries and persisted predecessor unions.
+
+Default-branch window/order is determined by immutable committed_at, then SHA,
+never CI completion/retry time. Off-branch/expired revisions are explicitly
+excluded; missing time or branch association leaves ordering UNKNOWN and the
+required series PARTIAL. The metadata discloses latest_decisive_default_branch,
+verification units, native/retained/aliased parent identities, current attempts,
+excluded revisions, diagnostics and coverage. Historical counts remain one
+per immutable revision. A broken predecessor cannot erase a proved failure
+into favorable unknown history; the real store gap is retained.
+
+Integrity replays raw native facts and compares all four emitted observation
+envelopes, including normalized records and provenance, before evaluation.
+Altered project/time/provider/version/digest/records/metadata are refused. This
+introduces the optional rule described in [vitals.md](vitals.md); absent these
+inputs, the historical collector, evaluator, bundle shapes and bytes replay
+unchanged. No core GitLab collection or accepted compatibility migration is
+introduced. R11–R53 implementation fixtures exercise this boundary and durable
+history; independent whole-case fidelity acceptance remains pending.

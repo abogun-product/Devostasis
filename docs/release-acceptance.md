@@ -120,7 +120,7 @@ devostasis code verify --bundle examples/code-v2/bundle
 devostasis code verify-packet --bundle examples/code-v2/bundle --packet examples/code-v2/packet.json
 devostasis work verify --bundle examples/code-v2/work-bundle
 devostasis work replay --bundle examples/code-v2/work-bundle
-python -m pip wheel --no-deps --no-build-isolation .
+python -m pip wheel --no-deps .
 ```
 
 CI additionally verifies both work/core examples, deterministic repeated builds
